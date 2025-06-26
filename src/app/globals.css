@@ -1,0 +1,16 @@
+:root,
+.light-theme {
+  --background: #fdf8f4;
+  --primary: #ffc244;
+  --secondary: #120802;
+  --text: #120802;
+  --accent: #f9e6c1;
+}
+
+.dark-theme {
+  --background: #120802;
+  --primary: #ffc244;
+  --secondary: #fdf8f4;
+  --text: #fdf8f4;
+  --accent: #ffc244;
+}
