@@ -37,7 +37,7 @@ export const getTheme = (mode: 'light' | 'dark') =>
           main: '#ffc244',
         },    
         text: {
-      primary: '#fdf8f4',
+            primary: '#fdf8f4',
           },
       
       }),

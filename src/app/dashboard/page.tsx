@@ -1,320 +1,223 @@
 "use client";
 
 import {
-  AppBar,
-  Toolbar,
-  Typography,
-  IconButton,
   Box,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
+  Typography,
   Divider,
   Avatar,
   TextField,
   InputAdornment,
-  Paper,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Button,
+  IconButton,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  useMediaQuery,
+  Theme,
 } from "@mui/material";
 import {
-  Menu,
-  MessageCircle,
-  Users,
-  Settings,
-  LogOut,
   Search,
-  Bell,
-  Send,
+  MoreVertical,
+  MessageCircle,
+  Smile,
+  Paperclip,
+  Mic,
+  ArrowLeft,
 } from "lucide-react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useTheme } from "@mui/material/styles";
+import Image from "next/image";
+export default function WhatsAppClone() {
+  const theme = useTheme();
+  const mode = theme.palette.mode;
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
 
-const drawerWidth = 260;
-
-export default function DashboardPage() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState("Chats");
-  const [logoutOpen, setLogoutOpen] = useState(false);
-  const router = useRouter();
-
-  const sidebarItems = [
-    { text: "Chats", icon: <MessageCircle size={20} />, route: "/dashboard/chats" },
-    { text: "Groups", icon: <Users size={20} />, route: "/dashboard/groups" },
-    { text: "Settings", icon: <Settings size={20} />, route: "/dashboard/settings" },
-    { text: "Logout", icon: <LogOut size={20} />, route: "" },
-  ];
-
-  const handleItemClick = (item: string, route: string) => {
-    if (item === "Logout") {
-      setLogoutOpen(true);
-    } else {
-      setSelectedItem(item);
-      router.push(route);
-    }
-    setMobileOpen(false);
-  };
-
-  const handleUserClick = (username: string) => {
-    router.push(`/dashboard/chats/${username.toLowerCase()}`);
-    setMobileOpen(false);
-  };
-
-  const SidebarContent = (
-    <>
-      <Toolbar>
-        <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-          ChatApp
-        </Typography>
-      </Toolbar>
-      <Divider />
-      <List>
-        {sidebarItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={selectedItem === item.text}
-              onClick={() => handleItemClick(item.text, item.route)}
-              sx={{
-                "&.Mui-selected": {
-                  bgcolor: "primary.light",
-                  "&:hover": { bgcolor: "primary.light" },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: "primary.main" }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-      <Divider />
-
-      {/* WhatsApp-style user list */}
-      <List sx={{ mt: 1 }}>
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleUserClick("Alice")}>
-            <ListItemIcon>
-              <Avatar src="/user1.jpg" alt="Alice" />
-            </ListItemIcon>
-            <ListItemText
-              primary="Alice"
-              secondary="Hey! Are you there?"
-              primaryTypographyProps={{ fontWeight: "medium" }}
-            />
-          </ListItemButton>
-        </ListItem>
-
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleUserClick("Bob")}>
-            <ListItemIcon>
-              <Avatar src="/user2.jpg" alt="Bob" />
-            </ListItemIcon>
-            <ListItemText
-              primary="Bob"
-              secondary="Let's catch up later!"
-              primaryTypographyProps={{ fontWeight: "medium" }}
-            />
-          </ListItemButton>
-        </ListItem>
-      </List>
-    </>
-  );
+  const users = ["Alice", "Bob", "Charlie", "David"];
 
   return (
-    <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-      {/* AppBar */}
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          ml: { md: `${drawerWidth}px` },
-          bgcolor: "background.paper",
-          color: "text.primary",
-          boxShadow: 1,
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-        }}
-      >
-        <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-          {/* Mobile Menu Button */}
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            sx={{ display: { md: "none" } }}
+    <Box display="flex" height="100vh" bgcolor="background.default">
+      {/* Sidebar */}
+      {(!isMobile || (isMobile && !selectedUser)) && (
+        <Box
+          width={{ xs: "100%", md: "30%" }}
+          borderRight="1px solid"
+          borderColor="divider"
+          display="flex"
+          flexDirection="column"
+        >
+          {/* Sidebar Header */}
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            p={2}
+            bgcolor="background.paper"
+             sx={{
+                color: mode === "light" ? theme.palette.text : theme.palette.secondary.contrastText
+              }}
           >
-            <Menu />
-          </IconButton>
+            <Image
+              src="/logo.png"
+              alt="Nestfinity logo"
+              width={50}
+              height={50}
+              style={{ borderRadius: "50%" }}
+            />
+            <Typography variant="h4" color="initial"
+              fontWeight="bold"
+            >
+              Nestfinity
+            </Typography>
+            {/* <Avatar alt="Me" src="/me.png" /> */}
+            <Box>
+              <IconButton>
+                <MessageCircle />
+              </IconButton>
+              <IconButton>
+                <MoreVertical />
+              </IconButton>
+            </Box>
+          </Box>
 
           {/* Search */}
-          <TextField
-            placeholder="Search..."
-            size="small"
-            sx={{ flexGrow: 1, maxWidth: 400, mx: 2 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search size={18} />
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          {/* Right side */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton>
-              <Bell />
-            </IconButton>
-            <Avatar alt="User Profile" src="/profile.jpg" />
+          <Box p={1}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Search or start new chat"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={18} />
+                  </InputAdornment>
+                ),
+              }}
+            />
           </Box>
-        </Toolbar>
-      </AppBar>
 
-      {/* Sidebar Desktop */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          display: { xs: "none", md: "block" },
-          "& .MuiDrawer-paper": {
-            width: drawerWidth,
-            boxSizing: "border-box",
-            bgcolor: "background.paper",
-            borderRight: "1px solid #e5e5e5",
-          },
-        }}
-        open
-      >
-        {SidebarContent}
-      </Drawer>
+          <Divider />
 
-      {/* Sidebar Mobile */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: "block", md: "none" },
-          "& .MuiDrawer-paper": {
-            width: drawerWidth,
-            bgcolor: "background.paper",
-          },
-        }}
-      >
-        {SidebarContent}
-      </Drawer>
-
-      {/* Chat Window */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          bgcolor: "background.default",
-          display: "flex",
-          flexDirection: "column",
-          pt: 8,
-        }}
-      >
-        {/* Messages */}
-        <Box
-          sx={{
-            flexGrow: 1,
-            overflowY: "auto",
-            px: 3,
-            py: 2,
-          }}
-        >
-          <Paper
-            sx={{
-              p: 2,
-              mb: 1,
-              maxWidth: "60%",
-              bgcolor: "primary.main",
-              color: "primary.contrastText",
-              borderRadius: "12px 12px 12px 0px",
-            }}
-          >
-            Hello! How are you doing today?
-          </Paper>
-          <Paper
-            sx={{
-              p: 2,
-              mb: 1,
-              maxWidth: "60%",
-              ml: "auto",
-              bgcolor: "secondary.main",
-              color: "secondary.contrastText",
-              borderRadius: "12px 12px 0px 12px",
-            }}
-          >
-            I'm doing great, thanks! How about you?
-          </Paper>
+          {/* Chat List */}
+          <List sx={{ overflowY: "auto", flex: 1 }}>
+            {users.map((user, i) => (
+              <ListItem
+                button
+                key={i}
+                onClick={() => setSelectedUser(user)}
+              >
+                <ListItemAvatar>
+                  <Avatar>{user[0]}</Avatar>
+                </ListItemAvatar>
+                <ListItemText primary={user} secondary="Last message..." />
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ whiteSpace: "nowrap" }}
+                >
+                  12:45pm
+                </Typography>
+              </ListItem>
+            ))}
+          </List>
         </Box>
+      )}
 
-        {/* Chat Input */}
-        <Box
-          sx={{
-            display: "flex",
-            gap: 2,
-            p: 2,
-            borderTop: "1px solid #e5e5e5",
-            bgcolor: "background.paper",
-          }}
-        >
-          <TextField
-            fullWidth
-            placeholder="Type a message..."
-            variant="outlined"
-            size="small"
-          />
-          <IconButton
-            sx={{
-              bgcolor: "primary.main",
-              color: "primary.contrastText",
-              "&:hover": { bgcolor: "primary.dark" },
-            }}
+      {/* Chat Area */}
+      {(!isMobile || (isMobile && selectedUser)) && (
+        <Box flex={1} display="flex" flexDirection="column">
+          {/* Chat Header */}
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            p={2}
+            bgcolor="background.paper"
+            borderBottom="1px solid"
+            borderColor="divider"
           >
-            <Send size={18} />
-          </IconButton>
+            <Box display="flex" alignItems="center" gap={2}>
+              {isMobile && (
+                <IconButton onClick={() => setSelectedUser(null)}>
+                  <ArrowLeft />
+                </IconButton>
+              )}
+              <Avatar>{selectedUser ? selectedUser[0] : "?"}</Avatar>
+              <Box>
+                <Typography variant="subtitle1">{selectedUser}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Online
+                </Typography>
+              </Box>
+            </Box>
+            <Box>
+              <IconButton>
+                <Search />
+              </IconButton>
+              <IconButton>
+                <MoreVertical />
+              </IconButton>
+            </Box>
+          </Box>
+
+          {/* Messages */}
+          <Box flex={1} p={2} overflow="auto" bgcolor="background.default">
+            <Box mb={2}>
+              <Typography
+                sx={{
+                  bgcolor: "primary.main",
+                  color: "primary.contrastText",
+                  display: "inline-block",
+                  p: 1.2,
+                  borderRadius: 2,
+                }}
+              >
+                Hello 👋
+              </Typography>
+            </Box>
+            <Box mb={2} display="flex" justifyContent="flex-end">
+              <Typography
+                sx={{
+                  bgcolor: "secondary.main",
+                  color: "secondary.contrastText",
+                  display: "inline-block",
+                  p: 1.2,
+                  borderRadius: 2,
+                }}
+              >
+                Hi {selectedUser}! 😄
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Chat Input */}
+          <Box
+            display="flex"
+            alignItems="center"
+            p={1}
+            borderTop="1px solid"
+            borderColor="divider"
+            bgcolor="background.paper"
+          >
+            <IconButton>
+              <Smile />
+            </IconButton>
+            <IconButton>
+              <Paperclip />
+            </IconButton>
+            <TextField
+              fullWidth
+              placeholder="Type a message"
+              variant="outlined"
+              size="small"
+              sx={{ mx: 1 }}
+            />
+            <IconButton color="primary">
+              <Mic />
+            </IconButton>
+          </Box>
         </Box>
-      </Box>
-
-      {/* Logout Confirmation Modal */}
-      <Dialog
-        open={logoutOpen}
-        onClose={() => setLogoutOpen(false)}
-        aria-labelledby="logout-dialog-title"
-      >
-        <DialogTitle id="logout-dialog-title">Confirm Logout</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to logout?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setLogoutOpen(false)} color="secondary">
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              setLogoutOpen(false);
-              console.log("User logged out"); // Replace with real logout logic
-            }}
-            color="primary"
-            variant="contained"
-          >
-            Logout
-          </Button>
-        </DialogActions>
-      </Dialog>
+      )}
     </Box>
   );
 }
