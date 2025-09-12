@@ -18,7 +18,6 @@ const baseTheme: ThemeOptions = {
     },
      text: {
       primary: '#120802',
-      secondary: '#f9e6c1',
     },
   },
 };
@@ -36,7 +35,11 @@ export const getTheme = (mode: 'light' | 'dark') =>
         },
         primary: {
           main: '#ffc244',
-        },
+        },    
+        text: {
+      primary: '#fdf8f4',
+          },
+      
       }),
     },
   });

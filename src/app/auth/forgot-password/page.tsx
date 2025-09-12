@@ -8,29 +8,23 @@ import {
   Typography,
   Paper,
   Stack,
-  InputAdornment,
-  IconButton,
 } from "@mui/material";
 import Grid from "@mui/material/GridLegacy";
 import { useTheme } from "@mui/material/styles";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import { Eye, EyeOff } from "lucide-react";
 
 // Yup validation schema
-const LoginSchema = Yup.object().shape({
+const ForgotPasswordSchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Email is required"),
-  password: Yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
 });
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const theme = useTheme();
   const mode = theme.palette.mode;
-
-  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     AOS.init({ duration: 800, easing: "ease-in-out", once: true });
@@ -97,13 +91,13 @@ export default function LoginPage() {
                 fontWeight="bold"
                 sx={{ fontSize: { xs: "1.5rem", sm: "1.8rem", md: "2rem", lg: "2.2rem" }, mb: 1 }}
               >
-                Welcome Back
+                Forgot Password?
               </Typography>
               <Typography
                 variant="body1"
                 sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem", lg: "1.1rem" } }}
               >
-                Log in to continue your journey with Nestfinity.
+                Enter your email and we’ll send you reset instructions.
               </Typography>
             </Box>
           </Grid>
@@ -114,32 +108,40 @@ export default function LoginPage() {
             xs={12}
             md={7}
             lg={6}
-            sx={{ p: { xs: 2, sm: 3, md: 4, lg: 5 }, display: "flex", flexDirection: "column", justifyContent: "center" }}
+            sx={{
+              p: { xs: 2, sm: 3, md: 4, lg: 5 },
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+            }}
             data-aos="fade-left"
             data-aos-delay="400"
           >
             <Typography
               variant="h4"
               fontWeight="bold"
-              sx={{ fontSize: { xs: "1.3rem", sm: "1.5rem", md: "1.7rem", lg: "1.9rem" }, mb: { xs: 1.5, sm: 2 } }}
+              sx={{
+                fontSize: { xs: "1.3rem", sm: "1.5rem", md: "1.7rem", lg: "1.9rem" },
+                mb: { xs: 1.5, sm: 2 },
+              }}
               data-aos="fade-up"
               data-aos-delay="500"
             >
-              Log In
+              Reset Password
             </Typography>
 
             <Formik
-              initialValues={{ email: "", password: "" }}
-              validationSchema={LoginSchema}
+              initialValues={{ email: "" }}
+              validationSchema={ForgotPasswordSchema}
               validateOnChange={true}
               validateOnBlur={true}
               onSubmit={(values) => {
-                console.log("Login Submitted:", values);
+                console.log("Forgot Password Submitted:", values);
               }}
             >
               {({ values, errors, touched, handleChange, handleBlur, isValid }) => (
                 <Form>
-                  <Stack spacing={{ xs: 1, sm: 1.5, md: 2 }}>
+                  <Stack spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
                     {/* Email */}
                     <TextField
                       label="Email"
@@ -163,38 +165,6 @@ export default function LoginPage() {
                       }}
                     />
 
-                    {/* Password */}
-                    <TextField
-                      label="Password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      value={values.password}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      fullWidth
-                      size="small"
-                      variant="outlined"
-                      error={touched.password && Boolean(errors.password)}
-                      helperText={touched.password ? errors.password : " "}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: { xs: 1, sm: 2 },
-                          "& fieldset": { borderColor: getBorderColor(touched.password, errors.password) },
-                          "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                        },
-                        "& .MuiInputLabel-root": { fontSize: { xs: "0.85rem", sm: "0.9rem" } },
-                      }}
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-
                     {/* Submit Button */}
                     <Button
                       variant="contained"
@@ -211,11 +181,14 @@ export default function LoginPage() {
                         fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" },
                         "&:hover": {
                           background: theme.palette.primary.dark,
-                          boxShadow: { xs: "0 2px 8px rgba(0,0,0,0.15)", sm: "0 4px 12px rgba(0,0,0,0.2)" },
+                          boxShadow: {
+                            xs: "0 2px 8px rgba(0,0,0,0.15)",
+                            sm: "0 4px 12px rgba(0,0,0,0.2)",
+                          },
                         },
                       }}
                     >
-                      Log In
+                      Send Reset Link
                     </Button>
                   </Stack>
                 </Form>
@@ -226,12 +199,16 @@ export default function LoginPage() {
               variant="body2"
               color="text.secondary"
               fontWeight="bold"
-              sx={{ mt: { xs: 1.5, sm: 2 }, textAlign: "center", fontSize: { xs: "0.75rem", sm: "0.8rem", md: "0.85rem" } }}
+              sx={{
+                mt: { xs: 1.5, sm: 2 },
+                textAlign: "center",
+                fontSize: { xs: "0.75rem", sm: "0.8rem", md: "0.85rem" },
+              }}
             >
-              Don’t have an account?{" "}
+              Remember your password?{" "}
               <Box
                 component="a"
-                href="/auth/signup"
+                href="/auth/login"
                 sx={{
                   color: theme.palette.primary.main,
                   textDecoration: "none",
@@ -239,7 +216,7 @@ export default function LoginPage() {
                   "&:hover": { textDecoration: "underline" },
                 }}
               >
-                Sign Up
+                Log In
               </Box>
             </Typography>
           </Grid>
