@@ -147,7 +147,7 @@ export default function LoginPage() {
                     password: values.password,
                   });
                   // resetForm();
-                  console.log("Signup success:", res.data);
+                  console.log("Login success:", res.data);
                   const message = res?.data?.message
                   const status = res?.data?.status
                   setApiMessage({ message: message, status: status });
@@ -164,7 +164,7 @@ export default function LoginPage() {
                   setApiMessage({ message: message, status: status });
                   // 🔹 Hide message after 3 seconds
                   setTimeout(() => setApiMessage(null), 3000);
-                  console.error("Signup error:", err.response?.data || err.message);
+                  console.error("Login error:", err.response?.data || err.message);
                 } finally {
                   setSubmitting(false);
                 }
@@ -280,6 +280,16 @@ export default function LoginPage() {
                 }}
               >
                 Sign Up
+              </Box>
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              fontWeight="bold"
+              sx={{ mt: { xs: 1.5, sm: 2 }, textAlign: "center", fontSize: { xs: "0.75rem", sm: "0.8rem", md: "0.85rem" } }}
+            >
+              <Box component="a" href="/auth/forgot-password" sx={{ color: theme.palette.primary.main, textDecoration: "none", fontWeight: "bold", "&:hover": { textDecoration: "underline" } }}>
+                forgotten password?
               </Box>
             </Typography>
           </Grid>

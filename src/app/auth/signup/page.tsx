@@ -349,6 +349,17 @@ export default function SignupPage() {
                 Log In
               </Box>
             </Typography>
+            
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              fontWeight="bold"
+              sx={{ mt: { xs: 1.5, sm: 2 }, textAlign: "center", fontSize: { xs: "0.75rem", sm: "0.8rem", md: "0.85rem" } }}
+            >
+              <Box component="a" href="/auth/forgot-password" sx={{ color: theme.palette.primary.main, textDecoration: "none", fontWeight: "bold", "&:hover": { textDecoration: "underline" } }}>
+                forgotten password?
+              </Box>
+            </Typography>
           </Grid>
         </Grid>
       </Paper>
