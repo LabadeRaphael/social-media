@@ -18,10 +18,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       try {
         // Call refresh endpoint to get new access token
-        await api.post("/auth/refresh-token");
+        // await api.post("/auth/refresh-token");
 
         // Retry the failed request with the new token
-        return api(error.config);
+        // return api(error.config);
       } catch (refreshError) {
         console.error("Refresh failed, logging out...");
         // Optional: redirect to login page

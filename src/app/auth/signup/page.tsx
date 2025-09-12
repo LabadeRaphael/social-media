@@ -19,6 +19,8 @@ import "aos/dist/aos.css";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { Eye, EyeOff } from "lucide-react";
+import api from "@/axios/axiosInstance";
+import MessageAlert from "@/components/messageAlert";
 
 // Yup validation schema
 const SignupSchema = Yup.object().shape({
@@ -34,6 +36,10 @@ const SignupSchema = Yup.object().shape({
     .oneOf([Yup.ref("password"), ""], "Passwords must match")
     .required("Confirm Password is required"),
 });
+interface ApiMessage {
+  message: string;
+  status: boolean;
+}
 
 export default function SignupPage() {
   const theme = useTheme();
@@ -41,6 +47,7 @@ export default function SignupPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [apiMessage, setApiMessage] = useState<ApiMessage | null>(null);
 
   useEffect(() => {
     AOS.init({ duration: 800, easing: "ease-in-out", once: true });
@@ -148,13 +155,49 @@ export default function SignupPage() {
               validationSchema={SignupSchema}
               validateOnChange={true}
               validateOnBlur={true}
-              onSubmit={(values) => {
-                console.log("Form Submitted:", values);
+              onSubmit={async (values, { setSubmitting, resetForm }) => {
+                try {
+                  setSubmitting(true)
+
+                  const res = await api.post("/auth/signup", {
+                    userName: values.userName,
+                    email: values.email,
+                    password: values.password,
+                  });
+                  // resetForm();
+                  console.log("Signup success:", res.data);
+                  const message = res?.data?.message
+                  const status = res?.data?.status
+                  setApiMessage({ message: message, status: status });
+                  // 🔹 Hide message after 3 seconds
+                  setTimeout(() => setApiMessage(null), 3000);
+
+                  // 🔹 Redirect after 2 seconds
+                  setTimeout(() => {
+                    window.location.href = "/auth/login";
+                  }, 2000);
+
+                } catch (err: any) {
+                  const message = err.response?.data.message
+                  const status = err.response?.data.status
+                  setApiMessage({ message: message, status: status });
+                  // 🔹 Hide message after 3 seconds
+                  setTimeout(() => setApiMessage(null), 3000);
+                  console.error("Signup error:", err.response?.data || err.message);
+                } finally {
+                  setSubmitting(false);
+                }
               }}
             >
-              {({ values, errors, touched, handleChange, handleBlur, isValid }) => (
+              {({ values, errors, touched, handleChange, handleBlur, isValid, isSubmitting }) => (
                 <Form>
                   <Stack spacing={{ xs: 1, sm: 1.5, md: 2 }}>
+                    {apiMessage && (
+                      <MessageAlert
+                        message={apiMessage.message}
+                        status={apiMessage.status}
+                      />
+                    )}
                     {/* Username */}
                     <TextField
                       label="Username"
@@ -275,7 +318,7 @@ export default function SignupPage() {
                       color="primary"
                       fullWidth
                       type="submit"
-                      disabled={!isValid}
+                      disabled={!isValid || isSubmitting}
                       sx={{
                         borderRadius: { xs: 1, sm: 2 },
                         py: { xs: 1, sm: 1.2 },
@@ -288,7 +331,7 @@ export default function SignupPage() {
                         },
                       }}
                     >
-                      Sign Up
+                      {isSubmitting ? "Please wait..." : "Sign Up"}
                     </Button>
                   </Stack>
                 </Form>
