@@ -13,12 +13,14 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/GridLegacy";
 import { useTheme } from "@mui/material/styles";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
+import api from "@/axios/axiosInstance";
+import MessageAlert from "@/components/messageAlert";
 
 // Yup validation schema
 const ResetPasswordSchema = Yup.object().shape({
@@ -29,6 +31,10 @@ const ResetPasswordSchema = Yup.object().shape({
     .oneOf([Yup.ref("newPassword")], "Passwords must match")
     .required("Confirm password is required"),
 });
+interface ApiMessage {
+  message: string;
+  status: boolean;
+}
 
 export default function ResetPasswordPage() {
   const theme = useTheme();
@@ -36,15 +42,12 @@ export default function ResetPasswordPage() {
 
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const [apiMessage, setApiMessage] = useState<ApiMessage | null>(null);
   useEffect(() => {
     AOS.init({ duration: 800, easing: "ease-in-out", once: true });
-  });
+  }, []);
 
-  const getBorderColor = (
-    touched: boolean | undefined,
-    error: string | undefined
-  ) => {
+  const getBorderColor = (touched: boolean | undefined, error: string | undefined) => {
     if (!touched) return undefined;
     return error ? "error.main" : "success.main";
   };
@@ -71,9 +74,7 @@ export default function ResetPasswordPage() {
           width: { xs: "100%", sm: "90%", md: "80%", lg: 900 },
           maxWidth: "100%",
           background:
-            mode === "light"
-              ? "rgba(255,255,255,0.95)"
-              : "rgba(18,18,18,0.95)",
+            mode === "light" ? "rgba(255,255,255,0.95)" : "rgba(18,18,18,0.95)",
           boxShadow: {
             xs: "0 2px 8px rgba(0,0,0,0.1)",
             sm: "0 4px 16px rgba(0,0,0,0.1)",
@@ -135,7 +136,7 @@ export default function ResetPasswordPage() {
                   },
                 }}
               >
-                Create a new password for your account.
+                Enter your new password below to regain access.
               </Typography>
             </Box>
           </Grid>
@@ -170,7 +171,7 @@ export default function ResetPasswordPage() {
               data-aos="fade-up"
               data-aos-delay="500"
             >
-              Set New Password
+               Set New Password
             </Typography>
 
             <Formik
@@ -178,8 +179,36 @@ export default function ResetPasswordPage() {
               validationSchema={ResetPasswordSchema}
               validateOnChange={true}
               validateOnBlur={true}
-              onSubmit={(values) => {
-                console.log("Reset Password Submitted:", values);
+              onSubmit={ async (values, {setSubmitting}) => {
+                 try {
+                                  setSubmitting(true)
+                
+                                  const res = await api.post("/auth/reset-password", {
+                                    newPassword: values.newPassword,
+                                    confirmPassword: values.confirmPassword,
+                                  });
+                                  // resetForm();
+                                  console.log("Login success:", res.data);
+                                  const message = res?.data?.message
+                                  const status = res?.data?.status
+                                  setApiMessage({ message: message, status: status });
+                                  // 🔹 Hide message after 3 seconds
+                                  setTimeout(() => setApiMessage(null), 3000);
+                
+                                  // 🔹 Redirect after 2 seconds
+                                  setTimeout(() => {
+                                    window.location.href = "/auth/login";
+                                  }, 2000);
+                                } catch (err: any) {
+                                  const message = err.response?.data.message
+                                  const status = err.response?.data.status
+                                  setApiMessage({ message: message, status: status });
+                                  // 🔹 Hide message after 3 seconds
+                                  setTimeout(() => setApiMessage(null), 3000);
+                                  console.error("Reset Password Failed", err.response?.data || err.message);
+                                } finally {
+                                  setSubmitting(false);
+                                }
               }}
             >
               {({
@@ -189,9 +218,16 @@ export default function ResetPasswordPage() {
                 handleChange,
                 handleBlur,
                 isValid,
+                isSubmitting
               }) => (
                 <Form>
                   <Stack spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
+                   {apiMessage && (
+                                        <MessageAlert
+                                          message={apiMessage.message}
+                                          status={apiMessage.status}
+                                        />
+                                      )}
                     {/* New Password */}
                     <TextField
                       label="New Password"
@@ -203,23 +239,17 @@ export default function ResetPasswordPage() {
                       fullWidth
                       size="small"
                       variant="outlined"
-                      error={
-                        touched.newPassword && Boolean(errors.newPassword)
-                      }
+                      error={touched.newPassword && Boolean(errors.newPassword)}
                       helperText={touched.newPassword ? errors.newPassword : " "}
                       InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Lock size={18} />
-                          </InputAdornment>
-                        ),
                         endAdornment: (
                           <InputAdornment position="end">
                             <IconButton
                               onClick={() =>
-                                setShowNewPassword(!showNewPassword)
+                                setShowNewPassword((prev) => !prev)
                               }
                               edge="end"
+                              size="small"
                             >
                               {showNewPassword ? (
                                 <EyeOff size={18} />
@@ -268,18 +298,14 @@ export default function ResetPasswordPage() {
                         touched.confirmPassword ? errors.confirmPassword : " "
                       }
                       InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Lock size={18} />
-                          </InputAdornment>
-                        ),
                         endAdornment: (
                           <InputAdornment position="end">
                             <IconButton
                               onClick={() =>
-                                setShowConfirmPassword(!showConfirmPassword)
+                                setShowConfirmPassword((prev) => !prev)
                               }
                               edge="end"
+                              size="small"
                             >
                               {showConfirmPassword ? (
                                 <EyeOff size={18} />
@@ -316,17 +342,13 @@ export default function ResetPasswordPage() {
                       color="primary"
                       fullWidth
                       type="submit"
-                      disabled={!isValid}
+                      disabled={!isValid || isSubmitting}
                       sx={{
                         borderRadius: { xs: 1, sm: 2 },
                         py: { xs: 1, sm: 1.2 },
                         fontWeight: "bold",
                         textTransform: "none",
-                        fontSize: {
-                          xs: "0.85rem",
-                          sm: "0.9rem",
-                          md: "1rem",
-                        },
+                        fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" },
                         "&:hover": {
                           background: theme.palette.primary.dark,
                           boxShadow: {
@@ -336,12 +358,37 @@ export default function ResetPasswordPage() {
                         },
                       }}
                     >
-                      Reset Password
+                        {isSubmitting ? "Please wait..." : "Reset Password"}
                     </Button>
                   </Stack>
                 </Form>
               )}
             </Formik>
+
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              fontWeight="bold"
+              sx={{
+                mt: { xs: 1.5, sm: 2 },
+                textAlign: "center",
+                fontSize: { xs: "0.75rem", sm: "0.8rem", md: "0.85rem" },
+              }}
+            >
+              Remember your password?{" "}
+              <Box
+                component="a"
+                href="/auth/login"
+                sx={{
+                  color: theme.palette.primary.main,
+                  textDecoration: "none",
+                  fontWeight: "bold",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+              >
+                Log In
+              </Box>
+            </Typography>
           </Grid>
         </Grid>
       </Paper>

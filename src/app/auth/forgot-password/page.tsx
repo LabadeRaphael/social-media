@@ -150,7 +150,7 @@ export default function ForgotPasswordPage() {
                                         email: values.email,
                                     });
                                     // resetForm();
-                                    console.log("Login success:", res.data);
+                                    console.log("Forgot Password Submitted:", res.data);
                                     const message = res?.data?.message
                                     const status = res?.data?.status
                                     setApiMessage({ message: message, status: status });
@@ -167,11 +167,11 @@ export default function ForgotPasswordPage() {
                                     setApiMessage({ message: message, status: status });
                                     // 🔹 Hide message after 3 seconds
                                     setTimeout(() => setApiMessage(null), 3000);
-                                    console.error("Login error:", err.response?.data || err.message);
+                                    console.error("Forgot Password Submission error:", err.response?.data || err.message);
                                 } finally {
                                     setSubmitting(false);
                                 }
-                                console.log("Forgot Password Submitted:", values);
+                                // console.log("Forgot Password Submitted:", values);
                             }}
                         >
                             {({ values, errors, touched, handleChange, handleBlur, isValid, isSubmitting }) => (
