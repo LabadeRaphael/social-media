@@ -21,7 +21,7 @@ import * as Yup from "yup";
 import { Eye, EyeOff } from "lucide-react";
 import api from "@/axios/axiosInstance";
 import MessageAlert from "@/components/messageAlert";
-
+import Image from "next/image";
 // Yup validation schema
 const SignupSchema = Yup.object().shape({
   userName: Yup.string()
@@ -109,6 +109,13 @@ export default function SignupPage() {
             data-aos-delay="300"
           >
             <Box>
+              <Image
+                src='/logo.png'
+                alt="Nestfinity logo"
+                height={90}
+                width={90}
+                style={{ borderRadius: '50%' }}
+              />
               <Typography
                 variant="h3"
                 fontWeight="bold"
@@ -349,7 +356,7 @@ export default function SignupPage() {
                 Log In
               </Box>
             </Typography>
-            
+
             <Typography
               variant="body2"
               color="text.secondary"

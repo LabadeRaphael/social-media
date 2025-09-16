@@ -18,21 +18,22 @@ import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import MessageAlert from "@/components/messageAlert";
 import api from "@/axios/axiosInstance";
+import Image from "next/image";
 
 // Yup validation schema
 const ForgotPasswordSchema = Yup.object().shape({
     email: Yup.string().email("Invalid email").required("Email is required"),
 });
 interface ApiMessage {
-  message: string;
-  status: boolean;
+    message: string;
+    status: boolean;
 }
 export default function ForgotPasswordPage() {
     const theme = useTheme();
     const mode = theme.palette.mode;
-    
+
     const [apiMessage, setApiMessage] = useState<ApiMessage | null>(null);
-    
+
     useEffect(() => {
         AOS.init({ duration: 800, easing: "ease-in-out", once: true });
     });
@@ -93,6 +94,13 @@ export default function ForgotPasswordPage() {
                         data-aos-delay="300"
                     >
                         <Box>
+                            <Image
+                                src='/logo.png'
+                                alt="Nestfinity logo"
+                                height={90}
+                                width={90}
+                                style={{ borderRadius: '50%' }}
+                            />
                             <Typography
                                 variant="h3"
                                 fontWeight="bold"
@@ -142,7 +150,7 @@ export default function ForgotPasswordPage() {
                             validationSchema={ForgotPasswordSchema}
                             validateOnChange={true}
                             validateOnBlur={true}
-                            onSubmit={async (values, { setSubmitting}) => {
+                            onSubmit={async (values, { setSubmitting }) => {
                                 try {
                                     setSubmitting(true)
 

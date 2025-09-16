@@ -21,7 +21,7 @@ import * as Yup from "yup";
 import { Eye, EyeOff } from "lucide-react";
 import api from "@/axios/axiosInstance";
 import MessageAlert from "@/components/messageAlert";
-
+import Image from "next/image";
 // Yup validation schema
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Email is required"),
@@ -97,6 +97,13 @@ export default function LoginPage() {
             data-aos-delay="300"
           >
             <Box>
+              <Image
+                src='/logo.png'
+                alt="Nestfinity logo"
+                height={90}
+                width={90}
+                style={{borderRadius:'50%'}}
+              />
               <Typography
                 variant="h3"
                 fontWeight="bold"
