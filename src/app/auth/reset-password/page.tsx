@@ -21,7 +21,8 @@ import * as Yup from "yup";
 import { Eye, EyeOff } from "lucide-react";
 import api from "@/axios/axiosInstance";
 import MessageAlert from "@/components/messageAlert";
-
+import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 // Yup validation schema
 const ResetPasswordSchema = Yup.object().shape({
   newPassword: Yup.string()
@@ -51,6 +52,15 @@ export default function ResetPasswordPage() {
     if (!touched) return undefined;
     return error ? "error.main" : "success.main";
   };
+  const router = useRouter();
+  const searchParams = useSearchParams(); // App Router
+  const token = searchParams.get("token");
+  useEffect(() => {
+    if (!token) {
+      // Redirect to request reset page
+      router.replace('/auth/forgot-password');
+    }
+  }, [router, token]);
 
   return (
     <Container
@@ -110,6 +120,13 @@ export default function ResetPasswordPage() {
             data-aos-delay="300"
           >
             <Box>
+              <Image
+                src='/logo.png'
+                alt="Nestfinity logo"
+                height={70}
+                width={70}
+                style={{ borderRadius: '50%' }}
+              />
               <Typography
                 variant="h3"
                 fontWeight="bold"
@@ -171,7 +188,7 @@ export default function ResetPasswordPage() {
               data-aos="fade-up"
               data-aos-delay="500"
             >
-               Set New Password
+              Set New Password
             </Typography>
 
             <Formik
@@ -179,36 +196,37 @@ export default function ResetPasswordPage() {
               validationSchema={ResetPasswordSchema}
               validateOnChange={true}
               validateOnBlur={true}
-              onSubmit={ async (values, {setSubmitting}) => {
-                 try {
-                                  setSubmitting(true)
-                
-                                  const res = await api.post("/auth/reset-password", {
-                                    newPassword: values.newPassword,
-                                    confirmPassword: values.confirmPassword,
-                                  });
-                                  // resetForm();
-                                  console.log("Login success:", res.data);
-                                  const message = res?.data?.message
-                                  const status = res?.data?.status
-                                  setApiMessage({ message: message, status: status });
-                                  // 🔹 Hide message after 3 seconds
-                                  setTimeout(() => setApiMessage(null), 3000);
-                
-                                  // 🔹 Redirect after 2 seconds
-                                  setTimeout(() => {
-                                    window.location.href = "/auth/login";
-                                  }, 2000);
-                                } catch (err: any) {
-                                  const message = err.response?.data.message
-                                  const status = err.response?.data.status
-                                  setApiMessage({ message: message, status: status });
-                                  // 🔹 Hide message after 3 seconds
-                                  setTimeout(() => setApiMessage(null), 3000);
-                                  console.error("Reset Password Failed", err.response?.data || err.message);
-                                } finally {
-                                  setSubmitting(false);
-                                }
+              onSubmit={async (values, { setSubmitting }) => {
+                try {
+                  setSubmitting(true)
+
+                  const res = await api.post("/auth/reset-password", {
+                    token,
+                    newPassword: values.newPassword,
+                    confirmPassword: values.confirmPassword,
+                  });
+                  // resetForm();
+                  console.log("Login success:", res.data);
+                  const message = res?.data?.message
+                  const status = res?.data?.status
+                  setApiMessage({ message: message, status: status });
+                  // 🔹 Hide message after 3 seconds
+                  setTimeout(() => setApiMessage(null), 3000);
+
+                  // 🔹 Redirect after 2 seconds
+                  setTimeout(() => {
+                    router.replace('/auth/login')
+                  }, 2000);
+                } catch (err: any) {
+                  const message = err.response?.data.message
+                  const status = err.response?.data.status
+                  setApiMessage({ message: message, status: status });
+                  // 🔹 Hide message after 3 seconds
+                  setTimeout(() => setApiMessage(null), 3000);
+                  console.error("Reset Password Failed", err.response?.data || err.message);
+                } finally {
+                  setSubmitting(false);
+                }
               }}
             >
               {({
@@ -222,12 +240,12 @@ export default function ResetPasswordPage() {
               }) => (
                 <Form>
                   <Stack spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
-                   {apiMessage && (
-                                        <MessageAlert
-                                          message={apiMessage.message}
-                                          status={apiMessage.status}
-                                        />
-                                      )}
+                    {apiMessage && (
+                      <MessageAlert
+                        message={apiMessage.message}
+                        status={apiMessage.status}
+                      />
+                    )}
                     {/* New Password */}
                     <TextField
                       label="New Password"
@@ -358,7 +376,7 @@ export default function ResetPasswordPage() {
                         },
                       }}
                     >
-                        {isSubmitting ? "Please wait..." : "Reset Password"}
+                      {isSubmitting ? "Please wait..." : "Reset Password"}
                     </Button>
                   </Stack>
                 </Form>

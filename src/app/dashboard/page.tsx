@@ -53,19 +53,20 @@ export default function WhatsAppClone() {
             justifyContent="space-between"
             p={2}
             bgcolor="background.paper"
-             sx={{
-                color: mode === "light" ? theme.palette.text : theme.palette.secondary.contrastText
-              }}
           >
             <Image
               src="/logo.png"
               alt="Nestfinity logo"
-              width={50}
-              height={50}
+              width={45}
+              height={45}
               style={{ borderRadius: "50%" }}
             />
-            <Typography variant="h4" color="initial"
-              fontWeight="bold"
+            <Typography variant="h5"
+              sx={{
+                color: mode === "light" ? theme.palette.text.primary : theme.palette.secondary.contrastText,
+                fontWeight: "bold",
+              }
+              }
             >
               Nestfinity
             </Typography>

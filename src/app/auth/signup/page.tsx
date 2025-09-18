@@ -112,8 +112,8 @@ export default function SignupPage() {
               <Image
                 src='/logo.png'
                 alt="Nestfinity logo"
-                height={90}
-                width={90}
+                height={70}
+                width={70}
                 style={{ borderRadius: '50%' }}
               />
               <Typography
