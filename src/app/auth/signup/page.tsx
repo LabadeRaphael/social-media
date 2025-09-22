@@ -20,7 +20,7 @@ import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { Eye, EyeOff } from "lucide-react";
 import api from "@/axios/axiosInstance";
-import MessageAlert from "@/components/messageAlert";
+import MessageAlert from "@/components/message-alert";
 import Image from "next/image";
 // Yup validation schema
 const SignupSchema = Yup.object().shape({

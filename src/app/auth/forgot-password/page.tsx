@@ -16,7 +16,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import MessageAlert from "@/components/messageAlert";
+import MessageAlert from "@/components/message-alert";
 import api from "@/axios/axiosInstance";
 import Image from "next/image";
 
