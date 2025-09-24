@@ -17,7 +17,7 @@ import "aos/dist/aos.css";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import MessageAlert from "@/components/message-alert";
-import api from "@/axios/axiosInstance";
+import api from "@/api/axiosInstance";
 import Image from "next/image";
 
 // Yup validation schema

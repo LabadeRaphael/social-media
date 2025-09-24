@@ -24,7 +24,6 @@ import { useTheme } from "@mui/material/styles";
 import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import debounce from "lodash/debounce";
-import api from "@/axios/axiosInstance";
 
 interface User {
   id: string;
@@ -42,12 +41,10 @@ export default function Sidebar({
   onSelectUser, 
   users: initialUsers 
 }: SidebarProps) {
-  const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchedUsers, setSearchedUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   // Debounced fetch function
   const fetchUsers = useCallback(
     debounce(async (term: string) => {
@@ -66,27 +63,6 @@ export default function Sidebar({
 
       setIsLoading(true);
       setError(null);
-
-      try {
-        const response = await api.get("/users/search", {
-          params: {
-            userName: term,
-          },
-        });
-
-        setSearchedUsers(response.data);
-      } catch (err: any) {
-        const message = err.response?.status === 401 
-          ? "Please log in to search users"
-          : err.response?.status >= 500 
-            ? "Server error. Please try again later"
-            : "Failed to search users";
-
-        setError(message);
-        console.error("Search error:", err);
-      } finally {
-        setIsLoading(false);
-      }
     }, 300),
     [initialUsers]
   );

@@ -19,7 +19,7 @@ import "aos/dist/aos.css";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { Eye, EyeOff } from "lucide-react";
-import api from "@/axios/axiosInstance";
+import api from "@/api/axiosInstance";
 import MessageAlert from "@/components/message-alert";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
