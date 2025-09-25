@@ -23,11 +23,12 @@ const getAllUsers = async (searchKey?:string)=>{
             return error
           } 
 }
-const getAllConversations = async (searchKey?:string)=>{
+
+const getAllConversations = async (userId?:string)=>{
     try {
-            const response = await api.get("/users/search", {
+            const response = await api.get("/conversations", {
               params: {
-                userId: searchKey,
+                userId,
               },
             });
             return response.data

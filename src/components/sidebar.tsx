@@ -15,93 +15,100 @@ import {
   ListItemButton,
   CircularProgress,
 } from "@mui/material";
-import {
-  Search,
-  MoreVertical,
-  MessageCircle,
-} from "lucide-react";
-import { useTheme } from "@mui/material/styles";
+import { Search, MoreVertical, MessageCircle } from "lucide-react";
 import Image from "next/image";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import debounce from "lodash/debounce";
+import { useDispatch, useSelector } from "react-redux";
+import { useAllUsers, useAllConversations } from "@/react-query/query-hooks";
+import { setSelectedUser } from "@/redux/chats-slice";
+import toast from "react-hot-toast";
+import type { RootState } from "@/redux/store";
 
 interface User {
-  id: string;
+  sub: string;
   userName: string;
 }
 
-interface SidebarProps {
-  selectedUser: string | null;
-  onSelectUser: (user: string) => void;
-  users: string[];
+interface Conversation {
+  id: string;
+  userName: string;
+  lastMessageTime?: string;
 }
 
-export default function Sidebar({ 
-  selectedUser, 
-  onSelectUser, 
-  users: initialUsers 
-}: SidebarProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchedUsers, setSearchedUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  // Debounced fetch function
-  const fetchUsers = useCallback(
-    debounce(async (term: string) => {
-      if (!term.trim()) {
-        // Use initial users when no search term
-        setSearchedUsers(
-          initialUsers.map(name => ({ 
-            id: name.toLowerCase(), 
-            userName: name 
-          }))
-        );
-        setIsLoading(false);
-        setError(null);
-        return;
-      }
+export default function Sidebar() {
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
+  const dispatch = useDispatch();
+  const selectedUser = useSelector((state: RootState) => state.chatReducer.selectedUser);
+  const currentUser = useSelector((state: RootState) => state.userReducer.currentUser);
 
-      setIsLoading(true);
-      setError(null);
-    }, 300),
-    [initialUsers]
+  // Debounced search handler
+  const debouncedHandler = useMemo(
+    () =>
+      debounce((value: string) => {
+        setDebouncedSearch(value);
+      }, 300),
+    []
   );
 
-  // Trigger search when term changes
+  // Fetch conversations and users
+  const { data: users = [], isLoading: isLoadingUsers, error: usersError } = useAllUsers(debouncedSearch);
+  const { data: conversations = [], isLoading: isLoadingConversations, error: conversationsError } = useAllConversations(currentUser?.id);
+
+  // Handle search input change
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchTerm(e.target.value);
+      debouncedHandler(e.target.value);
+    },
+    [debouncedHandler]
+  );
+
+  // Display toast for errors
   useEffect(() => {
-    fetchUsers(searchTerm);
-  }, [searchTerm, fetchUsers]);
+    if (conversationsError) {
+      toast.error(conversationsError.message || "Failed to load conversations");
+    }
+    if (usersError && searchTerm) {
+      toast.error(usersError.message || "No users found for search");
+    }
+  }, [conversationsError, usersError, searchTerm]);
 
-  // Extract userNames for display
-  const displayUsers = searchedUsers.length > 0 
-    ? searchedUsers.map(user => user.userName)
-    : initialUsers;
+  // Memoize display conversations
+  const displayConversations = useMemo(
+    () => (searchTerm && users.length > 0 ? users.map((user: User) => user.userName) : conversations.map((conv: Conversation) => conv.userName)),
+    [conversations, users, searchTerm]
+  );
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    if (error) setError(null);
-  };
-
-  const getUserForDisplay = (userName: string) => {
-    return searchedUsers.find(u => u.userName === userName) || 
-           initialUsers.find(name => name === userName);
-  };
+  // Handle user selection
+  const handleSelectUser = useCallback(
+    (userName: string) => {
+      dispatch(setSelectedUser(userName));
+    },
+    [dispatch]
+  );
 
   return (
     <Box
-      width={{ xs: "100%", md: "30%" }}
-      borderRight="1px solid"
-      borderColor="divider"
-      display="flex"
-      flexDirection="column"
+      sx={{
+        width: { xs: "100%", md: "30%" },
+        borderRight: 1,
+        borderColor: "divider",
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+      }}
     >
       {/* Sidebar Header */}
       <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        p={2}
-        bgcolor="background.paper"
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          p: 2,
+          bgcolor: "background.paper",
+        }}
       >
         <Box display="flex" alignItems="center" gap={1}>
           <Image
@@ -109,20 +116,17 @@ export default function Sidebar({
             alt="Nestfinity logo"
             width={45}
             height={45}
-            style={{ borderRadius: "50%" }}
+            style={{ borderRadius: "50%", objectFit: "cover" }}
           />
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: 600 }}
-          >
+          <Typography variant="h6" fontWeight={600}>
             Nestfinity
           </Typography>
         </Box>
         <Box>
-          <IconButton size="small">
+          <IconButton size="small" aria-label="Messages">
             <MessageCircle size={20} />
           </IconButton>
-          <IconButton size="small">
+          <IconButton size="small" aria-label="More options">
             <MoreVertical size={20} />
           </IconButton>
         </Box>
@@ -136,107 +140,111 @@ export default function Sidebar({
           placeholder="Search or start new chat"
           value={searchTerm}
           onChange={handleSearchChange}
-          error={!!error}
-          helperText={error}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                {isLoading ? (
+                {isLoadingUsers ? (
                   <CircularProgress size={16} />
                 ) : (
-                  <Search size={18} color={error ? "error" : "inherit"} />
+                  <Search size={18} color={usersError && searchTerm ? "red" : "inherit"} />
                 )}
               </InputAdornment>
             ),
           }}
+          sx={{ "& .MuiInputBase-root": { borderRadius: 2 } }}
         />
       </Box>
 
       <Divider />
 
       {/* Chat List */}
-      <List sx={{ flex: 1, overflowY: "auto" }}>
-        {isLoading && searchTerm ? (
-          <Box 
-            display="flex" 
-            justifyContent="center" 
-            alignItems="center" 
-            minHeight={100}
-          >
+      <List sx={{ flex: 1, overflowY: "auto", bgcolor: "background.paper" }}>
+        {(isLoadingConversations || (isLoadingUsers && searchTerm)) ? (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight={100}>
             <CircularProgress size={24} />
           </Box>
-        ) : error && searchTerm ? (
+        ) : conversationsError && !searchTerm ? (
           <Box p={2} textAlign="center">
             <Typography color="error" variant="body2">
-              {error}
+              {conversationsError.message || "Failed to load conversations"}
             </Typography>
           </Box>
-        ) : displayUsers.length === 0 ? (
+        ) : usersError && searchTerm ? (
+          <Box p={2} textAlign="center">
+            <Typography color="error" variant="body2">
+              {usersError.message || `No users found for "${searchTerm}"`}
+            </Typography>
+          </Box>
+        ) : displayConversations.length === 0 ? (
           <Box p={3} textAlign="center">
             <Typography color="text.secondary" variant="body2">
-              {searchTerm ? `No users found for "${searchTerm}"` : "No users available"}
+              {searchTerm ? `No users found for "${searchTerm}"` : "No conversations available"}
             </Typography>
           </Box>
         ) : (
-          displayUsers.map((userName, index) => {
-            const user = getUserForDisplay(userName);
+          displayConversations.map((userName: string) => {
+            const conversation = conversations.find((c: Conversation) => c.userName === userName);
             return (
-              <ListItem
-                key={user?.id || `user-${index}`}
-                disablePadding
-              >
+              <ListItem key={conversation?.id || userName} disablePadding>
                 <ListItemButton
                   selected={selectedUser === userName}
-                  onClick={() => onSelectUser(userName)}
-                  sx={{ 
+                  onClick={() => handleSelectUser(userName)}
+                  sx={{
                     px: 2,
                     py: 1.5,
-                    '&.Mui-selected': {
-                      backgroundColor: 'action.selected',
+                    "&.Mui-selected": {
+                      backgroundColor: "action.selected",
                     },
-                    '&:hover': {
-                      backgroundColor: 'action.hover',
+                    "&:hover": {
+                      backgroundColor: "action.hover",
                     },
                   }}
                 >
                   <ListItemAvatar sx={{ minWidth: 56 }}>
-                    <Avatar sx={{ 
-                      width: 40, 
-                      height: 40, 
-                      bgcolor: 'primary.main',
-                      fontSize: '1rem'
-                    }}>
+                    <Avatar
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        bgcolor: "primary.main",
+                        fontSize: "1rem",
+                      }}
+                    >
                       {userName[0]?.toUpperCase()}
                     </Avatar>
                   </ListItemAvatar>
-                  
-                  <ListItemText 
+
+                  <ListItemText
                     primary={userName}
                     secondary="Click to start chat"
                     primaryTypographyProps={{
                       fontWeight: selectedUser === userName ? 600 : 400,
-                      color: selectedUser === userName ? 'primary.main' : 'text.primary',
+                      color: selectedUser === userName ? "primary.main" : "text.primary",
                     }}
                     secondaryTypographyProps={{
-                      color: 'text.secondary',
-                      fontSize: '0.75rem',
+                      color: "text.secondary",
+                      fontSize: "0.75rem",
                     }}
                     sx={{ flex: 1, ml: 1 }}
                   />
-                  
+
                   <Typography
                     variant="caption"
                     color="text.secondary"
-                    sx={{ 
-                      fontSize: '0.75rem',
+                    sx={{
+                      fontSize: "0.75rem",
                       whiteSpace: "nowrap",
                       ml: 1,
                     }}
                   >
-                    {new Date().toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
+                    {conversation?.lastMessageTime
+                      ? new Date(conversation.lastMessageTime).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : new Date().toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                   </Typography>
                 </ListItemButton>
               </ListItem>

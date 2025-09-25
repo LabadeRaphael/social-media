@@ -37,7 +37,9 @@ const useAllUsers=(searchKey?: string)=> {
     }, [query.data, dispatch]);
     return query;
 }
-const useAllConversations=(userId)=>{
+const useAllConversations=(userId:string)=>{
+    console.log(userId);
+    
     const dispatch = useDispatch()
     const query = useQuery({
         queryKey: ["users", userId],
@@ -49,6 +51,8 @@ const useAllConversations=(userId)=>{
             dispatch(setAllUsers(query.data));
         }
     }, [query.data, dispatch]);
+    console.log(query.data);
+    
     return query;
 }
 export {useAllUsers,useCurrentUser,useAllConversations}

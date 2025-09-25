@@ -26,7 +26,7 @@ export default function SpecificChatPage() {
   const userId = params.userId as string;
   const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
-
+  
   useEffect(() => {
     if (userId) {
       setSelectedUser(userId);
