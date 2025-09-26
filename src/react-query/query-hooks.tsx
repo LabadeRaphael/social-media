@@ -1,13 +1,13 @@
 "use client"
-import { useQuery } from "@tanstack/react-query";
-import { getCurrentUser, getAllUsers, getAllConversations } from "@/api/user";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations } from "@/api/user";
 import { useDispatch } from "react-redux";
-import { setAllUsers, setCurrentUser } from "@/redux/users-slice";
+import { setAllConversations, setAllUsers, setCurrentUser, setNewConversations, setSelectedUser } from "@/redux/users-slice";
 import { useEffect } from "react";
 
 // ✅ Get single user
-const useCurrentUser=()=> {
- const dispatch = useDispatch()
+const useCurrentUser = () => {
+    const dispatch = useDispatch()
     const query = useQuery({
         queryKey: ["profile"], // unique cache key
         queryFn: () => getCurrentUser(),
@@ -17,14 +17,14 @@ const useCurrentUser=()=> {
             dispatch(setCurrentUser(query.data));
         }
     }, [query.data, dispatch]);
-    console.log(query.data);
-    
+    // console.log(query.data);
+
     return query
 }
 
 
 // ✅ Get all users
-const useAllUsers=(searchKey?: string)=> {
+const useAllUsers = (searchKey?: string) => {
     const dispatch = useDispatch()
     const query = useQuery({
         queryKey: ["users", searchKey],
@@ -37,22 +37,42 @@ const useAllUsers=(searchKey?: string)=> {
     }, [query.data, dispatch]);
     return query;
 }
-const useAllConversations=(userId:string)=>{
-    console.log(userId);
-    
+const useAllConversations = () => {
+    // console.log(userId);
+
     const dispatch = useDispatch()
     const query = useQuery({
-        queryKey: ["users", userId],
-        queryFn: () => getAllConversations(userId),
-        enabled: !!userId
+        queryKey: ["current-user-conv"],
+        queryFn: () => getAllConversations(),
+        // enabled: !!userId
     });
     useEffect(() => {
         if (query.data) {
-            dispatch(setAllUsers(query.data));
+            dispatch(setAllConversations(query.data));
         }
     }, [query.data, dispatch]);
-    console.log(query.data);
-    
+
     return query;
 }
-export {useAllUsers,useCurrentUser,useAllConversations}
+const useCreateConversation = () => {
+    const dispatch = useDispatch();
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: { participantIds: string[] }) => {
+            console.log("mutationFn data:", data);
+            return createNewConversations(data); // ✅ return the promise
+        },
+        onSuccess: (newConversation) => {
+
+            console.log("onSuccess data:", newConversation);
+
+            queryClient.setQueryData<any[] | undefined>(["conversations"], (old) =>
+                old ? [newConversation, ...old] : [newConversation]
+            );
+            dispatch(setSelectedUser(newConversation.id));
+        },
+    });
+};
+
+
+export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation }

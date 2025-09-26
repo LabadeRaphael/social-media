@@ -20,30 +20,41 @@ import Image from "next/image";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import debounce from "lodash/debounce";
 import { useDispatch, useSelector } from "react-redux";
-import { useAllUsers, useAllConversations } from "@/react-query/query-hooks";
+import { useAllUsers, useAllConversations, useCreateConversation, useCurrentUser } from "@/react-query/query-hooks";
 import { setSelectedUser } from "@/redux/chats-slice";
 import toast from "react-hot-toast";
 import type { RootState } from "@/redux/store";
 
 interface User {
-  sub: string;
+  id: string;
   userName: string;
 }
 
 interface Conversation {
   id: string;
-  userName: string;
-  lastMessageTime?: string;
+  createdAt: string;
+  participants: { id: string; userName: string }[];
+  lastMessage?: {
+    text: string;
+    createdAt: string;
+  } | null;
 }
 
 export default function Sidebar() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const dispatch = useDispatch();
-  const selectedUser = useSelector((state: RootState) => state.chatReducer.selectedUser);
-  const currentUser = useSelector((state: RootState) => state.userReducer.currentUser);
+  const selectedUser = useSelector(
+    (state: RootState) => state.chatReducer.selectedUser
+  );
+  const currentUser = useSelector(
+    (state: RootState) => state.userReducer.currentUser
+  );
+  // console.log(currentUser);
+  // const {data: currentUser, isLoading: isLoadingCurrentUser,error:currentUserError}=useCurrentUser()
 
-  // Debounced search handler
+
+  // debounce
   const debouncedHandler = useMemo(
     () =>
       debounce((value: string) => {
@@ -52,11 +63,16 @@ export default function Sidebar() {
     []
   );
 
-  // Fetch conversations and users
-  const { data: users = [], isLoading: isLoadingUsers, error: usersError } = useAllUsers(debouncedSearch);
-  const { data: conversations = [], isLoading: isLoadingConversations, error: conversationsError } = useAllConversations(currentUser?.id);
+  // queries
+  const { data: users = [], isLoading: isLoadingUsers, error: usersError } =
+    useAllUsers(debouncedSearch);
+  const {
+    data: conversations = [],
+    isLoading: isLoadingConversations,
+    error: conversationsError,
+  } = useAllConversations();
 
-  // Handle search input change
+  // search input
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearchTerm(e.target.value);
@@ -65,7 +81,7 @@ export default function Sidebar() {
     [debouncedHandler]
   );
 
-  // Display toast for errors
+  // errors
   useEffect(() => {
     if (conversationsError) {
       toast.error(conversationsError.message || "Failed to load conversations");
@@ -75,18 +91,66 @@ export default function Sidebar() {
     }
   }, [conversationsError, usersError, searchTerm]);
 
-  // Memoize display conversations
-  const displayConversations = useMemo(
-    () => (searchTerm && users.length > 0 ? users.map((user: User) => user.userName) : conversations.map((conv: Conversation) => conv.userName)),
-    [conversations, users, searchTerm]
-  );
+  // format conversations
+  const displayConversations = useMemo(() => {
+    if (searchTerm && users.length > 0) {
+      console.log("Mrs users", users);
 
-  // Handle user selection
+      return users.map((user: User) => ({
+        type: "user",
+        id: user.id,
+        userName: user.userName,
+        lastMessageText: "Click to start chat",
+        lastMessageTime: null,
+      }));
+    }
+
+    return (conversations as Conversation[]).map((conv) => {
+      const otherUser = conv.participants.find(
+        // (p) => p.userName !== currentUser?.userName
+        (p) => p.id !== currentUser?.id
+      );
+
+      return {
+        type: "conversation",
+        id: conv.id,
+        userName: otherUser?.userName ?? "Unknown",
+        lastMessageText: conv.lastMessage?.text ?? "Click to start chat",
+        lastMessageTime: conv.lastMessage?.createdAt ?? null,
+      };
+    });
+  }, [conversations, users, searchTerm, currentUser]);
+
+  // selection
+  const { mutateAsync } = useCreateConversation()
   const handleSelectUser = useCallback(
-    (userName: string) => {
-      dispatch(setSelectedUser(userName));
+    async (userId: string) => {
+      // 1️⃣ check if conversation already exists
+      const existingConv = (conversations as Conversation[]).find((conv) =>
+        conv.participants.some((p) => p.id === userId)
+      );
+      if (existingConv) {
+        dispatch(setSelectedUser(existingConv.id));
+        return;
+      }
+      try {
+        console.log("CurrentUser.sub:", currentUser?.id);
+        console.log("Selected userId:", userId);
+        const newConv = await mutateAsync({
+          participantIds: [currentUser?.id, userId],
+        });
+        console.log(newConv);
+
+
+        // 3️⃣ optimistically update Redux
+        dispatch(setSelectedUser(newConv.id));
+        toast.success("New conversation started");
+      } catch (err: any) {
+        toast.error(err.message || "Failed to start conversation");
+      }
+      // dispatch(setSelectedUser(userId));
     },
-    [dispatch]
+    [dispatch, conversations, currentUser, mutateAsync]
   );
 
   return (
@@ -100,7 +164,7 @@ export default function Sidebar() {
         height: "100vh",
       }}
     >
-      {/* Sidebar Header */}
+      {/* Header */}
       <Box
         sx={{
           display: "flex",
@@ -146,7 +210,10 @@ export default function Sidebar() {
                 {isLoadingUsers ? (
                   <CircularProgress size={16} />
                 ) : (
-                  <Search size={18} color={usersError && searchTerm ? "red" : "inherit"} />
+                  <Search
+                    size={18}
+                    color={usersError && searchTerm ? "red" : "inherit"}
+                  />
                 )}
               </InputAdornment>
             ),
@@ -157,99 +224,96 @@ export default function Sidebar() {
 
       <Divider />
 
-      {/* Chat List */}
+      {/* Chats */}
       <List sx={{ flex: 1, overflowY: "auto", bgcolor: "background.paper" }}>
-        {(isLoadingConversations || (isLoadingUsers && searchTerm)) ? (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight={100}>
+        {isLoadingConversations || (isLoadingUsers && searchTerm) ? (
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight={100}
+          >
             <CircularProgress size={24} />
-          </Box>
-        ) : conversationsError && !searchTerm ? (
-          <Box p={2} textAlign="center">
-            <Typography color="error" variant="body2">
-              {conversationsError.message || "Failed to load conversations"}
-            </Typography>
-          </Box>
-        ) : usersError && searchTerm ? (
-          <Box p={2} textAlign="center">
-            <Typography color="error" variant="body2">
-              {usersError.message || `No users found for "${searchTerm}"`}
-            </Typography>
           </Box>
         ) : displayConversations.length === 0 ? (
           <Box p={3} textAlign="center">
             <Typography color="text.secondary" variant="body2">
-              {searchTerm ? `No users found for "${searchTerm}"` : "No conversations available"}
+              {searchTerm
+                ? `No users found for "${searchTerm}"`
+                : "No conversations available"}
             </Typography>
           </Box>
         ) : (
-          displayConversations.map((userName: string) => {
-            const conversation = conversations.find((c: Conversation) => c.userName === userName);
-            return (
-              <ListItem key={conversation?.id || userName} disablePadding>
-                <ListItemButton
-                  selected={selectedUser === userName}
-                  onClick={() => handleSelectUser(userName)}
-                  sx={{
-                    px: 2,
-                    py: 1.5,
-                    "&.Mui-selected": {
-                      backgroundColor: "action.selected",
-                    },
-                    "&:hover": {
-                      backgroundColor: "action.hover",
-                    },
-                  }}
-                >
-                  <ListItemAvatar sx={{ minWidth: 56 }}>
-                    <Avatar
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        bgcolor: "primary.main",
-                        fontSize: "1rem",
-                      }}
-                    >
-                      {userName[0]?.toUpperCase()}
-                    </Avatar>
-                  </ListItemAvatar>
-
-                  <ListItemText
-                    primary={userName}
-                    secondary="Click to start chat"
-                    primaryTypographyProps={{
-                      fontWeight: selectedUser === userName ? 600 : 400,
-                      color: selectedUser === userName ? "primary.main" : "text.primary",
-                    }}
-                    secondaryTypographyProps={{
-                      color: "text.secondary",
-                      fontSize: "0.75rem",
-                    }}
-                    sx={{ flex: 1, ml: 1 }}
-                  />
-
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
+          displayConversations.map((conv) => (
+            <ListItem key={conv.id} disablePadding>
+              <ListItemButton
+                selected={selectedUser === conv.id}
+                onClick={() =>
+                  conv.type === "user"
+                    ? handleSelectUser(conv.id) // search: pass userId
+                    : dispatch(setSelectedUser(conv.id)) // existing: use conversationId
+                }
+                sx={{
+                  px: 2,
+                  py: 1.5,
+                  "&.Mui-selected": {
+                    backgroundColor: "action.selected",
+                  },
+                  "&:hover": {
+                    backgroundColor: "action.hover",
+                  },
+                }}
+              >
+                <ListItemAvatar sx={{ minWidth: 56 }}>
+                  <Avatar
                     sx={{
-                      fontSize: "0.75rem",
-                      whiteSpace: "nowrap",
-                      ml: 1,
+                      width: 40,
+                      height: 40,
+                      bgcolor: "primary.main",
+                      fontSize: "1rem",
                     }}
                   >
-                    {conversation?.lastMessageTime
-                      ? new Date(conversation.lastMessageTime).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : new Date().toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                  </Typography>
-                </ListItemButton>
-              </ListItem>
-            );
-          })
+                    {conv.userName[0]?.toUpperCase()}
+                  </Avatar>
+                </ListItemAvatar>
+
+                <ListItemText
+                  primary={conv.userName}
+                  secondary={conv.lastMessageText}
+                  primaryTypographyProps={{
+                    fontWeight: selectedUser === conv.id ? 600 : 400,
+                    color:
+                      selectedUser === conv.id
+                        ? "primary.main"
+                        : "text.primary",
+                  }}
+
+                  secondaryTypographyProps={{
+                    color: "text.secondary",
+                    fontSize: "0.75rem",
+                  }}
+                  sx={{ flex: 1, ml: 1 }}
+                />
+
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    fontSize: "0.75rem",
+                    whiteSpace: "nowrap",
+                    ml: 1,
+                  }}
+                >
+                  {conv.lastMessageTime
+                    ? new Date(conv.lastMessageTime).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                    : "--:--"}
+                </Typography>
+              </ListItemButton>
+            </ListItem>
+          ))
         )}
       </List>
     </Box>

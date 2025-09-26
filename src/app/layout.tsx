@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProviderWrapper } from '../components/Theme/themeprovider';
 import { ReduxProvider } from"@/redux/redux-provider"
+import { Toaster } from "react-hot-toast";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -32,6 +33,7 @@ export default function RootLayout({
         <ThemeProviderWrapper>
           <AppInitializer>
           {children}
+          <Toaster position="top-right" />
           </AppInitializer>
         </ThemeProviderWrapper>
         </ReduxProvider>

@@ -6,7 +6,6 @@ const getCurrentUser = async()=>{
             return response.data
     
           } catch (error: any) {
-            // Let React Query know it's an error
     throw error.response?.data || error;
           } 
 }
@@ -20,21 +19,32 @@ const getAllUsers = async (searchKey?:string)=>{
             return response.data
     
           } catch (error: any) {
-            return error
+              throw error.response?.data || error;
           } 
 }
 
-const getAllConversations = async (userId?:string)=>{
+const getAllConversations = async ()=>{
     try {
-            const response = await api.get("/conversations", {
-              params: {
-                userId,
-              },
-            });
+            const response = await api.get("/conversations/current-user");
             return response.data
     
           } catch (error: any) {
-            return error
+             throw error.response?.data || error;
           } 
 }
-export { getCurrentUser, getAllUsers, getAllConversations}
+const createNewConversations = async (data?:{ participantIds: string[] })=>{
+  console.log(data);
+  
+    try {
+            const response = await api.post("/new-conversations", {
+                participants: data?.participantIds
+            });
+            console.log("response", response);
+            
+            return response.data.saveConversation
+    
+          } catch (error: any) {
+             throw error.response?.data || error;
+          } 
+}
+export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations}
