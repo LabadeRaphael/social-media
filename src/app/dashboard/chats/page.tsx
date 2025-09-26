@@ -9,7 +9,7 @@
 
 // export default function ChatPage() {
 //   const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
-//   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+//   const [selectedChat, setSelectedChat] = useState<string | null>(null);
 //   const [isLoading, setIsLoading] = useState(false);
 //   const [error, setError] = useState<string | null>(null);
 
@@ -64,28 +64,28 @@
 
 
 //   const handleSelectUser = (user: string) => {
-//     setSelectedUser(user);
+//     setSelectedChat(user);
 //   };
 
 //   const handleBack = () => {
-//     setSelectedUser(null);
+//     setSelectedChat(null);
 //   };
 
 //   return (
 //     <Box display="flex" height="100vh" bgcolor="background.default">
 //       {/* Sidebar - Show on desktop or when no user selected on mobile */}
-//       {(!isMobile || (isMobile && !selectedUser)) && (
+//       {(!isMobile || (isMobile && !selectedChat)) && (
 //         <Sidebar
-//           selectedUser={selectedUser}
+//           selectedChat={selectedChat}
 //           onSelectUser={handleSelectUser}
 //           users={users}
 //         />
 //       )}
 
 //       {/* Chat Window - Show on desktop or when user selected on mobile */}
-//       {(!isMobile || (isMobile && selectedUser)) && (
+//       {(!isMobile || (isMobile && selectedChat)) && (
 //         <ChatWindow
-//           selectedUser={selectedUser}
+//           selectedChat={selectedChat}
 //           onBack={handleBack}
 //           isMobile={isMobile}
 //         />
@@ -100,14 +100,14 @@ import Sidebar from "@/components/sidebar";
 import ChatWindow from "@/components/chat-window";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setSelectedUser } from "@/redux/chats-slice";
+import { setSelectedChat } from "@/redux/chats-slice";
 import { useAllConversations } from "@/react-query/query-hooks";
 import toast from "react-hot-toast";
 import type { RootState } from "@/redux/store";
 
 export default function ChatPage() {
   const dispatch = useDispatch();
-  const selectedUser = useSelector((state: RootState) => state.chatReducer.selectedUser);
+  const selectedChat = useSelector((state: RootState) => state.chatReducer.selectedChat);
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down("md"));
   const { data: conversations = [], isLoading, error } = useAllConversations();
 
@@ -120,33 +120,17 @@ export default function ChatPage() {
 
   // Handle back navigation
   const handleBack = () => {
-    dispatch(setSelectedUser(null));
+    dispatch(setSelectedChat(null));
   };
-
-  // if (isLoading) {
-  //   return (
-  //     <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-  //       <p>Loading conversations...</p>
-  //     </Box>
-  //   );
-  // }
-
-  // if (error) {
-  //   return (
-  //     <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-  //       <p>{error.message || "Failed to load conversations"}</p>
-  //     </Box>
-  //   );
-  // }
 
   return (
     <Box display="flex" height="100vh" bgcolor="background.default">
       {/* Sidebar - Show on desktop or when no user selected on mobile */}
-      {(!isMobile || (isMobile && !selectedUser)) && <Sidebar />}
+      {(!isMobile || (isMobile && !selectedChat)) && <Sidebar />}
 
       {/* Chat Window - Show on desktop or when user selected on mobile */}
-      {(!isMobile || (isMobile && selectedUser)) && (
-        <ChatWindow selectedUser={selectedUser} onBack={handleBack} isMobile={isMobile} />
+      {(!isMobile || (isMobile && selectedChat)) && (
+        <ChatWindow selectedChat={selectedChat} onBack={handleBack} isMobile={isMobile} />
       )}
     </Box>
   );

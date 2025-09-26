@@ -30,7 +30,7 @@ import Image from "next/image";
 export default function WhatsAppClone() {
   const theme = useTheme();
   const mode = theme.palette.mode;
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
 
   const users = ["Alice", "Bob", "Charlie", "David"];
@@ -38,7 +38,7 @@ export default function WhatsAppClone() {
   return (
     <Box display="flex" height="100vh" bgcolor="background.default">
       {/* Sidebar */}
-      {(!isMobile || (isMobile && !selectedUser)) && (
+      {(!isMobile || (isMobile && !selectedChat)) && (
         <Box
           width={{ xs: "100%", md: "30%" }}
           borderRight="1px solid"
@@ -105,7 +105,7 @@ export default function WhatsAppClone() {
               <ListItem
                 button
                 key={i}
-                onClick={() => setSelectedUser(user)}
+                onClick={() => setSelectedChat(user)}
               >
                 <ListItemAvatar>
                   <Avatar>{user[0]}</Avatar>
@@ -125,7 +125,7 @@ export default function WhatsAppClone() {
       )}
 
       {/* Chat Area */}
-      {(!isMobile || (isMobile && selectedUser)) && (
+      {(!isMobile || (isMobile && selectedChat)) && (
         <Box flex={1} display="flex" flexDirection="column">
           {/* Chat Header */}
           <Box
@@ -139,13 +139,13 @@ export default function WhatsAppClone() {
           >
             <Box display="flex" alignItems="center" gap={2}>
               {isMobile && (
-                <IconButton onClick={() => setSelectedUser(null)}>
+                <IconButton onClick={() => setSelectedChat(null)}>
                   <ArrowLeft />
                 </IconButton>
               )}
-              <Avatar>{selectedUser ? selectedUser[0] : "?"}</Avatar>
+              <Avatar>{selectedChat ? selectedChat[0] : "?"}</Avatar>
               <Box>
-                <Typography variant="subtitle1">{selectedUser}</Typography>
+                <Typography variant="subtitle1">{selectedChat}</Typography>
                 <Typography variant="caption" color="text.secondary">
                   Online
                 </Typography>
@@ -186,7 +186,7 @@ export default function WhatsAppClone() {
                   borderRadius: 2,
                 }}
               >
-                Hi {selectedUser}! 😄
+                Hi {selectedChat}! 😄
               </Typography>
             </Box>
           </Box>

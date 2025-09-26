@@ -1,23 +1,17 @@
 "use client"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations } from "@/api/user";
+import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage } from "@/api/user";
 import { useDispatch } from "react-redux";
-import { setAllConversations, setAllUsers, setCurrentUser, setNewConversations, setSelectedUser } from "@/redux/users-slice";
-import { useEffect } from "react";
+import { setSelectedUser } from "@/redux/users-slice";
+import { Message } from "@/types/messages";
+import { setSelectedChat } from "@/redux/chats-slice";
 
 // ✅ Get single user
 const useCurrentUser = () => {
-    const dispatch = useDispatch()
     const query = useQuery({
         queryKey: ["profile"], // unique cache key
         queryFn: () => getCurrentUser(),
     });
-    useEffect(() => {
-        if (query.data) {
-            dispatch(setCurrentUser(query.data));
-        }
-    }, [query.data, dispatch]);
-    // console.log(query.data);
 
     return query
 }
@@ -25,32 +19,18 @@ const useCurrentUser = () => {
 
 // ✅ Get all users
 const useAllUsers = (searchKey?: string) => {
-    const dispatch = useDispatch()
     const query = useQuery({
         queryKey: ["users", searchKey],
         queryFn: () => getAllUsers(searchKey),
     });
-    useEffect(() => {
-        if (query.data) {
-            dispatch(setAllUsers(query.data));
-        }
-    }, [query.data, dispatch]);
+  
     return query;
 }
 const useAllConversations = () => {
-    // console.log(userId);
-
-    const dispatch = useDispatch()
     const query = useQuery({
         queryKey: ["current-user-conv"],
         queryFn: () => getAllConversations(),
-        // enabled: !!userId
     });
-    useEffect(() => {
-        if (query.data) {
-            dispatch(setAllConversations(query.data));
-        }
-    }, [query.data, dispatch]);
 
     return query;
 }
@@ -66,13 +46,36 @@ const useCreateConversation = () => {
 
             console.log("onSuccess data:", newConversation);
 
-            queryClient.setQueryData<any[] | undefined>(["conversations"], (old) =>
-                old ? [newConversation, ...old] : [newConversation]
-            );
-            dispatch(setSelectedUser(newConversation.id));
+             queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
+            dispatch(setSelectedChat(newConversation));
+        },
+    });
+};
+const useSendMessage = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (messageDetails:Message) => {
+            console.log("mutationFn data:", messageDetails);
+            return sendMessage(messageDetails);
+        },
+        onSuccess: (newMessage,variables) => {
+
+            console.log("onSuccess data:", newMessage);
+
+             queryClient.invalidateQueries({ queryKey: ["messages", variables.conversationId] });
         },
     });
 };
 
+const  useMessages=(conversationId: string | null)=> {
+  return useQuery({
+    queryKey: ["messages", conversationId],
+    queryFn: () => {
+      if (!conversationId) throw new Error("No conversationId"); // no chat selected yet
+      return getMessages(conversationId);
+    },
+    enabled: !!conversationId, // only run when a chat is selected
+  });
+}
 
-export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation }
+export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage,useMessages }

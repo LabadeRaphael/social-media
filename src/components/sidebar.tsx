@@ -21,37 +21,38 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import debounce from "lodash/debounce";
 import { useDispatch, useSelector } from "react-redux";
 import { useAllUsers, useAllConversations, useCreateConversation, useCurrentUser } from "@/react-query/query-hooks";
-import { setSelectedUser } from "@/redux/chats-slice";
+import { setSelectedChat } from "@/redux/chats-slice";
 import toast from "react-hot-toast";
 import type { RootState } from "@/redux/store";
-
+import { Conversation } from "@/types/conversation";
 interface User {
   id: string;
   userName: string;
 }
 
-interface Conversation {
-  id: string;
-  createdAt: string;
-  participants: { id: string; userName: string }[];
-  lastMessage?: {
-    text: string;
-    createdAt: string;
-  } | null;
-}
+// interface Conversation {
+//   id: string;
+//   createdAt: string;
+//   participants: { id: string; userName: string }[];
+//   lastMessage?: {
+//     text: string;
+//     createdAt: string;
+//   } | null;
+// }
+
 
 export default function Sidebar() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const dispatch = useDispatch();
-  const selectedUser = useSelector(
-    (state: RootState) => state.chatReducer.selectedUser
+  const selectedChat = useSelector(
+    (state: RootState) => state.chatReducer.selectedChat
   );
-  const currentUser = useSelector(
-    (state: RootState) => state.userReducer.currentUser
-  );
+  // const currentUser = useSelector(
+  //   (state: RootState) => state.userReducer.currentUser
+  // );
   // console.log(currentUser);
-  // const {data: currentUser, isLoading: isLoadingCurrentUser,error:currentUserError}=useCurrentUser()
+  const {data: currentUser=[], isLoading: isLoadingCurrentUser,error:currentUserError}=useCurrentUser()
 
 
   // debounce
@@ -123,14 +124,16 @@ export default function Sidebar() {
 
   // selection
   const { mutateAsync } = useCreateConversation()
-  const handleSelectUser = useCallback(
+  const handleSelectChat = useCallback(
     async (userId: string) => {
       // 1️⃣ check if conversation already exists
       const existingConv = (conversations as Conversation[]).find((conv) =>
         conv.participants.some((p) => p.id === userId)
       );
+      console.log("existingConv",existingConv);
+      
       if (existingConv) {
-        dispatch(setSelectedUser(existingConv.id));
+        dispatch(setSelectedChat(existingConv));
         return;
       }
       try {
@@ -141,14 +144,15 @@ export default function Sidebar() {
         });
         console.log(newConv);
 
-
+          setSearchTerm("");
+      setDebouncedSearch("");
         // 3️⃣ optimistically update Redux
-        dispatch(setSelectedUser(newConv.id));
+        dispatch(setSelectedChat(newConv));
         toast.success("New conversation started");
       } catch (err: any) {
         toast.error(err.message || "Failed to start conversation");
       }
-      // dispatch(setSelectedUser(userId));
+      // dispatch(setSelectedChat(userId));
     },
     [dispatch, conversations, currentUser, mutateAsync]
   );
@@ -247,11 +251,11 @@ export default function Sidebar() {
           displayConversations.map((conv) => (
             <ListItem key={conv.id} disablePadding>
               <ListItemButton
-                selected={selectedUser === conv.id}
+                selected={selectedChat?.id === conv.id}
                 onClick={() =>
                   conv.type === "user"
-                    ? handleSelectUser(conv.id) // search: pass userId
-                    : dispatch(setSelectedUser(conv.id)) // existing: use conversationId
+                    ? handleSelectChat(conv.id) // search: pass userId
+                      :dispatch(setSelectedChat(conversations.find(c => c.id === conv.id) || null)) // ✅ pass full Conversation
                 }
                 sx={{
                   px: 2,
@@ -281,9 +285,9 @@ export default function Sidebar() {
                   primary={conv.userName}
                   secondary={conv.lastMessageText}
                   primaryTypographyProps={{
-                    fontWeight: selectedUser === conv.id ? 600 : 400,
+                    fontWeight: selectedChat === conv.id ? 600 : 400,
                     color:
-                      selectedUser === conv.id
+                      selectedChat === conv.id
                         ? "primary.main"
                         : "text.primary",
                   }}
