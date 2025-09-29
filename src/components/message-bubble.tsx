@@ -10,12 +10,13 @@ interface MessageBubbleProps {
 
 export default function MessageBubble({ text, isSent }: MessageBubbleProps) {
   const theme = useTheme();
-
+  ;
+  // const isSent = 
   return (
     <Box
       mb={2}
       display="flex"
-      justifyContent={isSent ? "flex-end" : "flex-start"}
+      justifyContent={isSent? "flex-end" : "flex-start"}
     >
       <Typography
         sx={{

@@ -188,6 +188,7 @@ import MessageBubble from "./message-bubble";
 import { useState } from "react";
 import { useCurrentUser, useMessages, useSendMessage } from "@/react-query/query-hooks"; // ✅ import your hook
 import { Conversation } from "@/types/conversation";
+import { current } from "@reduxjs/toolkit";
 
 interface ChatWindowProps {
   selectedChat: Conversation | null; // conversationId
@@ -211,6 +212,8 @@ export default function ChatWindow({
     isError,
     refetch,
   } = useMessages(selectedChat?.id ?? "");
+console.log(currentUser);
+console.log(messages);
 
   const [newMessage, setNewMessage] = useState("");
   const { mutateAsync } = useSendMessage()
@@ -314,11 +317,11 @@ export default function ChatWindow({
             <Typography variant="caption">Start the conversation 👋</Typography>
           </Box>
         ) : (
-          messages.map((message: any) => (
+          messages.map((message: any) => (            
             <MessageBubble
               key={message.id}
               text={message.text}
-              isSent={message.isSent}
+              isSent={message.sender.id === currentUser.id}
             />
           ))
         )}
