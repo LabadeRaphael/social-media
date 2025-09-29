@@ -189,7 +189,7 @@ import { useState } from "react";
 import { useCurrentUser, useMessages, useSendMessage } from "@/react-query/query-hooks"; // ✅ import your hook
 import { Conversation } from "@/types/conversation";
 import { current } from "@reduxjs/toolkit";
-
+import { ThemeSwitcher } from "./Theme/themeswitcher";
 interface ChatWindowProps {
   selectedChat: Conversation | null; // conversationId
   onBack: () => void;
@@ -290,6 +290,7 @@ console.log(messages);
           <IconButton>
             <Search />
           </IconButton>
+            <ThemeSwitcher/>
           <IconButton>
             <MoreVertical />
           </IconButton>
