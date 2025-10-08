@@ -34,8 +34,8 @@
 
 //   // Initialize messages with default values, update when user is selected
 //   const [messages, setMessages] = useState([
-//     { id: 1, text: "Hello 👋", isSent: false },
-//     { id: 2, text: "Hi! 😄", isSent: true }, // Default message without user name
+//     { id: 1, text: "Hello 👋", isSender: false },
+//     { id: 2, text: "Hi! 😄", isSender: true }, // Default message without user name
 //   ]);
 
 //   // Update messages when selectedChat changes
@@ -57,7 +57,7 @@
 //       setMessages(prev => [...prev, {
 //         id: Date.now(),
 //         text,
-//         isSent: true
+//         isSender: true
 //       }]);
 //     }
 //   };
@@ -123,7 +123,7 @@
 //           <MessageBubble
 //             key={message.id}
 //             text={message.text}
-//             isSent={message.isSent}
+//             isSender={message.isSender}
 //           />
 //         ))}
 //       </Box>
@@ -190,6 +190,7 @@ import { useCurrentUser, useMessages, useSendMessage } from "@/react-query/query
 import { Conversation } from "@/types/conversation";
 import { current } from "@reduxjs/toolkit";
 import { ThemeSwitcher } from "./Theme/themeswitcher";
+import moment from "moment"
 interface ChatWindowProps {
   selectedChat: Conversation | null; // conversationId
   onBack: () => void;
@@ -322,7 +323,8 @@ console.log(messages);
             <MessageBubble
               key={message.id}
               text={message.text}
-              isSent={message.sender.id === currentUser.id}
+              timeStamp={message.createdAt}
+              isSender={message.sender.id === currentUser.id}
             />
           ))
         )}
