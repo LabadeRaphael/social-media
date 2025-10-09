@@ -20,7 +20,7 @@ import Image from "next/image";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import debounce from "lodash/debounce";
 import { useDispatch, useSelector } from "react-redux";
-import { useAllUsers, useAllConversations, useCreateConversation, useCurrentUser, useResetUnreadCount } from "@/react-query/query-hooks";
+import { useAllUsers, useAllConversations, useCreateConversation, useCurrentUser, useResetUnreadCount, useMarkMessagesAsRead } from "@/react-query/query-hooks";
 import { setSelectedChat } from "@/redux/chats-slice";
 import toast from "react-hot-toast";
 import type { RootState } from "@/redux/store";
@@ -203,6 +203,7 @@ const displayConversations = useMemo(() => {
   // selection
   const { mutateAsync } = useCreateConversation()
   const { mutate: resetUnread } = useResetUnreadCount();
+  const { mutate: markRead } = useMarkMessagesAsRead();
   const handleSelectChat = useCallback(
     async (userId: string) => {
       console.log("conversations:", conversations);
@@ -346,6 +347,7 @@ const displayConversations = useMemo(() => {
                     const existingConv = conversations.find(c => c.id === conv.id);
                     if (existingConv) {
                       dispatch(setSelectedChat(existingConv));
+                      markRead(existingConv.id)
                       resetUnread(existingConv.id); // ✅ Reset unread count immediately
                     }
                   }

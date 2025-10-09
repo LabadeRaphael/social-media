@@ -8,11 +8,11 @@ import { Check, CheckCheck } from "lucide-react"; // ✅ nice tick icons
 interface MessageBubbleProps {
   text: string;
   timeStamp: string;
-  unreadcount: number;
+  isRead: boolean;
   isSender: boolean;
 }
-export default function MessageBubble({ text, isSender, timeStamp, unreadcount }: MessageBubbleProps) {
-  console.log("Mr unread", unreadcount)
+export default function MessageBubble({ text, isSender, timeStamp, isRead }: MessageBubbleProps) {
+  console.log("Mr unread", isRead)
   // if(unreadcount){
   // }
   // const theme = useTheme();
@@ -37,7 +37,7 @@ export default function MessageBubble({ text, isSender, timeStamp, unreadcount }
     // When you send a message, unreadCount represents how many messages the RECEIVER hasn’t read yet.
     // So: 0 = read by receiver, >0 = not yet read.
 
-    if (unreadcount > 0) {
+    if (!isRead) {
       // Not yet read → gray ✓✓
       return <CheckCheck size={16} color="#888" />;
     }

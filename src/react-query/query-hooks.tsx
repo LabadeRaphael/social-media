@@ -1,6 +1,6 @@
 "use client"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount } from "@/api/user";
+import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount, markMessagesAsRead } from "@/api/user";
 import { useDispatch } from "react-redux";
 import { setSelectedUser } from "@/redux/users-slice";
 import { Message } from "@/types/messages";
@@ -23,7 +23,7 @@ const useAllUsers = (searchKey?: string) => {
         queryKey: ["users", searchKey],
         queryFn: () => getAllUsers(searchKey),
     });
-  
+
     return query;
 }
 const useAllConversations = () => {
@@ -46,9 +46,9 @@ const useCreateConversation = () => {
 
             console.log("onSuccess data:", response);
             // ✅ select only the actual conversation object
-  const newConversation = response?.saveConversation;
+            const newConversation = response?.saveConversation;
 
-             queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
+            queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
             dispatch(setSelectedChat(newConversation));
         },
     });
@@ -56,40 +56,57 @@ const useCreateConversation = () => {
 const useSendMessage = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (messageDetails:Message) => {
+        mutationFn: (messageDetails: Message) => {
             console.log("mutationFn data:", messageDetails);
             return sendMessage(messageDetails);
         },
-        onSuccess: (newMessage,variables) => {
+        onSuccess: (newMessage, variables) => {
 
             console.log("onSuccess data:", newMessage);
 
-             queryClient.invalidateQueries({ queryKey: ["messages", variables.conversationId] });
+            queryClient.invalidateQueries({ queryKey: ["messages", variables.conversationId] });
         },
     });
 };
 
-const  useMessages=(conversationId: string | null)=> {
-  return useQuery({
-    queryKey: ["messages", conversationId],
-    queryFn: async () => {
-      if (!conversationId) throw new Error("No conversationId"); // no chat selected yet
-      return getMessages(conversationId);
-    },
-    enabled: !!conversationId, // only run when a chat is selected
-  });
+const useMessages = (conversationId: string | null) => {
+    return useQuery({
+        queryKey: ["messages", conversationId],
+        queryFn: async () => {
+            if (!conversationId) throw new Error("No conversationId"); // no chat selected yet
+            return getMessages(conversationId);
+        },
+        enabled: !!conversationId, // only run when a chat is selected
+    });
 }
 const useResetUnreadCount = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (conversationId: string) => resetUnreadCount(conversationId),
-    onSuccess: (_, conversationId) => {
-      // refetch messages for this conversation
-      queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
-      // optionally invalidate conversation list to update unread counts
-      queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
-    }
-  });
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (conversationId: string) => resetUnreadCount(conversationId),
+        onSuccess: (_, conversationId) => {
+            // refetch messages for this conversation
+            queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+            // optionally invalidate conversation list to update unread counts
+            queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
+        }
+    });
 }
 
-export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage,useMessages,useResetUnreadCount }
+const useMarkMessagesAsRead = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ conversationId }: { conversationId: string }) =>
+            markMessagesAsRead(conversationId),
+
+        onSuccess: (_, { conversationId }) => {
+            // Refresh messages for this conversation
+            queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+
+            // Refresh the conversation list (to update unread badges)
+            queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
+        },
+    });
+
+}
+export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage, useMessages, useResetUnreadCount, useMarkMessagesAsRead }

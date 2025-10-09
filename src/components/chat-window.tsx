@@ -341,7 +341,8 @@ export default function ChatWindow({
       key={message.id}
       text={message.text}
       timeStamp={message.createdAt}
-      unreadcount={otherParticipant?.unreadCount ?? 0}
+      // unreadcount={otherParticipant?.unreadCount ?? 0}
+      isRead={message.isRead}
       isSender={message.sender.id === currentUser.id}
     />
   );
