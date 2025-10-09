@@ -51,9 +51,9 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // Case 1: Login attempt failed
-    // if (originalRequest?.url?.includes("/auth/login")) {
-    //   return Promise.reject(error); // just return the error to show "invalid credentials"
-    // }
+    if (originalRequest?.url?.includes("/auth/login")) {
+      return Promise.reject(error); // just return the error to show "invalid credentials"
+    }
 
     // Case 2: Expired token, try refresh
     if (error.response?.status === 401 && !originalRequest._retry) {

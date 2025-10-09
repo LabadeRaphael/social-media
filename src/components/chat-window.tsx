@@ -188,9 +188,7 @@ import MessageBubble from "./message-bubble";
 import { useState } from "react";
 import { useCurrentUser, useMessages, useSendMessage } from "@/react-query/query-hooks"; // ✅ import your hook
 import { Conversation } from "@/types/conversation";
-import { current } from "@reduxjs/toolkit";
 import { ThemeSwitcher } from "./Theme/themeswitcher";
-import moment from "moment"
 interface ChatWindowProps {
   selectedChat: Conversation | null; // conversationId
   onBack: () => void;
@@ -213,8 +211,8 @@ export default function ChatWindow({
     isError,
     refetch,
   } = useMessages(selectedChat?.id ?? "");
-console.log(currentUser);
-console.log(messages);
+  // console.log(currentUser);
+  console.log(messages);
 
   const [newMessage, setNewMessage] = useState("");
   const { mutateAsync } = useSendMessage()
@@ -224,10 +222,10 @@ console.log(messages);
   const handleSendMessage = async (text: string) => {
     if (text.trim() && selectedChat) {
       await mutateAsync({
-      conversationId: selectedChat.id,   // ✅ from your current chat
-      text,                              // ✅ the input message
-      type: "TEXT",                      // ✅ for now fixed to TEXT
-    });
+        conversationId: selectedChat.id,   // ✅ from your current chat
+        text,                              // ✅ the input message
+        type: "TEXT",                      // ✅ for now fixed to TEXT
+      });
 
       setNewMessage("");
     }
@@ -235,11 +233,11 @@ console.log(messages);
 
   // If no chat is selected
   if (!selectedChat) {
-  //    const {data: currentUser=[], isLoading: isLoadingCurrentUser,error:currentUserError}=useCurrentUser()
-    
-  //   const otherUser = selectedChat?.participants.find(
-  //   (p) => p.id !== currentUser?.id
-  // );
+    //    const {data: currentUser=[], isLoading: isLoadingCurrentUser,error:currentUserError}=useCurrentUser()
+
+    //   const otherUser = selectedChat?.participants.find(
+    //   (p) => p.id !== currentUser?.id
+    // );
     return (
       <Box
         flex={1}
@@ -257,8 +255,21 @@ console.log(messages);
     );
   }
   const otherUser = selectedChat.participants.find(
-    (p) => p.id !== currentUser?.id
+    (p) => p.user.id !== currentUser?.id
   );
+  console.log("currentUser id:", currentUser?.id);
+  console.log("participants:", selectedChat.participants);
+  console.log(
+    "match:",
+    selectedChat.participants.find((p) => p.user.id === currentUser?.id)
+  );
+  const unreadcount = selectedChat.participants.find(
+    (p) => p.user.id !== currentUser?.id
+  )?.unreadCount ?? 0
+  console.log("unreadcount in chat window", unreadcount);
+
+  console.log("oyther user in chat window", otherUser);
+
   return (
     <Box flex={1} display="flex" flexDirection="column">
       {/* Chat Header */}
@@ -277,10 +288,10 @@ console.log(messages);
               <ArrowLeft />
             </IconButton>
           )}
-          <Avatar>{otherUser?.userName[0]}</Avatar>
+          <Avatar>{otherUser?.user.userName[0]}</Avatar>
           <Box>
             <Typography variant="subtitle1">
-               {otherUser?.userName ?? "Unknown User"}
+              {otherUser?.user.userName ?? "Unknown User"}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               Online
@@ -291,7 +302,7 @@ console.log(messages);
           <IconButton>
             <Search />
           </IconButton>
-            <ThemeSwitcher/>
+          <ThemeSwitcher />
           <IconButton>
             <MoreVertical />
           </IconButton>
@@ -319,14 +330,23 @@ console.log(messages);
             <Typography variant="caption">Start the conversation 👋</Typography>
           </Box>
         ) : (
-          messages.map((message: any) => (            
-            <MessageBubble
-              key={message.id}
-              text={message.text}
-              timeStamp={message.createdAt}
-              isSender={message.sender.id === currentUser.id}
-            />
-          ))
+         messages.map((message: any) => {
+  // Find unread count of the *other participant* (not the sender)
+  const otherParticipant = selectedChat.participants.find(
+    (p) => p.user.id !== message.sender.id
+  );
+
+  return (
+    <MessageBubble
+      key={message.id}
+      text={message.text}
+      timeStamp={message.createdAt}
+      unreadcount={otherParticipant?.unreadCount ?? 0}
+      isSender={message.sender.id === currentUser.id}
+    />
+  );
+})
+
         )}
 
       </Box>

@@ -20,7 +20,7 @@ import Image from "next/image";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import debounce from "lodash/debounce";
 import { useDispatch, useSelector } from "react-redux";
-import { useAllUsers, useAllConversations, useCreateConversation, useCurrentUser } from "@/react-query/query-hooks";
+import { useAllUsers, useAllConversations, useCreateConversation, useCurrentUser, useResetUnreadCount } from "@/react-query/query-hooks";
 import { setSelectedChat } from "@/redux/chats-slice";
 import toast from "react-hot-toast";
 import type { RootState } from "@/redux/store";
@@ -29,18 +29,6 @@ interface User {
   id: string;
   userName: string;
 }
-
-// interface Conversation {
-//   id: string;
-//   createdAt: string;
-//   participants: { id: string; userName: string }[];
-//   lastMessage?: {
-//     text: string;
-//     createdAt: string;
-//   } | null;
-// }
-
-
 export default function Sidebar() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
@@ -48,11 +36,17 @@ export default function Sidebar() {
   const selectedChat = useSelector(
     (state: RootState) => state.chatReducer.selectedChat
   );
+  console.log(selectedChat);
+  console.log("no see see it", selectedChat);
+  if (selectedChat) {
+    console.log("the selected chat we he see it", selectedChat);
+  }
+
   // const currentUser = useSelector(
   //   (state: RootState) => state.userReducer.currentUser
   // );
   // console.log(currentUser);
-  const {data: currentUser=[], isLoading: isLoadingCurrentUser,error:currentUserError}=useCurrentUser()
+  const { data: currentUser = null, isLoading: isLoadingCurrentUser, error: currentUserError } = useCurrentUser()
 
 
   // debounce
@@ -93,24 +87,97 @@ export default function Sidebar() {
   }, [conversationsError, usersError, searchTerm]);
 
   // format conversations
-  const displayConversations = useMemo(() => {
-    if (searchTerm && users.length > 0) {
-      console.log("Mrs users", users);
+  // const displayConversations = useMemo(() => {
 
-      return users.map((user: User) => ({
+  //   if (searchTerm && users.length > 0) {
+  //     return users.map((user: User) => {
+  //       const conv = (conversations as Conversation[]).find(
+  //         c =>
+  //           c.participants.some(p => p.user.id === currentUser?.id) &&
+  //           c.participants.some(p => p.user.id === user.id)
+  //       );
+
+  //       const unreadCount = conv?.participants.find(p => p.user.id === currentUser?.id)?.unreadCount || 0;
+  //       const lastMessageText = conv?.lastMessage?.text || "Click to start chat";
+  //       const lastMessageTime = conv?.lastMessage?.createdAt || null;
+
+  //       return {
+  //         type: "user",
+  //         id: user.id,
+  //         userName: user.userName,
+  //         lastMessageText,
+  //         lastMessageTime,
+  //         unreadCount
+  //       };
+  //     });
+  //   }
+
+
+  //   return (conversations as Conversation[]).map((conv) => {
+  //     // const participant = conv.participants.find(p => p.user.id === currentUser?.id);
+  //     // console.log(participant);
+  //     const myParticipant = conv.participants.find(p => p.user.id === currentUser?.id);
+  //     // const otherParticipant = conv.participants.find(p => p.user.id !== currentUser?.id);
+
+  //     const unreadCount = myParticipant?.unreadCount ?? 0;
+  //     console.log(unreadCount);
+
+  //     const otherUser = conv.participants
+  //       .map((p) => p.user)
+  //       .find((u) => u.id !== currentUser?.id);
+  //     console.log("oheruser", otherUser);
+
+
+  //     return {
+  //       type: "conversation",
+  //       id: conv.id,
+  //       userName: otherUser?.userName ?? "Unknown",
+  //       lastMessageText: conv.lastMessage?.text ?? "Click to start chat",
+  //       lastMessageTime: conv.lastMessage?.createdAt ?? null,
+  //       unreadCount,
+  //     };
+  //   });
+  // }, [conversations, users, searchTerm, currentUser]);
+const displayConversations = useMemo(() => {
+  let convs: {
+    type: "user" | "conversation";
+    id: string;
+    userName: string;
+    lastMessageText: string;
+    lastMessageTime: string | null;
+    unreadCount: number;
+  }[] = [];
+
+  if (searchTerm && users.length > 0) {
+    convs = users.map((user: User) => {
+      const conv = (conversations as Conversation[]).find(
+        c =>
+          c.participants.some(p => p.user.id === currentUser?.id) &&
+          c.participants.some(p => p.user.id === user.id)
+      );
+
+      const unreadCount =
+        conv?.participants.find(p => p.user.id === currentUser?.id)?.unreadCount || 0;
+      const lastMessageText = conv?.lastMessage?.text || "Click to start chat";
+      const lastMessageTime = conv?.lastMessage?.createdAt || null;
+
+      return {
         type: "user",
         id: user.id,
         userName: user.userName,
-        lastMessageText: "Click to start chat",
-        lastMessageTime: null,
-      }));
-    }
+        lastMessageText,
+        lastMessageTime,
+        unreadCount,
+      };
+    });
+  } else {
+    convs = (conversations as Conversation[]).map(conv => {
+      const myParticipant = conv.participants.find(p => p.user.id === currentUser?.id);
+      const unreadCount = myParticipant?.unreadCount ?? 0;
 
-    return (conversations as Conversation[]).map((conv) => {
-      const otherUser = conv.participants.find(
-        // (p) => p.userName !== currentUser?.userName
-        (p) => p.id !== currentUser?.id
-      );
+      const otherUser = conv.participants
+        .map(p => p.user)
+        .find(u => u.id !== currentUser?.id);
 
       return {
         type: "conversation",
@@ -118,22 +185,42 @@ export default function Sidebar() {
         userName: otherUser?.userName ?? "Unknown",
         lastMessageText: conv.lastMessage?.text ?? "Click to start chat",
         lastMessageTime: conv.lastMessage?.createdAt ?? null,
+        unreadCount,
       };
     });
-  }, [conversations, users, searchTerm, currentUser]);
+  }
+
+  // Sort by lastMessageTime descending (newest first)
+  convs.sort((a, b) => {
+    const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+    const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  return convs;
+}, [conversations, users, searchTerm, currentUser]);
 
   // selection
   const { mutateAsync } = useCreateConversation()
+  const { mutate: resetUnread } = useResetUnreadCount();
   const handleSelectChat = useCallback(
     async (userId: string) => {
-      // 1️⃣ check if conversation already exists
-      const existingConv = (conversations as Conversation[]).find((conv) =>
-        conv.participants.some((p) => p.id === userId)
-      );
-      console.log("existingConv",existingConv);
-      
+      console.log("conversations:", conversations);
+      console.log("clicked userId:", userId);
+      console.log("All conversations", conversations);
+
+      const existingConv = (conversations as Conversation[]).find(
+        (conv) =>
+          conv.participants.some(p => p.user.id === currentUser?.id) &&
+          conv.participants.some(p => p.user.id === userId)
+      )
+
+      console.log("existingConv", existingConv);
       if (existingConv) {
+        setSearchTerm("");
+        setDebouncedSearch("");
         dispatch(setSelectedChat(existingConv));
+        resetUnread(existingConv.id);
         return;
       }
       try {
@@ -144,17 +231,17 @@ export default function Sidebar() {
         });
         console.log(newConv);
 
-          setSearchTerm("");
-      setDebouncedSearch("");
+        setSearchTerm("");
+        setDebouncedSearch("");
         // 3️⃣ optimistically update Redux
-        dispatch(setSelectedChat(newConv));
+        dispatch(setSelectedChat(newConv.saveConversation));
         toast.success("New conversation started");
       } catch (err: any) {
         toast.error(err.message || "Failed to start conversation");
       }
       // dispatch(setSelectedChat(userId));
     },
-    [dispatch, conversations, currentUser, mutateAsync]
+    [dispatch, conversations, currentUser, mutateAsync, resetUnread]
   );
 
   return (
@@ -252,11 +339,17 @@ export default function Sidebar() {
             <ListItem key={conv.id} disablePadding>
               <ListItemButton
                 selected={selectedChat?.id === conv.id}
-                onClick={() =>
-                  conv.type === "user"
-                    ? handleSelectChat(conv.id) // search: pass userId
-                      :dispatch(setSelectedChat(conversations.find(c => c.id === conv.id) || null)) // ✅ pass full Conversation
-                }
+                onClick={() => {
+                  if (conv.type === "user") {
+                    handleSelectChat(conv.id); // search: pass userId
+                  } else {
+                    const existingConv = conversations.find(c => c.id === conv.id);
+                    if (existingConv) {
+                      dispatch(setSelectedChat(existingConv));
+                      resetUnread(existingConv.id); // ✅ Reset unread count immediately
+                    }
+                  }
+                }}
                 sx={{
                   px: 2,
                   py: 1.5,
@@ -314,7 +407,28 @@ export default function Sidebar() {
                       minute: "2-digit",
                     })
                     : "--:--"}
+
+
                 </Typography>
+                {conv.unreadCount > 0 && (
+                  <Box
+                    sx={{
+                      backgroundColor: "primary.main",
+                      color: "white",
+                      borderRadius: "50%",
+                      fontSize: "0.7rem",
+                      minWidth: 22,
+                      height: 22,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      ml: 1,
+                    }}
+                  >
+                    {conv.unreadCount}
+                  </Box>
+                )}
+
               </ListItemButton>
             </ListItem>
           ))

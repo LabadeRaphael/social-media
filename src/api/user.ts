@@ -61,6 +61,16 @@ const sendMessage = async (messageDetails:Message) => {
     throw error.response?.data || error;
   }
 }
+
+const resetUnreadCount = async (conversationId?: string) => {
+  try {
+    const response = await api.patch(`/conversations/${conversationId}/unread/reset`);
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+}
 const getMessages = async (conversationId?: string) => {
   try {
     const response = await api.get(`/conversations/${conversationId}/messages`);
@@ -70,4 +80,4 @@ const getMessages = async (conversationId?: string) => {
     throw error.response?.data || error;
   }
 }
-export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage,getMessages }
+export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage,resetUnreadCount,getMessages }

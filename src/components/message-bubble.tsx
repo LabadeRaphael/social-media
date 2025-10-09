@@ -3,38 +3,54 @@
 import { Box, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import moment from "moment";
+import { Check, CheckCheck } from "lucide-react"; // ✅ nice tick icons
 
 interface MessageBubbleProps {
   text: string;
-  isSender: boolean;
   timeStamp: string;
+  unreadcount: number;
+  isSender: boolean;
 }
-
-export default function MessageBubble({ text, isSender, timeStamp }: MessageBubbleProps) {
-  const theme = useTheme();
+export default function MessageBubble({ text, isSender, timeStamp, unreadcount }: MessageBubbleProps) {
+  console.log("Mr unread", unreadcount)
+  // if(unreadcount){
+  // }
+  // const theme = useTheme();
 
   const formatTime = (timeStamp: string) => {
-    const now = moment()
-    console.log("now ", now);
+    const now = moment();
+    const msgTime = moment(timeStamp);
 
-    const timeDiff = now.diff(moment(timeStamp), 'days')
-    console.log("time difference ", timeDiff);
-
-    if (timeDiff < 1) {
-      return `Today ${moment(timeStamp).format("hh:mm: A")}`
-    } else if (timeDiff === 1) {
-      return `yesterday ${moment(timeStamp).format("hh:mm: A")}`
+    if (now.isSame(msgTime, "day")) {
+      return `Today ${msgTime.format("hh:mm A")}`;
+    } else if (now.clone().subtract(1, "day").isSame(msgTime, "day")) {
+      return `Yesterday ${msgTime.format("hh:mm A")}`;
     } else {
-      return `${moment(timeStamp).format("MMM D, hh:mm: A")}`
+      return msgTime.format("MMM D, hh:mm A");
     }
+
   }
+   // ✅ Determine tick type only for sender
+  const getTickIcon = () => {
+    if (!isSender) return null;
+
+    // When you send a message, unreadCount represents how many messages the RECEIVER hasn’t read yet.
+    // So: 0 = read by receiver, >0 = not yet read.
+
+    if (unreadcount > 0) {
+      // Not yet read → gray ✓✓
+      return <CheckCheck size={16} color="#888" />;
+    }
+
+    // ✅ Read by receiver → blue ✓✓
+    return <CheckCheck size={16} color="#0084ff" />;
+  };
   return (
     <Box
       mb={2}
       display="flex"
       flexDirection="column"
       alignItems={isSender ? "flex-end" : "flex-start"}
-    // justifyContent={isSender? "flex-end" : "flex-start"}
     >
       <Typography
         sx={{
@@ -48,15 +64,32 @@ export default function MessageBubble({ text, isSender, timeStamp }: MessageBubb
         }}
       >
         {text}
+        {getTickIcon()}
+          {/* {isSender && (
+          <Box display="flex" alignItems="center" ml={0.5}>
+            {unreadcount === 0 ? (
+              <CheckCheck size={16} color="#0084ff" /> // ✅ read (blue)
+            ) : unreadcount > 0 ? (
+              <CheckCheck size={16} color="#888" /> // ✅ delivered (gray)
+            ) : (
+              <Check size={16} color="#888" /> // ✅ sent (single gray tick)
+            )}
+          </Box>
+        )} */}
+        {/* {unreadcount?"sent message": unreadcount ===0?"read message":"have not read"} */}
+        {/* {unreadcount === 0 ? (
+          <span style={{ color: "#0084ff" }}>ndn✓✓</span> // read
+        ) : (
+          "✓✓" // delivered
+        )} */}
+
       </Typography>
       <Typography
-
         variant="body1"
         sx={{
           mt: 0.3,
           fontSize: "0.85rem",
         }}>
-        {/* yesterday */}
         {formatTime(timeStamp)}
       </Typography>
     </Box>
