@@ -185,10 +185,15 @@ import {
 } from "lucide-react";
 import { useTheme } from "@mui/material/styles";
 import MessageBubble from "./message-bubble";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useCurrentUser, useMessages, useSendMessage } from "@/react-query/query-hooks"; // ✅ import your hook
 import { Conversation } from "@/types/conversation";
 import { ThemeSwitcher } from "./Theme/themeswitcher";
+import { useSocketChat } from "@/react-query/query-hooks";
+import { getSocket } from "@/lib/socket";
+import TypingIndicator from "./typing-indicator";
+import { useOnlineUsers } from "@/socket-hook/socket";
+
 interface ChatWindowProps {
   selectedChat: Conversation | null; // conversationId
   onBack: () => void;
@@ -200,8 +205,11 @@ export default function ChatWindow({
   onBack,
   isMobile,
 }: ChatWindowProps) {
+  useSocketChat(selectedChat?.id);
+
   const theme = useTheme();
   const { data: currentUser } = useCurrentUser();
+  const onlineUsers = useOnlineUsers();
 
 
   // ✅ fetch messages when a chat is selected
@@ -219,14 +227,46 @@ export default function ChatWindow({
   //  const newMsg = await mutateAsync({
   //         participan: [currentUser?.id, userId],
   //       });
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+const handleTyping = () => {
+  if (!selectedChat || !currentUser) return;
+
+  const socket = getSocket();
+
+  socket.emit("typing", {
+    conversationId: selectedChat.id,
+    senderId: currentUser.id,
+  });
+  console.log("typing");
+  
+
+  if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+  typingTimeoutRef.current = setTimeout(() => {
+    socket.emit("stop_typing", {
+      
+      conversationId: selectedChat.id,
+      senderId: currentUser.id,
+    });
+    console.log("stop_typing");
+  }, 2000); // stops typing after 2s of inactivity
+};
+
   const handleSendMessage = async (text: string) => {
     if (text.trim() && selectedChat) {
-      await mutateAsync({
-        conversationId: selectedChat.id,   // ✅ from your current chat
-        text,                              // ✅ the input message
-        type: "TEXT",                      // ✅ for now fixed to TEXT
-      });
+      // await mutateAsync({
+      //   conversationId: selectedChat.id,   // ✅ from your current chat
+      //   text,                              // ✅ the input message
+      //   type: "TEXT",                      // ✅ for now fixed to TEXT
+      // });
+      const socket = getSocket();
 
+      socket.emit("send_message", {
+        text,
+        conversationId: selectedChat.id,
+        type: "TEXT",
+      });
       setNewMessage("");
     }
   };
@@ -257,6 +297,8 @@ export default function ChatWindow({
   const otherUser = selectedChat.participants.find(
     (p) => p.user.id !== currentUser?.id
   );
+  const isOtherUserOnline = otherUser ? onlineUsers.has(otherUser.user.id):false;
+
   console.log("currentUser id:", currentUser?.id);
   console.log("participants:", selectedChat.participants);
   console.log(
@@ -294,8 +336,12 @@ export default function ChatWindow({
               {otherUser?.user.userName ?? "Unknown User"}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Online
+             {isOtherUserOnline ? "Online" : "Offline"}
             </Typography>
+                  <TypingIndicator
+  conversationId={selectedChat?.id}
+  currentUserId={currentUser?.id}
+/>
           </Box>
         </Box>
         <Box>
@@ -330,27 +376,31 @@ export default function ChatWindow({
             <Typography variant="caption">Start the conversation 👋</Typography>
           </Box>
         ) : (
-         messages.map((message: any) => {
-  // Find unread count of the *other participant* (not the sender)
-  const otherParticipant = selectedChat.participants.find(
-    (p) => p.user.id !== message.sender.id
-  );
+          messages.map((message: any) => {
+            // Find unread count of the *other participant* (not the sender)
+            const otherParticipant = selectedChat.participants.find(
+              (p) => p.user.id !== message.sender.id
+            );
 
-  return (
-    <MessageBubble
-      key={message.id}
-      text={message.text}
-      timeStamp={message.createdAt}
-      // unreadcount={otherParticipant?.unreadCount ?? 0}
-      isRead={message.isRead}
-      isSender={message.sender.id === currentUser.id}
-    />
-  );
-})
+            return (
+              <MessageBubble
+                key={message.id}
+                text={message.text}
+                timeStamp={message.createdAt}
+                // unreadcount={otherParticipant?.unreadCount ?? 0}
+                isRead={message.isRead}
+                isSender={message.sender.id === currentUser.id}
+              />
+            );
+          })
 
         )}
 
       </Box>
+        <TypingIndicator
+    conversationId={selectedChat?.id}
+    currentUserId={currentUser?.id}
+  />
 
       {/* Chat Input */}
       <Box
@@ -374,7 +424,12 @@ export default function ChatWindow({
           size="small"
           sx={{ mx: 1 }}
           value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
+          onChange={
+          (e) => {
+            setNewMessage(e.target.value)
+            handleTyping()
+            }
+          }
           onKeyPress={(e) => {
             if (e.key === "Enter") {
               handleSendMessage(newMessage);

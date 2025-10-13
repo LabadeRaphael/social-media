@@ -65,23 +65,6 @@ export default function MessageBubble({ text, isSender, timeStamp, isRead }: Mes
       >
         {text}
         {getTickIcon()}
-          {/* {isSender && (
-          <Box display="flex" alignItems="center" ml={0.5}>
-            {unreadcount === 0 ? (
-              <CheckCheck size={16} color="#0084ff" /> // ✅ read (blue)
-            ) : unreadcount > 0 ? (
-              <CheckCheck size={16} color="#888" /> // ✅ delivered (gray)
-            ) : (
-              <Check size={16} color="#888" /> // ✅ sent (single gray tick)
-            )}
-          </Box>
-        )} */}
-        {/* {unreadcount?"sent message": unreadcount ===0?"read message":"have not read"} */}
-        {/* {unreadcount === 0 ? (
-          <span style={{ color: "#0084ff" }}>ndn✓✓</span> // read
-        ) : (
-          "✓✓" // delivered
-        )} */}
 
       </Typography>
       <Typography

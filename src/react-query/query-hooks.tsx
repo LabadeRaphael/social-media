@@ -5,7 +5,8 @@ import { useDispatch } from "react-redux";
 import { setSelectedUser } from "@/redux/users-slice";
 import { Message } from "@/types/messages";
 import { setSelectedChat } from "@/redux/chats-slice";
-
+import { getSocket } from "@/lib/socket";
+import { useEffect, useState } from "react";
 // ✅ Get single user
 const useCurrentUser = () => {
     const query = useQuery({
@@ -68,6 +69,44 @@ const useSendMessage = () => {
         },
     });
 };
+const useSocketChat = (conversationId?: string) => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const socket = getSocket();
+
+    if (conversationId) {
+      // ✅ join conversation room
+      socket.emit("join_conversation", conversationId);
+      socket.emit("mark_as_read", conversationId);
+    }
+
+    // ✅ listen for incoming messages
+    socket.on("receive_message", (message) => {
+      console.log("📩 New message received:", message);
+
+      // update cache so React Query shows new message instantly
+    //   queryClient.setQueryData(["messages", message.conversationId], (old: any) => {
+    //     return old ? [...old, message] : [message];
+    //   });
+
+      // also refresh conversation list (to update lastMessage/unread)
+      queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+    });
+      socket.on("messages_read", ({ conversationId, userId }) => {
+      console.log("✅ Messages read by:", userId);
+      queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+      queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
+
+    });
+
+    return () => {
+      socket.off("receive_message");
+      socket.off("messages_read");
+    };
+  }, [conversationId, queryClient]);
+};
 
 const useMessages = (conversationId: string | null) => {
     return useQuery({
@@ -102,11 +141,42 @@ const useMarkMessagesAsRead = () => {
         onSuccess: (_, { conversationId }) => {
             // Refresh messages for this conversation
             queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
-
             // Refresh the conversation list (to update unread badges)
             queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
         },
     });
 
 }
-export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage, useMessages, useResetUnreadCount, useMarkMessagesAsRead }
+const useTypingIndicator = (conversationId: string, currentUserId: string) => {
+  const [typingUser, setTypingUser] = useState<string | null>(null);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!conversationId) return;
+    socket.emit("join_conversation", conversationId);
+  
+    socket.on("user_typing", (data) => {
+        console.log("🟢 Received user_typing:", data); // ✅ Add this
+      if (data.conversationId === conversationId && data.senderId !== currentUserId) {
+        setTypingUser(data.senderId);
+      }
+    });
+
+    socket.on("user_stop_typing", (data) => {
+      if (data.conversationId === conversationId && data.senderId !== currentUserId) {
+        setTypingUser(null);
+      }
+    });
+
+    return () => {
+      socket.off("user_typing");
+      socket.off("user_stop_typing");
+    };
+  }, [conversationId, currentUserId]);
+
+  return typingUser;
+};
+
+
+
+export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage, useSocketChat,useMessages, useResetUnreadCount, useMarkMessagesAsRead,useTypingIndicator }
