@@ -13,7 +13,8 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({
   currentUserId,
 }) => {
   const typingUser = useTypingIndicator(conversationId, currentUserId);
-
+  // console.log('typinguser',typingUser);
+  
   if (!typingUser) return null;
 
   return (

@@ -1,5 +1,6 @@
 import { Message } from "@/types/messages";
 import api from "./axiosInstance";
+import { UploadVoicePayload } from "@/types/audio";
 
 const getCurrentUser = async () => {
   try {
@@ -89,4 +90,15 @@ const getMessages = async (conversationId?: string) => {
     throw error.response?.data || error;
   }
 }
-export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage,resetUnreadCount,getMessages,markMessagesAsRead }
+const sendAudio = async (formData: any) => {
+  try {
+    
+    const response = await api.post('/messages/voice', formData
+    );
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+}
+export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage,resetUnreadCount,getMessages,markMessagesAsRead,sendAudio }

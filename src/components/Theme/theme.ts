@@ -39,6 +39,11 @@ export const getTheme = (mode: 'light' | 'dark') =>
         text: {
             primary: '#fdf8f4',
           },
+    //        secondary: {
+    //   main: '#fdf8f4',
+    //   contrastText: '  #120802',
+    // },
+ 
       
       }),
     },

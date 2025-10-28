@@ -1,12 +1,13 @@
 "use client"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount, markMessagesAsRead } from "@/api/user";
+import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount, markMessagesAsRead, sendAudio } from "@/api/user";
 import { useDispatch } from "react-redux";
 import { setSelectedUser } from "@/redux/users-slice";
 import { Message } from "@/types/messages";
 import { setSelectedChat } from "@/redux/chats-slice";
 import { getSocket } from "@/lib/socket";
 import { useEffect, useState } from "react";
+import { UploadVoicePayload } from "@/types/audio";
 // ✅ Get single user
 const useCurrentUser = () => {
     const query = useQuery({
@@ -85,10 +86,6 @@ const useSocketChat = (conversationId?: string) => {
     socket.on("receive_message", (message) => {
       console.log("📩 New message received:", message);
 
-      // update cache so React Query shows new message instantly
-    //   queryClient.setQueryData(["messages", message.conversationId], (old: any) => {
-    //     return old ? [...old, message] : [message];
-    //   });
 
       // also refresh conversation list (to update lastMessage/unread)
       queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
@@ -176,6 +173,24 @@ const useTypingIndicator = (conversationId: string, currentUserId: string) => {
 
   return typingUser;
 };
+
+
+
+
+
+
+
+export const useSendVoice = () => {
+  return useMutation({
+    mutationFn: async ({ file, conversationId }: UploadVoicePayload) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('conversationId', conversationId);
+      return sendAudio(formData);
+    },
+  });
+};
+
 
 
 
