@@ -57,11 +57,17 @@ export default function ChatWindow({
   useSocketChat(selectedChat?.id);
   const { data: currentUser } = useCurrentUser();
   const onlineUsers = useOnlineUsers();
+console.log("onlineuser", onlineUsers);
 
   const { data: messages = [], isLoading, isError } = useMessages(
     selectedChat?.id ?? ""
   );
-  const { mutateAsync: sendMessage } = useSendMessage();
+ console.log(selectedChat);
+ 
+  
+  // console.log(messages);
+  
+  // const { mutateAsync: sendMessage } = useSendMessage();
 
   const handleTyping = () => {
     if (!selectedChat || !currentUser) return;
@@ -81,7 +87,14 @@ export default function ChatWindow({
       });
     }, 2000);
   };
-
+    const otherUser = selectedChat?.participants.find(
+    (p) => p.user.id !== currentUser?.id
+  );
+  
+  console.log("otheruser",otherUser?.user.id);
+  console.log("senderId", currentUser?.id);
+  console.log("receiverId", otherUser?.user.id);
+  
   const handleSendMessage = async (text: string) => {
     if (text.trim() && selectedChat) {
       const socket = getSocket();
@@ -89,6 +102,8 @@ export default function ChatWindow({
         text,
         conversationId: selectedChat.id,
         type: "TEXT",
+        senderId: currentUser?.id,
+        receiverId: otherUser?.user.id 
       });
       setNewMessage("");
     }
@@ -122,12 +137,21 @@ export default function ChatWindow({
     );
   }
 
-  const otherUser = selectedChat.participants.find(
-    (p) => p.user.id !== currentUser?.id
-  );
+// console.log("otheruser", otherUser?.user.id);
+// // console.log("onlineuser", onlineUsers);
+// if (otherUser) {
+  
+//   console.log("onlineuser", onlineUsers.has(otherUser.user.id));
+// }
+
+  console.log("Other user ID (string):", String(otherUser?.user.id));
+console.log("OnlineUsers:", Array.from(onlineUsers));
+
+
   const isOtherUserOnline = otherUser
-    ? onlineUsers.has(otherUser.user.id)
-    : false;
+  ? onlineUsers.has(otherUser.user.id)
+  : false;
+  console.log("isOtherUserOnline:", isOtherUserOnline);
 
   return (
     <Box flex={1} display="flex" flexDirection="column">
@@ -147,7 +171,23 @@ export default function ChatWindow({
               <ArrowLeft />
             </IconButton>
           )}
-          <Avatar>{otherUser?.user.userName[0]}</Avatar>
+            <Box position="relative" display="inline-block">
+  <Avatar>{otherUser?.user.userName[0]}</Avatar>
+  <Box
+    sx={{
+      position: "absolute",
+      bottom: 2,
+      right: 2,
+      width: 10,
+      height: 10,
+      borderRadius: "50%",
+      bgcolor: isOtherUserOnline ? "green" : "grey.400",
+      border: "2px solid white", // adds a border to separate dot from avatar
+    }}
+  />
+</Box>
+
+          {/* <Avatar>{otherUser?.user.userName[0]}</Avatar> */}
           <Box>
             <Typography variant="subtitle1">
               {otherUser?.user.userName ?? "Unknown User"}
@@ -202,6 +242,7 @@ export default function ChatWindow({
               mediaUrl={message.mediaUrl}
               isRead={message.isRead}
               isSender={message.sender.id === currentUser.id}
+              // isSender={message.senderId === currentUser.id}
             />
           ))
         )}

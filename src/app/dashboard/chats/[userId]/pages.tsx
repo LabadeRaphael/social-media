@@ -25,16 +25,16 @@
 //   const params = useParams();
 //   const userId = params.userId as string;
 //   const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
-//   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+//   const [selectedUser, setSelectedChat] = useState<string | null>(null);
   
 //   useEffect(() => {
 //     if (userId) {
-//       setSelectedUser(userId);
+//       setSelectedChat(userId);
 //     }
 //   }, [userId]);
 
 //   const handleBack = () => {
-//     setSelectedUser(null);
+//     setSelectedChat(null);
 //   };
 
 //   if (!userId) {
@@ -59,28 +59,34 @@ import { Box, useParams, useMediaQuery } from "@mui/material";
 import ChatWindow from "@/components/chat-window";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setSelectedUser } from "@/redux/slices/chatSlice";
-import { useAllConversations, useConversationByUserId } from "@/react-query/query-hooks";
+import { setSelectedChat } from "@/redux/chats-slice";
+import { useAllConversations, useConversationByUserId, useJoinAllConversations } from "@/react-query/query-hooks";
 import toast from "react-hot-toast";
 import type { RootState } from "@/redux/store";
 
 export default function SpecificChatPage() {
   const { userId } = useParams<{ userId: string }>();
   const dispatch = useDispatch();
-  const selectedUser = useSelector((state: RootState) => state.chatReducer.selectedUser);
+  const selectedChat = useSelector((state: RootState) => state.chatReducer.selectedChat);
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down("md"));
   const { data: conversation, isLoading, error } = useAllConversations();
+  useJoinAllConversations()
 
-  // Handle userId change and set selectedUser in Redux
-  useEffect(() => {
-    if (userId) {
-      dispatch(setSelectedUser(userId));
-    }
-    return () => {
-      // Clear selected user on unmount
-      dispatch(setSelectedUser(null));
-    };
-  }, [userId, dispatch]);
+// useEffect(() => {
+//   if (userId && conversation) {
+//     const existingConv = conversation.find((c: any) =>
+//       c.participants.some((p: any) => p.user.id === userId)
+//     );
+
+//     if (existingConv) {
+//       dispatch(setSelectedChat(existingConv));
+//     }
+//   }
+
+//   return () => {
+//     dispatch(setSelectedChat(null));
+//   };
+// }, [userId, conversation, dispatch]);
 
   // Display error toast if conversation fetch fails
   useEffect(() => {
@@ -91,7 +97,7 @@ export default function SpecificChatPage() {
 
   // Handle back navigation
   const handleBack = () => {
-    dispatch(setSelectedUser(null));
+    dispatch(setSelectedChat(null));
   };
 
   if (!userId || isLoading) {
@@ -112,7 +118,8 @@ export default function SpecificChatPage() {
 
   return (
     <ChatWindow
-      selectedUser={selectedUser}
+      // selectedUser={selectedUser}
+      selectedChat={selectedChat}
       onBack={handleBack}
       isMobile={isMobile}
     />

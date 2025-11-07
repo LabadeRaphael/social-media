@@ -20,11 +20,12 @@ import Image from "next/image";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import debounce from "lodash/debounce";
 import { useDispatch, useSelector } from "react-redux";
-import { useAllUsers, useAllConversations, useCreateConversation, useCurrentUser, useResetUnreadCount, useMarkMessagesAsRead } from "@/react-query/query-hooks";
+import { useAllUsers, useAllConversations, useCreateConversation, useCurrentUser, useResetUnreadCount, useMarkMessagesAsRead, useJoinAllConversations } from "@/react-query/query-hooks";
 import { setSelectedChat } from "@/redux/chats-slice";
 import toast from "react-hot-toast";
 import type { RootState } from "@/redux/store";
 import { Conversation } from "@/types/conversation";
+import { useOnlineUsers } from "@/socket-hook/socket";
 interface User {
   id: string;
   userName: string;
@@ -66,6 +67,13 @@ export default function Sidebar() {
     isLoading: isLoadingConversations,
     error: conversationsError,
   } = useAllConversations();
+  const onlineUsers = useOnlineUsers();
+      const otherUser = selectedChat?.participants.find(
+    (p) => p.user.id !== currentUser?.id
+  );
+   const isOtherUserOnline = otherUser
+    ? onlineUsers.has(otherUser.user.id)
+    : false;
 
   // search input
   const handleSearchChange = useCallback(
@@ -364,7 +372,7 @@ const displayConversations = useMemo(() => {
                 }}
               >
                 <ListItemAvatar sx={{ minWidth: 56 }}>
-                  <Avatar
+                  {/* <Avatar
                     sx={{
                       width: 40,
                       height: 40,
@@ -373,7 +381,34 @@ const displayConversations = useMemo(() => {
                     }}
                   >
                     {conv.userName[0]?.toUpperCase()}
-                  </Avatar>
+                  </Avatar> */}
+                  
+                   <Box position="relative" display="inline-block">
+                    <Avatar
+                       sx={{
+                      width: 40,
+                      height: 40,
+                      bgcolor: "primary.main",
+                      fontSize: "1rem",
+                    }}
+                    > {conv.userName[0]?.toUpperCase()}</Avatar>
+                    <Box
+                      sx={{ 
+                        position: "absolute",
+                        bottom: 2,
+                        right: 2,
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        bgcolor:isOtherUserOnline ? "green" : "red",
+                        border: "2px solid white", // adds a border to separate dot from avatar
+                      }}
+                    />
+                  </Box>
+
+
+ 
+
                 </ListItemAvatar>
 
                 <ListItemText

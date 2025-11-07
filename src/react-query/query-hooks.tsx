@@ -66,42 +66,72 @@ const useSendMessage = () => {
 
             console.log("onSuccess data:", newMessage);
 
-            queryClient.invalidateQueries({ queryKey: ["messages", variables.conversationId] });
+            // queryClient.invalidateQueries({ queryKey: ["messages", variables.conversationId] });
         },
     });
 };
+const useJoinAllConversations = () => {
+  const socket = getSocket();
+  const { data: conversations, isSuccess: convReady } = useAllConversations();
+  const { data: currentUser, isSuccess: userReady } = useCurrentUser();
+
+  useEffect(() => {
+    if (!socket) return;
+    if (!userReady || !convReady){
+      console.log("kahhhehhe");
+      
+    }
+
+    if (conversations?.length && currentUser?.id) {
+      conversations.forEach((conv) => {
+        socket.emit("join_conversation", conv.id);
+      });
+      console.log("✅ Joined all conversations for", currentUser.id);
+    }
+
+    return () => {
+      socket.off("join_conversation");
+    };
+  }, [socket, conversations, convReady, currentUser, userReady]);
+};
+
+
 const useSocketChat = (conversationId?: string) => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const socket = getSocket();
-
+    console.log(socket);
+    
     if (conversationId) {
       // ✅ join conversation room
       socket.emit("join_conversation", conversationId);
       socket.emit("mark_as_read", conversationId);
     }
 
-    // ✅ listen for incoming messages
     socket.on("receive_message", (message) => {
+        // if (!message.conversationId) return;
       console.log("📩 New message received:", message);
 
 
       // also refresh conversation list (to update lastMessage/unread)
       queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
-      queryClient.invalidateQueries({ queryKey: ["messages"] });
-    });
-      socket.on("messages_read", ({ conversationId, userId }) => {
-      console.log("✅ Messages read by:", userId);
       queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
-      queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
-
     });
+    
+   
 
-    return () => {
-      socket.off("receive_message");
-      socket.off("messages_read");
-    };
+    //   socket.on("messages_read", ({ conversationId, userId }) => {
+    //   console.log("✅ Messages read by:", userId);
+    //   // queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+    //   queryClient.invalidateQueries({ queryKey: ["current-user-conv", conversationId] });
+
+    // });
+
+    // return () => {
+    //   socket.off("receive_message");
+    //   socket.off("messages_read");
+    // };
   }, [conversationId, queryClient]);
 };
 
@@ -112,7 +142,7 @@ const useMessages = (conversationId: string | null) => {
             if (!conversationId) throw new Error("No conversationId"); // no chat selected yet
             return getMessages(conversationId);
         },
-        enabled: !!conversationId, // only run when a chat is selected
+        enabled: !!conversationId,
     });
 }
 const useResetUnreadCount = () => {
@@ -180,7 +210,7 @@ const useTypingIndicator = (conversationId: string, currentUserId: string) => {
 
 
 
-export const useSendVoice = () => {
+const useSendVoice = () => {
   return useMutation({
     mutationFn: async ({ file, conversationId }: UploadVoicePayload) => {
       const formData = new FormData();
@@ -194,4 +224,4 @@ export const useSendVoice = () => {
 
 
 
-export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage, useSocketChat,useMessages, useResetUnreadCount, useMarkMessagesAsRead,useTypingIndicator }
+export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage, useSocketChat,useJoinAllConversations,useMessages, useResetUnreadCount, useMarkMessagesAsRead,useTypingIndicator,useSendVoice }

@@ -86,6 +86,8 @@ export default function MessageBubble({
       flexDirection="column"
       alignItems={isSender ? "flex-end" : "flex-start"}
     >
+      {(type === 'TEXT' && text) || (type === 'VOICE' && mediaUrl) ? (
+      
       <Box
         sx={{
           bgcolor: mode === 'light' ? theme.palette.secondary.main : theme.palette.secondary.contrastText,
@@ -97,7 +99,7 @@ export default function MessageBubble({
         }}
       >
         {/* TEXT MESSAGE */}
-        {type === "TEXT" && !mediaUrl && (
+        {type === "TEXT" && text!=null && (
           <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
             {text} {getTickIcon()}
           </Typography>
@@ -153,6 +155,7 @@ export default function MessageBubble({
           </Box>
         )}
       </Box>
+      ):null}
 
       <Typography
         variant="body2"
