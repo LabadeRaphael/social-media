@@ -153,7 +153,6 @@ export default function LoginPage() {
                     email: values.email,
                     password: values.password,
                   });
-                  // resetForm();
                   console.log("Login success:", res.data);
                   const message = res?.data?.message
                   const status = res?.data?.status
@@ -163,7 +162,7 @@ export default function LoginPage() {
 
                   // 🔹 Redirect after 2 seconds
                   setTimeout(() => {
-                    window.location.href = "/dashboard";
+                    window.location.href = "/dashboard/chats";
                   }, 2000);
                 } catch (err: any) {
                   const message = err.response?.data?.message || err.message

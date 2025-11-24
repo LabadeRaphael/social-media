@@ -94,7 +94,10 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
+        console.log("visit the refresh-token");
         await api.post("/auth/refresh-token");
+        console.log("after visiting the refresh-token");
+        
         return api(originalRequest);
       } catch (refreshError) {
         if (typeof window !== "undefined") {
