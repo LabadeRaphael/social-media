@@ -166,8 +166,8 @@ export default function LoginPage() {
                     window.location.href = "/dashboard";
                   }, 2000);
                 } catch (err: any) {
-                  const message = err.response?.data.message
-                  const status = err.response?.data.status
+                  const message = err.response?.data?.message || err.message
+                  const status = err.response?.data?.status
                   setApiMessage({ message: message, status: status });
                   // 🔹 Hide message after 3 seconds
                   setTimeout(() => setApiMessage(null), 3000);

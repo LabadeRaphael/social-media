@@ -45,24 +45,59 @@ const api = axios.create({
   withCredentials: true, // ✅ send cookies automatically
 });
 
+// api.interceptors.response.use(
+//   res => res,
+//   async error => {
+//     const originalRequest = error.config;
+
+//     // Case 1: Login attempt failed
+//     if (originalRequest?.url?.includes("/auth/login")) {
+//       return Promise.reject(error); // just return the error to show "invalid credentials"
+//     }
+
+//     // Case 2: Expired token, try refresh
+//     if (error.response?.status === 401 && !originalRequest._retry) {
+//       originalRequest._retry = true;
+//       try {
+//         await api.post("/auth/refresh-token");
+//         return api(originalRequest); // retry with new token
+//       } catch (refreshError) {
+//         if (typeof window !== 'undefined') {
+//           window.location.href = "/auth/login";
+//         }
+//       }
+//     }
+
+//     return Promise.reject(error);
+//   }
+// );
 api.interceptors.response.use(
   res => res,
   async error => {
     const originalRequest = error.config;
 
-    // Case 1: Login attempt failed
-    if (originalRequest?.url?.includes("/auth/login")) {
-      return Promise.reject(error); // just return the error to show "invalid credentials"
+    // ❗ Backend is OFFLINE (Network Error)
+    if (error.message === "Network Error" || !error.response) {
+      return Promise.reject({
+        message: "Unable to connect to the server. Please try again later.",
+        status: 0,
+      });
     }
 
-    // Case 2: Expired token, try refresh
+    // ❗ Login attempt failed
+    if (originalRequest?.url?.includes("/auth/login")) {
+      return Promise.reject(error);
+    }
+
+    // ❗ Token expired → try refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+
       try {
         await api.post("/auth/refresh-token");
-        return api(originalRequest); // retry with new token
+        return api(originalRequest);
       } catch (refreshError) {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           window.location.href = "/auth/login";
         }
       }
@@ -71,6 +106,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 
 
 export default api;

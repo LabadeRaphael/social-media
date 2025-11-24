@@ -137,13 +137,6 @@ console.log("onlineuser", onlineUsers);
     );
   }
 
-// console.log("otheruser", otherUser?.user.id);
-// // console.log("onlineuser", onlineUsers);
-// if (otherUser) {
-  
-//   console.log("onlineuser", onlineUsers.has(otherUser.user.id));
-// }
-
   console.log("Other user ID (string):", String(otherUser?.user.id));
 console.log("OnlineUsers:", Array.from(onlineUsers));
 
