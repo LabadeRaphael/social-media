@@ -25,6 +25,7 @@ export interface Conversation {
     };
   }[];
   lastMessage?: {
+    type:string;
     text: string;
     createdAt: string;
   };

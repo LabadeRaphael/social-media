@@ -6,6 +6,7 @@ import { Play, Pause, Send, X } from "lucide-react";
 import WaveSurfer from "wavesurfer.js";
 import { useSendVoice } from "@/react-query/query-hooks";
 import { getSocket } from "@/lib/socket";
+import toast from "react-hot-toast";
 
 type Props = {
   conversationId: string;
@@ -90,7 +91,8 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(({ conversationId }
       setIsRecording(true);
     } catch (err: any) {
       console.error("Microphone error:", err);
-      alert("Unable to start recording: " + err.message);
+      toast.error("Unable to start recording: " + err.message);
+      // alert("Unable to start recording: " + err.message);
     }
   };
 
@@ -122,10 +124,14 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(({ conversationId }
             conversationId,
             type: "VOICE",
             mediaUrl: res.mediaUrl,
+            duration:res.duration
           });
           cancelPreview();
         },
-        onError: (err) => console.error("❌ Upload failed", err),
+        onError: (err) => {
+          toast.error("Upload failed: " + err.message);
+          // console.error("❌ Upload failed", err),
+        } 
       }
     );
   };

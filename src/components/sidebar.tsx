@@ -15,7 +15,7 @@ import {
   ListItemButton,
   CircularProgress,
 } from "@mui/material";
-import { Search, MoreVertical, MessageCircle } from "lucide-react";
+import { Search, MoreVertical, MessageCircle, Mic } from "lucide-react";
 import Image from "next/image";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import debounce from "lodash/debounce";
@@ -43,10 +43,6 @@ export default function Sidebar() {
     console.log("the selected chat we he see it", selectedChat);
   }
 
-  // const currentUser = useSelector(
-  //   (state: RootState) => state.userReducer.currentUser
-  // );
-  // console.log(currentUser);
   const { data: currentUser = null, isLoading: isLoadingCurrentUser, error: currentUserError } = useCurrentUser()
 
 
@@ -68,10 +64,10 @@ export default function Sidebar() {
     error: conversationsError,
   } = useAllConversations();
   const onlineUsers = useOnlineUsers();
-      const otherUser = selectedChat?.participants.find(
+  const otherUser = selectedChat?.participants.find(
     (p) => p.user.id !== currentUser?.id
   );
-   const isOtherUserOnline = otherUser
+  const isOtherUserOnline = otherUser
     ? onlineUsers.has(otherUser.user.id)
     : false;
 
@@ -146,67 +142,83 @@ export default function Sidebar() {
   //     };
   //   });
   // }, [conversations, users, searchTerm, currentUser]);
-const displayConversations = useMemo(() => {
-  let convs: {
-    type: "user" | "conversation";
-    id: string;
-    userName: string;
-    lastMessageText: string;
-    lastMessageTime: string | null;
-    unreadCount: number;
-  }[] = [];
+  const displayConversations = useMemo(() => {
+    let convs: {
+      type: "user" | "conversation";
+      id: string;
+      userName: string;
+      // lastMessageText: string;
+      lastMessagePreview: string;
+      lastMessageTime: string | null;
+      unreadCount: number;
+    }[] = [];
 
-  if (searchTerm && users.length > 0) {
-    convs = users.map((user: User) => {
-      const conv = (conversations as Conversation[]).find(
-        c =>
-          c.participants.some(p => p.user.id === currentUser?.id) &&
-          c.participants.some(p => p.user.id === user.id)
-      );
+    if (searchTerm && users.length > 0) {
+      convs = users.map((user: User) => {
+        const conv = (conversations as Conversation[]).find(
+          c =>
+            c.participants.some(p => p.user.id === currentUser?.id) &&
+            c.participants.some(p => p.user.id === user.id)
+        );
 
-      const unreadCount =
-        conv?.participants.find(p => p.user.id === currentUser?.id)?.unreadCount || 0;
-      const lastMessageText = conv?.lastMessage?.text || "Click to start chat";
-      const lastMessageTime = conv?.lastMessage?.createdAt || null;
+        const unreadCount =
+          conv?.participants.find(p => p.user.id === currentUser?.id)?.unreadCount || 0;
+        const lastMessageText = conv?.lastMessage?.text || "Click to start chat";
+        const lastMessageTime = conv?.lastMessage?.createdAt || null;
 
-      return {
-        type: "user",
-        id: user.id,
-        userName: user.userName,
-        lastMessageText,
-        lastMessageTime,
-        unreadCount,
+        return {
+          type: "user",
+          id: user.id,
+          userName: user.userName,
+          lastMessagePreview: lastMessageText,
+          lastMessageTime,
+          unreadCount,
+        };
+      });
+    } else {
+
+      const formatDuration = (seconds: number) => {
+        if (!seconds || isNaN(seconds)) return "0:00";
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s.toString().padStart(2, "0")}`;
       };
+
+
+
+      convs = (conversations as Conversation[]).map(conv => {
+        const myParticipant = conv.participants.find(p => p.user.id === currentUser?.id);
+        const unreadCount = myParticipant?.unreadCount ?? 0;
+
+        const otherUser = conv.participants
+          .map(p => p.user)
+          .find(u => u.id !== currentUser?.id);
+        console.log("The conv", conv);
+
+        return {
+          type: "conversation",
+          id: conv.id,
+          userName: otherUser?.userName ?? "Unknown",
+          lastMessage: conv.lastMessage,
+          lastMessagePreview:
+            conv.lastMessage?.type === "VOICE"
+              ? <Box display="flex" alignItems="center" gap={1}><Mic size={16} />Voice message {formatDuration(conv.lastMessage.duration)}</Box>
+              : conv.lastMessage?.text || "Click to start chat",
+          lastMessageTime: conv.lastMessage?.createdAt ?? null,
+          unreadCount,
+        };
+      });
+    }
+
+    // Sort by lastMessageTime descending (newest first)
+    convs.sort((a, b) => {
+      const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+      const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+      return timeB - timeA;
     });
-  } else {
-    convs = (conversations as Conversation[]).map(conv => {
-      const myParticipant = conv.participants.find(p => p.user.id === currentUser?.id);
-      const unreadCount = myParticipant?.unreadCount ?? 0;
 
-      const otherUser = conv.participants
-        .map(p => p.user)
-        .find(u => u.id !== currentUser?.id);
-
-      return {
-        type: "conversation",
-        id: conv.id,
-        userName: otherUser?.userName ?? "Unknown",
-        lastMessageText: conv.lastMessage?.text ?? "Click to start chat",
-        lastMessageTime: conv.lastMessage?.createdAt ?? null,
-        unreadCount,
-      };
-    });
-  }
-
-  // Sort by lastMessageTime descending (newest first)
-  convs.sort((a, b) => {
-    const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
-    const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
-    return timeB - timeA;
-  });
-
-  return convs;
-}, [conversations, users, searchTerm, currentUser]);
+    return convs;
+  }, [conversations, users, searchTerm, currentUser]);
 
   // selection
   const { mutateAsync } = useCreateConversation()
@@ -372,52 +384,37 @@ const displayConversations = useMemo(() => {
                 }}
               >
                 <ListItemAvatar sx={{ minWidth: 56 }}>
-                  {/* <Avatar
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      bgcolor: "primary.main",
-                      fontSize: "1rem",
-                    }}
-                  >
-                    {conv.userName[0]?.toUpperCase()}
-                  </Avatar> */}
-                  
-                   <Box position="relative" display="inline-block">
+                  <Box position="relative" display="inline-block">
                     <Avatar
-                       sx={{
-                      width: 40,
-                      height: 40,
-                      bgcolor: "primary.main",
-                      fontSize: "1rem",
-                    }}
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        bgcolor: "primary.main",
+                        fontSize: "1rem",
+                      }}
                     > {conv.userName[0]?.toUpperCase()}</Avatar>
                     <Box
-                      sx={{ 
+                      sx={{
                         position: "absolute",
                         bottom: 2,
                         right: 2,
                         width: 10,
                         height: 10,
                         borderRadius: "50%",
-                        bgcolor:isOtherUserOnline ? "green" : "red",
+                        bgcolor: isOtherUserOnline ? "green" : "red",
                         border: "2px solid white", // adds a border to separate dot from avatar
                       }}
                     />
                   </Box>
-
-
- 
-
                 </ListItemAvatar>
 
                 <ListItemText
                   primary={conv.userName}
-                  secondary={conv.lastMessageText}
+                  secondary={conv.lastMessagePreview}
                   primaryTypographyProps={{
-                    fontWeight: selectedChat === conv.id ? 600 : 400,
+                    fontWeight: selectedChat?.id === conv.id ? 600 : 400,
                     color:
-                      selectedChat === conv.id
+                      selectedChat?.id === conv.id
                         ? "primary.main"
                         : "text.primary",
                   }}
