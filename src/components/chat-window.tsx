@@ -23,6 +23,7 @@ import { useRef, useState } from "react";
 import {
   useCurrentUser,
   useMessages,
+  useSendDocument,
   useSendMessage,
 } from "@/react-query/query-hooks";
 import { Conversation } from "@/types/conversation";
@@ -63,6 +64,7 @@ console.log("onlineuser", onlineUsers);
     selectedChat?.id ?? ""
   );
  console.log(selectedChat);
+ console.log(messages)
  
   
   // console.log(messages);
@@ -102,12 +104,39 @@ console.log("onlineuser", onlineUsers);
         text,
         conversationId: selectedChat.id,
         type: "TEXT",
-        senderId: currentUser?.id,
         receiverId: otherUser?.user.id 
       });
       setNewMessage("");
     }
   };
+  // Document
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+const { mutateAsync: sendDocumentMutation } = useSendDocument();
+
+const handleDocumentUpload = async (e: any) => {
+  const file = e.target.files?.[0];
+  if (!file || !selectedChat) return;
+
+  const message = await sendDocumentMutation({
+    file,
+    conversationId: selectedChat.id,
+  });
+
+  const socket = getSocket();
+  
+  socket.emit("send_message", {
+    type: "DOCUMENT",
+    mediaUrl: message.mediaUrl,
+    receiverId: otherUser?.user.id,
+    conversationId: selectedChat.id,
+    fileName: message.fileName,
+    fileSize: message.fileSize,
+    fileType: message.fileType,
+  });
+};
+
+  
 
   const startRecording = () => {
     recorderRef.current?.startRecording();
@@ -233,6 +262,8 @@ console.log("OnlineUsers:", Array.from(onlineUsers));
               timeStamp={message.createdAt}
               type={message.type}
               mediaUrl={message.mediaUrl}
+              fileName={message.fileName}
+              fileSize={message.fileSize}
               isRead={message.isRead}
               isSender={message.sender.id === currentUser.id}
               // isSender={message.senderId === currentUser.id}
@@ -278,9 +309,20 @@ console.log("OnlineUsers:", Array.from(onlineUsers));
           </Box>
         )}
 
-        <IconButton>
+        {/* <IconButton onClick={() => fileInputRef.current?.click()>
           <Paperclip />
-        </IconButton>
+        </IconButton> */}
+        {/* Document Upload */}
+<input
+  ref={fileInputRef}
+  type="file"
+  hidden
+  onChange={handleDocumentUpload}
+/>
+
+<IconButton onClick={() => fileInputRef.current?.click()}>
+  <Paperclip />
+</IconButton>
 
         <TextField
           fullWidth

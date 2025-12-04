@@ -101,4 +101,15 @@ const sendAudio = async (formData: any) => {
     throw error.response?.data || error;
   }
 }
-export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage,resetUnreadCount,getMessages,markMessagesAsRead,sendAudio }
+const sendDocument = async (formData: any) => {
+  try {
+    
+    const response = await api.post('/messages/document', formData
+    );
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+}
+export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage,resetUnreadCount,getMessages,markMessagesAsRead,sendAudio,sendDocument }

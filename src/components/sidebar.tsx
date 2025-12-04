@@ -203,7 +203,7 @@ export default function Sidebar() {
           lastMessagePreview:
             conv.lastMessage?.type === "VOICE"
               ? <Box display="flex" alignItems="center" gap={1}><Mic size={16} />Voice message {formatDuration(conv.lastMessage.duration)}</Box>
-              : conv.lastMessage?.text || "Click to start chat",
+              : conv.lastMessage?.type === "DOCUMENT" ? <Box display="flex" alignItems="center" gap={1}><Mic size={16} />Voice message {formatDuration(conv.lastMessage.duration)}</Box>: conv.lastMessage?.text   || "Click to start chat",
           lastMessageTime: conv.lastMessage?.createdAt ?? null,
           unreadCount,
         };

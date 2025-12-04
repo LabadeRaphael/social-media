@@ -27,6 +27,7 @@ export interface Conversation {
   lastMessage?: {
     type:string;
     text: string;
+    duration?: number;
     createdAt: string;
   };
 }

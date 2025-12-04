@@ -4,6 +4,9 @@ export interface Message {
   text: string;
   mediaUrl?: string|null;
   duration?: number|null;
+  fileName?: string|null;
+  fileSize?: number|null,
+  fileType?: string|null
   isRead?: boolean; // ✅ add this line
-  type: "TEXT" | "IMAGE" | "FILE" | "VOICE"; // extend later
+  type: "TEXT" | "DOCUMENT" | "VOICE"; // extend later
 }

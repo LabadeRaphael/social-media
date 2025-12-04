@@ -4,9 +4,11 @@ import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "re
 import { Box, IconButton, CircularProgress } from "@mui/material";
 import { Play, Pause, Send, X } from "lucide-react";
 import WaveSurfer from "wavesurfer.js";
-import { useSendVoice } from "@/react-query/query-hooks";
+import { useCurrentUser, useSendVoice } from "@/react-query/query-hooks";
 import { getSocket } from "@/lib/socket";
 import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
 
 type Props = {
   conversationId: string;
@@ -109,6 +111,16 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(({ conversationId }
     setIsPreviewing(false);
     setIsPlaying(false);
   };
+  const { data: currentUser } = useCurrentUser();
+  const selectedChat = useSelector(
+    (state: RootState) => state.chatReducer.selectedChat
+  );
+  if (!selectedChat || !currentUser) return;
+
+  const otherUser = selectedChat?.participants.find(
+    (p) => p.user.id !== currentUser?.id
+  );
+  console.log("From voice recorder", otherUser);
 
   // 📤 Send voice message
   const sendRecording = () => {
@@ -120,18 +132,20 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(({ conversationId }
       {
         onSuccess: (res) => {
           const socket = getSocket();
+
           socket.emit("send_message", {
             conversationId,
             type: "VOICE",
+            receiverId: otherUser?.user.id,
             mediaUrl: res.mediaUrl,
-            duration:res.duration
+            duration: res.duration
           });
           cancelPreview();
         },
         onError: (err) => {
           toast.error("Upload failed: " + err.message);
           // console.error("❌ Upload failed", err),
-        } 
+        }
       }
     );
   };

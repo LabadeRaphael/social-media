@@ -1,6 +1,6 @@
 "use client"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount, markMessagesAsRead, sendAudio } from "@/api/user";
+import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount, markMessagesAsRead, sendAudio, sendDocument } from "@/api/user";
 import { useDispatch } from "react-redux";
 import { setSelectedUser } from "@/redux/users-slice";
 import { Message } from "@/types/messages";
@@ -220,8 +220,18 @@ const useSendVoice = () => {
     },
   });
 };
+const useSendDocument = () => {
+  return useMutation({
+    mutationFn: async ({ file, conversationId }: UploadVoicePayload) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('conversationId', conversationId);
+      return sendDocument(formData);
+    },
+  });
+};
 
 
 
 
-export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage, useSocketChat,useJoinAllConversations,useMessages, useResetUnreadCount, useMarkMessagesAsRead,useTypingIndicator,useSendVoice }
+export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage, useSocketChat,useJoinAllConversations,useMessages, useResetUnreadCount, useMarkMessagesAsRead,useTypingIndicator,useSendVoice,useSendDocument }
