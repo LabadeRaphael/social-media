@@ -79,7 +79,12 @@ export default function Sidebar() {
     },
     [debouncedHandler]
   );
-
+    function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+}
   // errors
   useEffect(() => {
     if (conversationsError) {
@@ -202,8 +207,8 @@ export default function Sidebar() {
           lastMessage: conv.lastMessage,
           lastMessagePreview:
             conv.lastMessage?.type === "VOICE"
-              ? <Box display="flex" alignItems="center" gap={1}><Mic size={16} />Voice message {formatDuration(conv.lastMessage.duration)}</Box>
-              : conv.lastMessage?.type === "DOCUMENT" ? <Box display="flex" alignItems="center" gap={1}><Mic size={16} />Voice message {formatDuration(conv.lastMessage.duration)}</Box>: conv.lastMessage?.text   || "Click to start chat",
+              ? <Box display="flex" alignItems="center" fontWeight={"bold"}  gap={1}><Mic size={16} />Voice messae {formatDuration(conv.lastMessage.duration)}</Box>
+              : conv.lastMessage?.type === "DOCUMENT" ? <Box display="flex" alignItems="center" fontWeight={"bold"}  gap={1}>Document { formatFileSize(conv.lastMessage.fileSize)}<Mic size={16} /></Box>: conv.lastMessage?.text   || "Click to start chat",
           lastMessageTime: conv.lastMessage?.createdAt ?? null,
           unreadCount,
         };

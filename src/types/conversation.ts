@@ -28,6 +28,7 @@ export interface Conversation {
     type:string;
     text: string;
     duration?: number;
+    fileSize?: number;
     createdAt: string;
   };
 }

@@ -34,6 +34,7 @@ import TypingIndicator from "./typing-indicator";
 import { useOnlineUsers } from "@/socket-hook/socket";
 import dynamic from "next/dynamic";
 import VoiceRecorder, { VoiceRecorderHandle } from "./voice-recoder";
+import DocumentPreview from "./document-preview";
 
 // Dynamically import emoji picker for performance
 const Picker = dynamic(() => import("emoji-picker-react"), { ssr: false });
@@ -53,22 +54,30 @@ export default function ChatWindow({
   const [isRecording, setIsRecording] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isSendingFile, setIsSendingFile] = useState(false);
+
+    const [selectedFile, setSelectedFile] = useState<{
+    url: string;
+    name: string;
+    size: number;
+  } | null>(null);
+
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useSocketChat(selectedChat?.id);
   const { data: currentUser } = useCurrentUser();
   const onlineUsers = useOnlineUsers();
-console.log("onlineuser", onlineUsers);
+  console.log("onlineuser", onlineUsers);
 
   const { data: messages = [], isLoading, isError } = useMessages(
     selectedChat?.id ?? ""
   );
- console.log(selectedChat);
- console.log(messages)
- 
-  
+  console.log(selectedChat);
+  console.log(messages)
+
+
   // console.log(messages);
-  
+
   // const { mutateAsync: sendMessage } = useSendMessage();
 
   const handleTyping = () => {
@@ -89,14 +98,14 @@ console.log("onlineuser", onlineUsers);
       });
     }, 2000);
   };
-    const otherUser = selectedChat?.participants.find(
+  const otherUser = selectedChat?.participants.find(
     (p) => p.user.id !== currentUser?.id
   );
-  
-  console.log("otheruser",otherUser?.user.id);
+
+  console.log("otheruser", otherUser?.user.id);
   console.log("senderId", currentUser?.id);
   console.log("receiverId", otherUser?.user.id);
-  
+
   const handleSendMessage = async (text: string) => {
     if (text.trim() && selectedChat) {
       const socket = getSocket();
@@ -104,7 +113,7 @@ console.log("onlineuser", onlineUsers);
         text,
         conversationId: selectedChat.id,
         type: "TEXT",
-        receiverId: otherUser?.user.id 
+        receiverId: otherUser?.user.id
       });
       setNewMessage("");
     }
@@ -112,31 +121,74 @@ console.log("onlineuser", onlineUsers);
   // Document
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-const { mutateAsync: sendDocumentMutation } = useSendDocument();
+  const { mutateAsync: sendDocumentMutation } = useSendDocument();
 
-const handleDocumentUpload = async (e: any) => {
-  const file = e.target.files?.[0];
-  if (!file || !selectedChat) return;
+  const handleDocumentUpload = async (e: any) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedChat) return;
 
-  const message = await sendDocumentMutation({
-    file,
-    conversationId: selectedChat.id,
-  });
+    // const message = await sendDocumentMutation({
+    //   file,
+    //   conversationId: selectedChat.id,
+    // });
+    const fileUrl = URL.createObjectURL(file); // preview
+    setSelectedFile({
+      url: fileUrl,
+      name: file.name,
+      size: file.size,
+    });
 
-  const socket = getSocket();
-  
-  socket.emit("send_message", {
-    type: "DOCUMENT",
-    mediaUrl: message.mediaUrl,
-    receiverId: otherUser?.user.id,
-    conversationId: selectedChat.id,
-    fileName: message.fileName,
-    fileSize: message.fileSize,
-    fileType: message.fileType,
-  });
-};
+    // Clear input so same file can be selected again if needed
+    e.target.value = "";
 
-  
+    // const socket = getSocket();
+
+    // socket.emit("send_message", {
+    //   type: "DOCUMENT",
+    //   mediaUrl: message.mediaUrl,
+    //   receiverId: otherUser?.user.id,
+    //   conversationId: selectedChat.id,
+    //   fileName: message.fileName,
+    //   fileSize: message.fileSize,
+    //   fileType: message.fileType,
+    // });
+  };
+  const handleSendFile = async (fileData: { url: string; name: string; size: number }) => {
+    if (!selectedChat) return;
+
+    const fileBlob = await fetch(fileData.url).then((res) => res.blob());
+    const file = new File([fileBlob], fileData.name);
+    try {
+      setIsSendingFile(true)
+      const message = await sendDocumentMutation({
+      file,
+      conversationId: selectedChat.id,
+    });
+
+    const socket = getSocket();
+    const otherUser = selectedChat.participants.find(
+      (p) => p.user.id !== currentUser?.id
+    );
+
+    socket.emit("send_message", {
+      type: "DOCUMENT",
+      mediaUrl: message.mediaUrl,
+      receiverId: otherUser?.user.id,
+      conversationId: selectedChat.id,
+      fileName: message.fileName,
+      fileSize: message.fileSize,
+      fileType: message.fileType,
+    });
+
+    setSelectedFile(null); // remove preview
+      
+    } catch (error) {
+      
+    }
+    
+  };
+
+
 
   const startRecording = () => {
     recorderRef.current?.startRecording();
@@ -167,12 +219,12 @@ const handleDocumentUpload = async (e: any) => {
   }
 
   console.log("Other user ID (string):", String(otherUser?.user.id));
-console.log("OnlineUsers:", Array.from(onlineUsers));
+  console.log("OnlineUsers:", Array.from(onlineUsers));
 
 
   const isOtherUserOnline = otherUser
-  ? onlineUsers.has(otherUser.user.id)
-  : false;
+    ? onlineUsers.has(otherUser.user.id)
+    : false;
   console.log("isOtherUserOnline:", isOtherUserOnline);
 
   return (
@@ -193,21 +245,21 @@ console.log("OnlineUsers:", Array.from(onlineUsers));
               <ArrowLeft />
             </IconButton>
           )}
-            <Box position="relative" display="inline-block">
-  <Avatar>{otherUser?.user.userName[0]}</Avatar>
-  <Box
-    sx={{
-      position: "absolute",
-      bottom: 2,
-      right: 2,
-      width: 10,
-      height: 10,
-      borderRadius: "50%",
-      bgcolor: isOtherUserOnline ? "green" : "grey.400",
-      border: "2px solid white", // adds a border to separate dot from avatar
-    }}
-  />
-</Box>
+          <Box position="relative" display="inline-block">
+            <Avatar>{otherUser?.user.userName[0]}</Avatar>
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: 2,
+                right: 2,
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                bgcolor: isOtherUserOnline ? "green" : "grey.400",
+                border: "2px solid white", // adds a border to separate dot from avatar
+              }}
+            />
+          </Box>
 
           {/* <Avatar>{otherUser?.user.userName[0]}</Avatar> */}
           <Box>
@@ -266,7 +318,7 @@ console.log("OnlineUsers:", Array.from(onlineUsers));
               fileSize={message.fileSize}
               isRead={message.isRead}
               isSender={message.sender.id === currentUser.id}
-              // isSender={message.senderId === currentUser.id}
+            // isSender={message.senderId === currentUser.id}
             />
           ))
         )}
@@ -277,6 +329,21 @@ console.log("OnlineUsers:", Array.from(onlineUsers));
         ref={recorderRef}
         conversationId={selectedChat.id}
       />
+
+      {/* {selectedFile && ( */}
+
+ {selectedFile && (
+  <DocumentPreview
+    fileUrl={selectedFile.url}
+    fileName={selectedFile.name}
+    fileSize={selectedFile.size}
+    onSend={() => handleSendFile(selectedFile)}
+    onCancel={() => setSelectedFile(null)}
+  />
+)}
+
+      {/* )} */}
+
 
       {/* Chat Input */}
       <Box
@@ -313,16 +380,16 @@ console.log("OnlineUsers:", Array.from(onlineUsers));
           <Paperclip />
         </IconButton> */}
         {/* Document Upload */}
-<input
-  ref={fileInputRef}
-  type="file"
-  hidden
-  onChange={handleDocumentUpload}
-/>
+        <input
+          ref={fileInputRef}
+          type="file"
+          hidden
+          onChange={handleDocumentUpload}
+        />
 
-<IconButton onClick={() => fileInputRef.current?.click()}>
-  <Paperclip />
-</IconButton>
+        <IconButton onClick={() => fileInputRef.current?.click()}>
+          <Paperclip />
+        </IconButton>
 
         <TextField
           fullWidth

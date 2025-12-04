@@ -85,33 +85,35 @@ export default function MessageBubble({
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
   function formatFileSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-  return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
-}
-const downloadFile = async () => {
-  if (!mediaUrl) return;
-
-  try {
-    const response = await fetch(mediaUrl);
-    console.log(response);
-    
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName ?? "file.jpg"; // fallback filename
-    link.click();
-
-    // Clean up
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error("Download failed:", err);
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
   }
-};
+  // const downloadFile = async () => {
+  //   if (!mediaUrl) return;
 
+  //   try {
+  //     const response = await fetch(mediaUrl);
+  //     console.log(response);
+
+  //     const blob = await response.blob();
+  //     const url = URL.createObjectURL(blob);
+
+  //     const link = document.createElement("a");
+  //     link.href = url;
+  //     link.download = fileName ?? "file.jpg"; // fallback filename
+  //     link.click();
+
+  //     // Clean up
+  //     URL.revokeObjectURL(url);
+  //   } catch (err) {
+  //     console.error("Download failed:", err);
+  //   }
+  // };
+
+
+  // const downloadableUrl = mediaUrl?.replace("/image/upload", "/raw/upload");
 
 
   console.log("from document ", fileSize, fileName);
@@ -124,7 +126,7 @@ const downloadFile = async () => {
       flexDirection="column"
       alignItems={isSender ? "flex-end" : "flex-start"}
     >
-      {(type === 'TEXT' && text) || (type === 'VOICE' && mediaUrl) || (type === 'DOCUMENT' && mediaUrl) ? (
+      {(type === 'TEXT' && text) || (type === 'VOICE' && mediaUrl) ? (
 
         <Box
           sx={{
@@ -143,50 +145,7 @@ const downloadFile = async () => {
             </Typography>
           )}
           {/* DOCUMENT */}
-          {type === "DOCUMENT" && (
-            <Box
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                cursor: "pointer"
-              }}
-              // onClick={() => window.open(mediaUrl, "_blank")}
-            >
-              <Box
-                component="img"
-                src={mediaUrl}
-                alt="document"
-                sx={{
-                  width: 200,          
-                  height: 200,         
-                  objectFit: "cover", 
-                  borderRadius: 2,
-                  mt: 1,
-                  cursor: "pointer",
-                }} />
-              <Typography>{fileName}</Typography>
-              <Typography fontSize={12}>{formatFileSize(fileSize!)}</Typography>
 
-              <FileText size={22} />
-                
-    {/* Download Button */}
-    {/* <a
-      href={mediaUrl}
-      download={fileName ?? "file.jpg"}
-      style={{
-        textDecoration: "none",
-        display: "flex",
-        alignItems: "center",
-        gap: "5px",
-        marginTop: "8px",
-        color: "inherit",
-      }}
-    >
-      <Download size={20} />
-      <Typography fontSize={14}>Download</Typography>
-    </a> */}
-            </Box>
-          )}
 
 
           {/* VOICE MESSAGE */}
@@ -207,6 +166,7 @@ const downloadFile = async () => {
                       : theme.palette.secondary.main,
                 }} />}
               </IconButton>
+
 
               {/* Waveform Bars */}
               <Box
@@ -240,6 +200,48 @@ const downloadFile = async () => {
           )}
         </Box>
       ) : null}
+      {type === "DOCUMENT" && (
+        <Box
+          sx={{
+            // p: 2,
+            // borderRadius: 2,
+            // pointerEvents:"none"
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            ml: 2,
+            mb: 2,
+            border: `1px solid ${theme.palette.mode === "light"
+              ? theme.palette.secondary.main
+              : theme.palette.secondary.contrastText}`,
+
+            borderRadius: 2,
+            maxWidth: 250,
+            gap: 1,
+          }}
+        >
+          <Box
+            component="img"
+            src={mediaUrl}
+            alt="document"
+            sx={{
+              width: 250,
+              height: 200,
+              objectFit: "cover",
+              borderRadius: 2,
+              // mt: 1,
+              cursor: "pointer",
+            }} />
+          <Typography>{fileName}</Typography>
+          <Typography fontSize={12}>{formatFileSize(fileSize!)}</Typography>
+
+          <FileText size={22} />
+
+          {/* Download Button */}
+        </Box>
+
+
+      )}
 
       <Typography
         variant="body2"
