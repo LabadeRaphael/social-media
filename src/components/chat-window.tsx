@@ -183,8 +183,10 @@ export default function ChatWindow({
     setSelectedFile(null); // remove preview
       
     } catch (error) {
-      
-    }
+          console.error("Failed to send file:", error.message);
+    }finally {
+    setIsSendingFile(false); // stop loading
+  }
     
   };
 
@@ -339,6 +341,7 @@ export default function ChatWindow({
     fileSize={selectedFile.size}
     onSend={() => handleSendFile(selectedFile)}
     onCancel={() => setSelectedFile(null)}
+     isSending={isSendingFile}
   />
 )}
 

@@ -117,7 +117,18 @@ export default function MessageBubble({
 
 
   console.log("from document ", fileSize, fileName);
+  const getFileType = (name: string) => {
+    const ext = name?.split(".").pop()?.toLowerCase();
+    console.log("fileType", ext);
+    if (!ext) return "unknown";
 
+    if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return "image";
+    if (["mp3", "wav", "ogg"].includes(ext)) return "audio";
+    if (["mp4", "mov", "webm"].includes(ext)) return "video";
+    if (["pdf", "docx"].includes(ext)) return "pdf";
+    return "other";
+  };
+  const fileType = getFileType(fileName);
 
   return (
     <Box
@@ -203,9 +214,6 @@ export default function MessageBubble({
       {type === "DOCUMENT" && (
         <Box
           sx={{
-            // p: 2,
-            // borderRadius: 2,
-            // pointerEvents:"none"
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -220,7 +228,7 @@ export default function MessageBubble({
             gap: 1,
           }}
         >
-          <Box
+          {/* <Box
             component="img"
             src={mediaUrl}
             alt="document"
@@ -231,7 +239,65 @@ export default function MessageBubble({
               borderRadius: 2,
               // mt: 1,
               cursor: "pointer",
-            }} />
+            }} /> */}
+            {/* Preview based on type */}
+      <Box
+        sx={{
+          width: 250,
+          height: 200,
+          borderRadius: 2,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          // backgroundColor: "#f5f5f5",
+          backgroundColor: `${theme.palette.mode === "light"
+            ? theme.palette.secondary.main
+            : theme.palette.secondary.contrastText}`,
+          overflow: "hidden",
+        }}
+      >
+        {fileType === "image" && (
+          <Box
+            component="img"
+            src={mediaUrl}
+            alt={fileName}
+            sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        )}
+
+        {fileType === "audio" && (
+          <audio controls style={{ width: "100%" }}>
+            <source src={mediaUrl} />
+            Your browser does not support the audio element.
+          </audio>
+        )}
+
+        {fileType === "video" && (
+          <video controls style={{ width: "100%", height: "100%" }}>
+            <source src={mediaUrl} />
+            Your browser does not support the video element.
+          </video>
+        )}
+
+        {fileType === "pdf" && (
+          <Box sx={{
+            textAlign: "center",
+            color: `${theme.palette.mode === "light"
+              ? theme.palette.secondary.contrastText
+              : theme.palette.secondary.main}`
+          }}>
+            <FileText size={48} />
+            <Typography variant="subtitle2">PDF Preview</Typography>
+          </Box>
+        )}
+
+        {fileType === "other" && (
+          <Box sx={{ textAlign: "center" }}>
+            <FileText size={48} />
+            <Typography variant="subtitle2">Preview Not Available</Typography>
+          </Box>
+        )}
+      </Box>
           <Typography>{fileName}</Typography>
           <Typography fontSize={12}>{formatFileSize(fileSize!)}</Typography>
 
