@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography, IconButton, Tooltip } from "@mui/material";
-import { FileText, X, Check, Loader2 } from "lucide-react"; // X = cancel, Check = send
+import { FileText, X, Check, Loader2 } from "lucide-react"; 
 import { useTheme } from "@mui/material/styles";
 interface PreviewDocumentProps {
   fileUrl: string;
@@ -40,6 +40,9 @@ export default function DocumentPreview({
   };
   const fileType = getFileType(fileName);
   console.log("fileType", fileType);
+
+
+
   const shortenFileName = (name: string, maxLength: number = 20) => {
     const ext = name.split(".").pop();
     const baseName = name.replace(`.${ext}`, "");

@@ -2,8 +2,7 @@
 
 import { Box, Typography, IconButton } from "@mui/material";
 import moment from "moment";
-import { CheckCheck, Play, Pause, FileText, Download } from "lucide-react";
-
+import { CheckCheck, Play, Pause, FileText,  FileImage, FileMusic, FileVideo, File,Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@mui/material/styles";
 interface MessageBubbleProps {
@@ -117,7 +116,7 @@ export default function MessageBubble({
 
 
   console.log("from document ", fileSize, fileName);
-  const getFileType = (name: string) => {
+  const getFileType = (name?: string) => {
     const ext = name?.split(".").pop()?.toLowerCase();
     console.log("fileType", ext);
     if (!ext) return "unknown";
@@ -129,7 +128,23 @@ export default function MessageBubble({
     return "other";
   };
   const fileType = getFileType(fileName);
+  const getFileIcon = (fileName?: string) => {
+  
+    const ext = fileName?.split(".").pop()?.toLowerCase();
+    console.log("ext",fileName);
+    console.log("ext",ext);
+    
+    if (!ext) return File;
 
+    if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return FileImage;
+    if (["mp3", "wav", "ogg"].includes(ext)) return FileMusic;
+    if (["mp4", "mov", "webm"].includes(ext)) return FileVideo;
+    if (["pdf", "docx"].includes(ext)) return FileText;
+    return File; // fallback for unknown types
+  };
+  const FileIcon = getFileIcon(fileName);
+  console.log("fileIcon",FileIcon);
+  
   return (
     <Box
       mb={2}
@@ -240,68 +255,68 @@ export default function MessageBubble({
               // mt: 1,
               cursor: "pointer",
             }} /> */}
-            {/* Preview based on type */}
-      <Box
-        sx={{
-          width: 250,
-          height: 200,
-          borderRadius: 2,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          // backgroundColor: "#f5f5f5",
-          backgroundColor: `${theme.palette.mode === "light"
-            ? theme.palette.secondary.main
-            : theme.palette.secondary.contrastText}`,
-          overflow: "hidden",
-        }}
-      >
-        {fileType === "image" && (
+          {/* Preview based on type */}
           <Box
-            component="img"
-            src={mediaUrl}
-            alt={fileName}
-            sx={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-        )}
+            sx={{
+              width: 250,
+              height: 200,
+              borderRadius: 2,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              // backgroundColor: "#f5f5f5",
+              backgroundColor: `${theme.palette.mode === "light"
+                ? theme.palette.secondary.main
+                : theme.palette.secondary.contrastText}`,
+              overflow: "hidden",
+            }}
+          >
+            {fileType === "image" && (
+              <Box
+                component="img"
+                src={mediaUrl}
+                alt={fileName}
+                sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            )}
 
-        {fileType === "audio" && (
-          <audio controls style={{ width: "100%" }}>
-            <source src={mediaUrl} />
-            Your browser does not support the audio element.
-          </audio>
-        )}
+            {fileType === "audio" && (
+              <audio controls style={{ width: "100%" }}>
+                <source src={mediaUrl} />
+                Your browser does not support the audio element.
+              </audio>
+            )}
 
-        {fileType === "video" && (
-          <video controls style={{ width: "100%", height: "100%" }}>
-            <source src={mediaUrl} />
-            Your browser does not support the video element.
-          </video>
-        )}
+            {fileType === "video" && (
+              <video controls style={{ width: "100%", height: "100%" }}>
+                <source src={mediaUrl} />
+                Your browser does not support the video element.
+              </video>
+            )}
 
-        {fileType === "pdf" && (
-          <Box sx={{
-            textAlign: "center",
-            color: `${theme.palette.mode === "light"
-              ? theme.palette.secondary.contrastText
-              : theme.palette.secondary.main}`
-          }}>
-            <FileText size={48} />
-            <Typography variant="subtitle2">PDF Preview</Typography>
+            {fileType === "pdf" && (
+              <Box sx={{
+                textAlign: "center",
+                color: `${theme.palette.mode === "light"
+                  ? theme.palette.secondary.contrastText
+                  : theme.palette.secondary.main}`
+              }}>
+                <FileIcon size={48} />
+                <Typography variant="subtitle2">PDF Preview</Typography>
+              </Box>
+            )}
+
+            {fileType === "other" && (
+              <Box sx={{ textAlign: "center" }}>
+                <FileIcon size={48} />
+                <Typography variant="subtitle2">Preview Not Available</Typography>
+              </Box>
+            )}
           </Box>
-        )}
-
-        {fileType === "other" && (
-          <Box sx={{ textAlign: "center" }}>
-            <FileText size={48} />
-            <Typography variant="subtitle2">Preview Not Available</Typography>
-          </Box>
-        )}
-      </Box>
           <Typography>{fileName}</Typography>
           <Typography fontSize={12}>{formatFileSize(fileSize!)}</Typography>
 
-          <FileText size={22} />
+          <FileIcon size={22} />
 
           {/* Download Button */}
         </Box>
