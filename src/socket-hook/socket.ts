@@ -47,6 +47,12 @@ export const useOnlineUsers = () => {
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return
+    const interval = setInterval(() => {
+    socket.emit('heartbeat');
+    console.log("see heartbeat");
+    
+  }, 10000); // every 10 seconds
+
     const handleOnlineUsers = (userIds: string[]) => {
       console.log("Updated online users:", userIds);
       setOnlineUsers(new Set(userIds));
@@ -55,6 +61,7 @@ export const useOnlineUsers = () => {
     socket.on("online_users", handleOnlineUsers);
 
     return () => {
+      clearInterval(interval)
       socket.off("online_users", handleOnlineUsers);
     };
   }, []);

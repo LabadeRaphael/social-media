@@ -14,6 +14,7 @@ import {
   ListItemText,
   ListItemButton,
   CircularProgress,
+  colors,
 } from "@mui/material";
 import { Search, MoreVertical, MessageCircle, Mic } from "lucide-react";
 import Image from "next/image";
@@ -63,13 +64,7 @@ export default function Sidebar() {
     isLoading: isLoadingConversations,
     error: conversationsError,
   } = useAllConversations();
-  const onlineUsers = useOnlineUsers();
-  const otherUser = selectedChat?.participants.find(
-    (p) => p.user.id !== currentUser?.id
-  );
-  const isOtherUserOnline = otherUser
-    ? onlineUsers.has(otherUser.user.id)
-    : false;
+
 
   // search input
   const handleSearchChange = useCallback(
@@ -79,12 +74,14 @@ export default function Sidebar() {
     },
     [debouncedHandler]
   );
-    function formatFileSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-  return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
-}
+  function formatFileSize(bytes: number) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+  }
+  const onlineUsers = useOnlineUsers();
+
   // errors
   useEffect(() => {
     if (conversationsError) {
@@ -95,58 +92,6 @@ export default function Sidebar() {
     }
   }, [conversationsError, usersError, searchTerm]);
 
-  // format conversations
-  // const displayConversations = useMemo(() => {
-
-  //   if (searchTerm && users.length > 0) {
-  //     return users.map((user: User) => {
-  //       const conv = (conversations as Conversation[]).find(
-  //         c =>
-  //           c.participants.some(p => p.user.id === currentUser?.id) &&
-  //           c.participants.some(p => p.user.id === user.id)
-  //       );
-
-  //       const unreadCount = conv?.participants.find(p => p.user.id === currentUser?.id)?.unreadCount || 0;
-  //       const lastMessageText = conv?.lastMessage?.text || "Click to start chat";
-  //       const lastMessageTime = conv?.lastMessage?.createdAt || null;
-
-  //       return {
-  //         type: "user",
-  //         id: user.id,
-  //         userName: user.userName,
-  //         lastMessageText,
-  //         lastMessageTime,
-  //         unreadCount
-  //       };
-  //     });
-  //   }
-
-
-  //   return (conversations as Conversation[]).map((conv) => {
-  //     // const participant = conv.participants.find(p => p.user.id === currentUser?.id);
-  //     // console.log(participant);
-  //     const myParticipant = conv.participants.find(p => p.user.id === currentUser?.id);
-  //     // const otherParticipant = conv.participants.find(p => p.user.id !== currentUser?.id);
-
-  //     const unreadCount = myParticipant?.unreadCount ?? 0;
-  //     console.log(unreadCount);
-
-  //     const otherUser = conv.participants
-  //       .map((p) => p.user)
-  //       .find((u) => u.id !== currentUser?.id);
-  //     console.log("oheruser", otherUser);
-
-
-  //     return {
-  //       type: "conversation",
-  //       id: conv.id,
-  //       userName: otherUser?.userName ?? "Unknown",
-  //       lastMessageText: conv.lastMessage?.text ?? "Click to start chat",
-  //       lastMessageTime: conv.lastMessage?.createdAt ?? null,
-  //       unreadCount,
-  //     };
-  //   });
-  // }, [conversations, users, searchTerm, currentUser]);
   const displayConversations = useMemo(() => {
     let convs: {
       type: "user" | "conversation";
@@ -199,7 +144,13 @@ export default function Sidebar() {
           .map(p => p.user)
           .find(u => u.id !== currentUser?.id);
         console.log("The conv", conv);
-
+       console.log(otherUser);
+        const isOnline = otherUser
+          ? onlineUsers.has(otherUser?.id)
+          : false;
+          console.log("The other user", otherUser);
+          console.log("isOnline",isOnline);
+          
         return {
           type: "conversation",
           id: conv.id,
@@ -207,10 +158,11 @@ export default function Sidebar() {
           lastMessage: conv.lastMessage,
           lastMessagePreview:
             conv.lastMessage?.type === "VOICE"
-              ? <Box display="flex" alignItems="center" fontWeight={"bold"}  gap={1}><Mic size={16} />Voice messae {formatDuration(conv.lastMessage.duration)}</Box>
-              : conv.lastMessage?.type === "DOCUMENT" ? <Box display="flex" alignItems="center" fontWeight={"bold"}  gap={1}>Document { formatFileSize(conv.lastMessage.fileSize)}<Mic size={16} /></Box>: conv.lastMessage?.text   || "Click to start chat",
+              ? <Box display="flex" alignItems="center" fontWeight={"bold"} gap={1}><Mic size={16} />Voice messae {formatDuration(conv.lastMessage.duration)}</Box>
+              : conv.lastMessage?.type === "DOCUMENT" ? <Box display="flex" alignItems="center" fontWeight={"bold"} gap={1}>Document {formatFileSize(conv.lastMessage.fileSize)}<Mic size={16} /></Box> : conv.lastMessage?.text || "Click to start chat",
           lastMessageTime: conv.lastMessage?.createdAt ?? null,
           unreadCount,
+          isOnline
         };
       });
     }
@@ -223,7 +175,7 @@ export default function Sidebar() {
     });
 
     return convs;
-  }, [conversations, users, searchTerm, currentUser]);
+  }, [conversations, users, searchTerm, currentUser, onlineUsers]);
 
   // selection
   const { mutateAsync } = useCreateConversation()
@@ -269,6 +221,7 @@ export default function Sidebar() {
     },
     [dispatch, conversations, currentUser, mutateAsync, resetUnread]
   );
+  // const color = isOtherUserOnline === null ? "gray" : (isOtherUserOnline ? "green" : "red");
 
   return (
     <Box
@@ -361,8 +314,10 @@ export default function Sidebar() {
             </Typography>
           </Box>
         ) : (
-          displayConversations.map((conv) => (
-            <ListItem key={conv.id} disablePadding>
+          displayConversations.map((conv) => {
+              const { isOnline } = conv;
+            return (
+              <ListItem key={conv.id} disablePadding>
               <ListItemButton
                 selected={selectedChat?.id === conv.id}
                 onClick={() => {
@@ -398,6 +353,7 @@ export default function Sidebar() {
                         fontSize: "1rem",
                       }}
                     > {conv.userName[0]?.toUpperCase()}</Avatar>
+
                     <Box
                       sx={{
                         position: "absolute",
@@ -406,7 +362,8 @@ export default function Sidebar() {
                         width: 10,
                         height: 10,
                         borderRadius: "50%",
-                        bgcolor: isOtherUserOnline ? "green" : "red",
+                        bgcolor: isOnline ? "green": "red",
+
                         border: "2px solid white", // adds a border to separate dot from avatar
                       }}
                     />
@@ -470,7 +427,8 @@ export default function Sidebar() {
 
               </ListItemButton>
             </ListItem>
-          ))
+          )
+          })
         )}
       </List>
     </Box>
