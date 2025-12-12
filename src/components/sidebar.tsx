@@ -26,13 +26,20 @@ import { setSelectedChat } from "@/redux/chats-slice";
 import toast from "react-hot-toast";
 import type { RootState } from "@/redux/store";
 import { Conversation } from "@/types/conversation";
+import { Drawer, Button } from "@mui/material";
 import { useOnlineUsers } from "@/socket-hook/socket";
 interface User {
   id: string;
   userName: string;
 }
-export default function Sidebar() {
+interface SidebarProps {
+  setActiveView: (view: 'chat' | 'settings') => void;
+}
+export default function Sidebar({setActiveView }: SidebarProps) {
   const [searchTerm, setSearchTerm] = useState<string>("");
+  // const [openProfile, setOpenProfile] = useState(false);
+// const [activeView, setActiveView] = useState<'chat' | 'settings'>('chat');
+
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const dispatch = useDispatch();
   const selectedChat = useSelector(
@@ -144,13 +151,13 @@ export default function Sidebar() {
           .map(p => p.user)
           .find(u => u.id !== currentUser?.id);
         console.log("The conv", conv);
-       console.log(otherUser);
+        console.log(otherUser);
         const isOnline = otherUser
           ? onlineUsers.has(otherUser?.id)
           : false;
-          console.log("The other user", otherUser);
-          console.log("isOnline",isOnline);
-          
+        console.log("The other user", otherUser);
+        console.log("isOnline", isOnline);
+
         return {
           type: "conversation",
           id: conv.id,
@@ -260,11 +267,16 @@ export default function Sidebar() {
           <IconButton size="small" aria-label="Messages">
             <MessageCircle size={20} />
           </IconButton>
-          <IconButton size="small" aria-label="More options">
+          <IconButton size="small" aria-label="More options" onClick={() => setActiveView('settings')}>
             <MoreVertical size={20} />
           </IconButton>
+
         </Box>
       </Box>
+
+  
+
+
 
       {/* Search */}
       <Box p={1.5}>
@@ -315,119 +327,120 @@ export default function Sidebar() {
           </Box>
         ) : (
           displayConversations.map((conv) => {
-              const { isOnline } = conv;
+            const { isOnline } = conv;
             return (
               <ListItem key={conv.id} disablePadding>
-              <ListItemButton
-                selected={selectedChat?.id === conv.id}
-                onClick={() => {
-                  if (conv.type === "user") {
-                    handleSelectChat(conv.id); // search: pass userId
-                  } else {
-                    const existingConv = conversations.find(c => c.id === conv.id);
-                    if (existingConv) {
-                      dispatch(setSelectedChat(existingConv));
-                      markRead(existingConv.id)
-                      resetUnread(existingConv.id); // ✅ Reset unread count immediately
+                <ListItemButton
+                  selected={selectedChat?.id === conv.id}
+                  onClick={() => {
+                    if (conv.type === "user") {
+                      handleSelectChat(conv.id); // search: pass userId
+                    } else {
+                      const existingConv = conversations.find(c => c.id === conv.id);
+                      if (existingConv) {
+                        dispatch(setSelectedChat(existingConv));
+                        setActiveView('chat')
+                        markRead(existingConv.id)
+                        resetUnread(existingConv.id); // ✅ Reset unread count immediately
+                      }
                     }
-                  }
-                }}
-                sx={{
-                  px: 2,
-                  py: 1.5,
-                  "&.Mui-selected": {
-                    backgroundColor: "action.selected",
-                  },
-                  "&:hover": {
-                    backgroundColor: "action.hover",
-                  },
-                }}
-              >
-                <ListItemAvatar sx={{ minWidth: 56 }}>
-                  <Box position="relative" display="inline-block">
-                    <Avatar
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        bgcolor: "primary.main",
-                        fontSize: "1rem",
-                      }}
-                    > {conv.userName[0]?.toUpperCase()}</Avatar>
-
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        bottom: 2,
-                        right: 2,
-                        width: 10,
-                        height: 10,
-                        borderRadius: "50%",
-                        bgcolor: isOnline ? "green": "red",
-
-                        border: "2px solid white", // adds a border to separate dot from avatar
-                      }}
-                    />
-                  </Box>
-                </ListItemAvatar>
-
-                <ListItemText
-                  primary={conv.userName}
-                  secondary={conv.lastMessagePreview}
-                  primaryTypographyProps={{
-                    fontWeight: selectedChat?.id === conv.id ? 600 : 400,
-                    color:
-                      selectedChat?.id === conv.id
-                        ? "primary.main"
-                        : "text.primary",
                   }}
-
-                  secondaryTypographyProps={{
-                    color: "text.secondary",
-                    fontSize: "0.75rem",
-                  }}
-                  sx={{ flex: 1, ml: 1 }}
-                />
-
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
                   sx={{
-                    fontSize: "0.75rem",
-                    whiteSpace: "nowrap",
-                    ml: 1,
+                    px: 2,
+                    py: 1.5,
+                    "&.Mui-selected": {
+                      backgroundColor: "action.selected",
+                    },
+                    "&:hover": {
+                      backgroundColor: "action.hover",
+                    },
                   }}
                 >
-                  {conv.lastMessageTime
-                    ? new Date(conv.lastMessageTime).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                    : "--:--"}
+                  <ListItemAvatar sx={{ minWidth: 56 }}>
+                    <Box position="relative" display="inline-block">
+                      <Avatar
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          bgcolor: "primary.main",
+                          fontSize: "1rem",
+                        }}
+                      > {conv.userName[0]?.toUpperCase()}</Avatar>
 
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          bottom: 2,
+                          right: 2,
+                          width: 10,
+                          height: 10,
+                          borderRadius: "50%",
+                          bgcolor: isOnline ? "green" : "red",
 
-                </Typography>
-                {conv.unreadCount > 0 && (
-                  <Box
+                          border: "2px solid white", // adds a border to separate dot from avatar
+                        }}
+                      />
+                    </Box>
+                  </ListItemAvatar>
+
+                  <ListItemText
+                    primary={conv.userName}
+                    secondary={conv.lastMessagePreview}
+                    primaryTypographyProps={{
+                      fontWeight: selectedChat?.id === conv.id ? 600 : 400,
+                      color:
+                        selectedChat?.id === conv.id
+                          ? "primary.main"
+                          : "text.primary",
+                    }}
+
+                    secondaryTypographyProps={{
+                      color: "text.secondary",
+                      fontSize: "0.75rem",
+                    }}
+                    sx={{ flex: 1, ml: 1 }}
+                  />
+
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
                     sx={{
-                      backgroundColor: "primary.main",
-                      color: "white",
-                      borderRadius: "50%",
-                      fontSize: "0.7rem",
-                      minWidth: 22,
-                      height: 22,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      fontSize: "0.75rem",
+                      whiteSpace: "nowrap",
                       ml: 1,
                     }}
                   >
-                    {conv.unreadCount}
-                  </Box>
-                )}
+                    {conv.lastMessageTime
+                      ? new Date(conv.lastMessageTime).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                      : "--:--"}
 
-              </ListItemButton>
-            </ListItem>
-          )
+
+                  </Typography>
+                  {conv.unreadCount > 0 && (
+                    <Box
+                      sx={{
+                        backgroundColor: "primary.main",
+                        color: "white",
+                        borderRadius: "50%",
+                        fontSize: "0.7rem",
+                        minWidth: 22,
+                        height: 22,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        ml: 1,
+                      }}
+                    >
+                      {conv.unreadCount}
+                    </Box>
+                  )}
+
+                </ListItemButton>
+              </ListItem>
+            )
           })
         )}
       </List>

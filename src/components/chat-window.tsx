@@ -8,6 +8,7 @@ import {
   Avatar,
   Tooltip,
   CircularProgress,
+  Button,
 } from "@mui/material";
 import {
   ArrowLeft,
@@ -17,7 +18,13 @@ import {
   Square,
   Paperclip,
   Mic,
+  ChevronLeft,
+
 } from "lucide-react";
+import { Menu, MenuItem } from "@mui/material";
+import { Ban, Trash2 } from "lucide-react";
+import Settings from "@/components/settings"
+
 import MessageBubble from "./message-bubble";
 import { useRef, useState } from "react";
 import {
@@ -36,6 +43,12 @@ import dynamic from "next/dynamic";
 import VoiceRecorder, { VoiceRecorderHandle } from "./voice-recoder";
 import DocumentPreview from "./document-preview";
 
+
+
+
+
+
+
 // Dynamically import emoji picker for performance
 const Picker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
@@ -43,12 +56,16 @@ interface ChatWindowProps {
   selectedChat: Conversation | null;
   onBack: () => void;
   isMobile: boolean;
+  activeView: 'chat' | 'settings';
+  setActiveView: (view: 'chat' | 'settings') => void;
 }
 
 export default function ChatWindow({
   selectedChat,
   onBack,
   isMobile,
+  activeView,
+  setActiveView
 }: ChatWindowProps) {
   const recorderRef = useRef<VoiceRecorderHandle>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -56,11 +73,39 @@ export default function ChatWindow({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isSendingFile, setIsSendingFile] = useState(false);
 
-    const [selectedFile, setSelectedFile] = useState<{
+  const [selectedFile, setSelectedFile] = useState<{
     url: string;
     name: string;
     size: number;
   } | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false);
+
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleBlockUser = () => {
+    // call your mutation here
+    // blockUserMutation.mutate({
+    //   userId: currentUser?.id,
+    //   targetUserId: otherUser?.user.id,
+    // });
+    handleMenuClose();
+  };
+
+
+
+
+
+
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -161,33 +206,33 @@ export default function ChatWindow({
     try {
       setIsSendingFile(true)
       const message = await sendDocumentMutation({
-      file,
-      conversationId: selectedChat.id,
-    });
+        file,
+        conversationId: selectedChat.id,
+      });
 
-    const socket = getSocket();
-    const otherUser = selectedChat.participants.find(
-      (p) => p.user.id !== currentUser?.id
-    );
+      const socket = getSocket();
+      const otherUser = selectedChat.participants.find(
+        (p) => p.user.id !== currentUser?.id
+      );
 
-    socket.emit("send_message", {
-      type: "DOCUMENT",
-      mediaUrl: message.mediaUrl,
-      receiverId: otherUser?.user.id,
-      conversationId: selectedChat.id,
-      fileName: message.fileName,
-      fileSize: message.fileSize,
-      fileType: message.fileType,
-    });
+      socket.emit("send_message", {
+        type: "DOCUMENT",
+        mediaUrl: message.mediaUrl,
+        receiverId: otherUser?.user.id,
+        conversationId: selectedChat.id,
+        fileName: message.fileName,
+        fileSize: message.fileSize,
+        fileType: message.fileType,
+      });
 
-    setSelectedFile(null); // remove preview
-      
+      setSelectedFile(null); // remove preview
+
     } catch (error) {
-          console.error("Failed to send file:", error.message);
-    }finally {
-    setIsSendingFile(false); // stop loading
-  }
-    
+      console.error("Failed to send file:", error.message);
+    } finally {
+      setIsSendingFile(false); // stop loading
+    }
+
   };
 
 
@@ -202,7 +247,7 @@ export default function ChatWindow({
     setIsRecording(false);
   };
 
-  if (!selectedChat) {
+  if (!selectedChat && activeView!="settings") {
     return (
       <Box
         flex={1}
@@ -230,195 +275,383 @@ export default function ChatWindow({
   console.log("isOtherUserOnline:", isOtherUserOnline);
 
   return (
-    <Box flex={1} display="flex" flexDirection="column">
-      {/* Chat Header */}
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        p={2}
-        bgcolor="background.paper"
-        borderBottom="1px solid"
-        borderColor="divider"
-      >
-        <Box display="flex" alignItems="center" gap={2}>
-          {isMobile && (
-            <IconButton onClick={onBack}>
-              <ArrowLeft />
-            </IconButton>
-          )}
-          <Box position="relative" display="inline-block">
-            <Avatar>{otherUser?.user.userName[0]}</Avatar>
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: 2,
-                right: 2,
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
-                bgcolor: isOtherUserOnline ? "green" : "grey.400",
-                border: "2px solid white", // adds a border to separate dot from avatar
-              }}
-            />
-          </Box>
+    <>
+      {activeView === 'chat' &&
+        <Box flex={1} display="flex" flexDirection="column">
+          {/* Chat Header */}
 
-          {/* <Avatar>{otherUser?.user.userName[0]}</Avatar> */}
-          <Box>
-            <Typography variant="subtitle1">
-              {otherUser?.user.userName ?? "Unknown User"}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {isOtherUserOnline ? "Online" : "Offline"}
-            </Typography>
-            <TypingIndicator
-              conversationId={selectedChat?.id}
-              currentUserId={currentUser?.id}
-            />
-          </Box>
-        </Box>
-        <Box>
-          <IconButton>
-            <Search />
-          </IconButton>
-          <ThemeSwitcher />
-          <IconButton>
-            <MoreVertical />
-          </IconButton>
-        </Box>
-      </Box>
-
-      {/* Messages */}
-      <Box flex={1} p={2} overflow="auto" bgcolor="background.default">
-        {isLoading ? (
-          <Box display="flex" justifyContent="center" p={2}>
-            <CircularProgress size={24} />
-          </Box>
-        ) : isError ? (
-          <Typography color="error">Failed to load messages</Typography>
-        ) : messages.length === 0 ? (
           <Box
             display="flex"
-            justifyContent="center"
             alignItems="center"
-            height="100%"
-            flexDirection="column"
-            color="text.secondary"
+            justifyContent="space-between"
+            p={2}
+            bgcolor="background.paper"
+            borderBottom="1px solid"
+            borderColor="divider"
           >
-            <Typography variant="body2">No messages yet</Typography>
-            <Typography variant="caption">Start the conversation 👋</Typography>
+            <Box display="flex" alignItems="center" gap={2}>
+              {isMobile && (
+                <IconButton onClick={onBack}>
+                  <ArrowLeft />
+                </IconButton>
+              )}
+              <Box position="relative" display="inline-block">
+                <Avatar>{otherUser?.user.userName[0]}</Avatar>
+                <Box
+                  sx={{
+                    position: "absolute",
+                    bottom: 2,
+                    right: 2,
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    bgcolor: isOtherUserOnline ? "green" : "grey.400",
+                    border: "2px solid white", // adds a border to separate dot from avatar
+                  }}
+                />
+              </Box>
+
+              {/* <Avatar>{otherUser?.user.userName[0]}</Avatar> */}
+              <Box>
+                <Typography variant="subtitle1">
+                  {otherUser?.user.userName ?? "Unknown User"}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {isOtherUserOnline ? "Online" : "Offline"}
+                </Typography>
+                <TypingIndicator
+                  conversationId={selectedChat?.id}
+                  currentUserId={currentUser?.id}
+                />
+              </Box>
+            </Box>
+            <Box>
+              <IconButton>
+                <Search />
+              </IconButton>
+              <ThemeSwitcher />
+              <IconButton onClick={handleMenuOpen}>
+                <MoreVertical />
+              </IconButton>
+
+              <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+                <MenuItem
+                  onClick={() => {
+                    setShowBlockModal(true);
+                    handleMenuClose();
+                  }}
+                >
+                  <Ban size={18} style={{ marginRight: 8 }} />
+                  Block User
+                </MenuItem>
+
+                <MenuItem
+                  onClick={() => {
+                    setShowClearModal(true);
+                    handleMenuClose();
+                  }}
+                >
+                  <Trash2 size={18} style={{ marginRight: 8 }} />
+                  Clear Chat
+                </MenuItem>
+              </Menu>
+              {showBlockModal && (
+                <Box
+                  sx={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: "100vw",
+                    height: "100vh",
+                    bgcolor: "rgba(0,0,0,0.5)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    zIndex: 2000,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      bgcolor: "background.paper",
+                      p: 3,
+                      borderRadius: 2,
+                      width: "90%",
+                      maxWidth: 400,
+                    }}
+                  >
+                    <Typography variant="h6" mb={1}>
+                      Block User?
+                    </Typography>
+                    <Typography variant="body2" mb={2}>
+                      You will no longer receive messages from this user.
+                    </Typography>
+
+                    <Box display="flex" justifyContent="flex-end" gap={2}>
+                      <button
+                        onClick={() => setShowBlockModal(false)}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "6px",
+                          background: "#ccc",
+                          border: "none",
+                        }}
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          handleBlockUser();
+                          setShowBlockModal(false);
+                        }}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "6px",
+                          background: "red",
+                          color: "white",
+                          border: "none",
+                        }}
+                      >
+                        Block
+                      </button>
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+              {showClearModal && (
+                <Box
+                  sx={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: "100vw",
+                    height: "100vh",
+                    bgcolor: "rgba(0,0,0,0.5)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    zIndex: 2000,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      bgcolor: "background.paper",
+                      p: 3,
+                      borderRadius: 2,
+                      width: "90%",
+                      maxWidth: 400,
+                    }}
+                  >
+                    <Typography variant="h6" mb={1}>
+                      Clear Chat?
+                    </Typography>
+                    <Typography variant="body2" mb={2}>
+                      This will delete all messages in this conversation.
+                    </Typography>
+
+                    <Box display="flex" justifyContent="flex-end" gap={2}>
+                      <button
+                        onClick={() => setShowClearModal(false)}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "6px",
+                          background: "#ccc",
+                          border: "none",
+                        }}
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          // TODO: add your clear chat mutation here
+                          console.log("Chat cleared");
+                          setShowClearModal(false);
+                        }}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "6px",
+                          background: "red",
+                          color: "white",
+                          border: "none",
+                        }}
+                      >
+                        Clear Chat
+                      </button>
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+
+
+            </Box>
           </Box>
-        ) : (
-          messages.map((message: any) => (
-            <MessageBubble
-              key={message.id}
-              text={message.text}
-              timeStamp={message.createdAt}
-              type={message.type}
-              mediaUrl={message.mediaUrl}
-              fileName={message.fileName}
-              fileSize={message.fileSize}
-              isRead={message.isRead}
-              isSender={message.sender.id === currentUser.id}
-            // isSender={message.senderId === currentUser.id}
+
+          {/* Messages */}
+          <Box flex={1} p={2} overflow="auto" bgcolor="background.default">
+            {isLoading ? (
+              <Box display="flex" justifyContent="center" p={2}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : isError ? (
+              <Typography color="error">Failed to load messages</Typography>
+            ) : messages.length === 0 ? (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                height="100%"
+                flexDirection="column"
+                color="text.secondary"
+              >
+                <Typography variant="body2">No messages yet</Typography>
+                <Typography variant="caption">Start the conversation 👋</Typography>
+              </Box>
+            ) : (
+              messages.map((message: any) => (
+                <MessageBubble
+                  key={message.id}
+                  text={message.text}
+                  timeStamp={message.createdAt}
+                  type={message.type}
+                  mediaUrl={message.mediaUrl}
+                  fileName={message.fileName}
+                  fileSize={message.fileSize}
+                  isRead={message.isRead}
+                  isSender={message.sender.id === currentUser.id}
+                // isSender={message.senderId === currentUser.id}
+                />
+              ))
+            )}
+          </Box>
+
+          {/* Voice Recorder */}
+          <VoiceRecorder
+            ref={recorderRef}
+            conversationId={selectedChat.id}
+          />
+
+          {/* {selectedFile && ( */}
+
+          {selectedFile && (
+            <DocumentPreview
+              fileUrl={selectedFile.url}
+              fileName={selectedFile.name}
+              fileSize={selectedFile.size}
+              onSend={() => handleSendFile(selectedFile)}
+              onCancel={() => setSelectedFile(null)}
+              isSending={isSendingFile}
             />
-          ))
-        )}
-      </Box>
+          )}
 
-      {/* Voice Recorder */}
-      <VoiceRecorder
-        ref={recorderRef}
-        conversationId={selectedChat.id}
-      />
-
-      {/* {selectedFile && ( */}
-
- {selectedFile && (
-  <DocumentPreview
-    fileUrl={selectedFile.url}
-    fileName={selectedFile.name}
-    fileSize={selectedFile.size}
-    onSend={() => handleSendFile(selectedFile)}
-    onCancel={() => setSelectedFile(null)}
-     isSending={isSendingFile}
-  />
-)}
-
-      {/* )} */}
+          {/* )} */}
 
 
-      {/* Chat Input */}
-      <Box
-        position="relative"
-        display="flex"
-        alignItems="center"
-        p={1}
-        borderTop="1px solid"
-        borderColor="divider"
-        bgcolor="background.paper"
-      >
-        <IconButton onClick={() => setShowEmojiPicker((prev) => !prev)}>
-          <Smile />
-        </IconButton>
-
-        {showEmojiPicker && (
+          {/* Chat Input */}
           <Box
-            sx={{
-              position: "absolute",
-              bottom: "55px",
-              left: "10px",
-              zIndex: 1200,
-            }}
+            position="relative"
+            display="flex"
+            alignItems="center"
+            p={1}
+            borderTop="1px solid"
+            borderColor="divider"
+            bgcolor="background.paper"
           >
-            <Picker
-              onEmojiClick={(emojiData: any) =>
-                setNewMessage((prev) => prev + emojiData.emoji)
-              }
+            <IconButton onClick={() => setShowEmojiPicker((prev) => !prev)}>
+              <Smile />
+            </IconButton>
+
+            {showEmojiPicker && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  bottom: "55px",
+                  left: "10px",
+                  zIndex: 1200,
+                }}
+              >
+                <Picker
+                  onEmojiClick={(emojiData: any) =>
+                    setNewMessage((prev) => prev + emojiData.emoji)
+                  }
+                />
+              </Box>
+            )}
+
+            {/* <IconButton onClick={() => fileInputRef.current?.click()>
+              <Paperclip />
+            </IconButton> */}
+            {/* Document Upload */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              hidden
+              onChange={handleDocumentUpload}
             />
+
+            <IconButton onClick={() => fileInputRef.current?.click()}>
+              <Paperclip />
+            </IconButton>
+
+            <TextField
+              fullWidth
+              placeholder="Type a message"
+              variant="outlined"
+              size="small"
+              sx={{ mx: 1 }}
+              value={newMessage}
+              onChange={(e) => {
+                setNewMessage(e.target.value);
+                handleTyping();
+              }}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") handleSendMessage(newMessage);
+              }}
+            />
+
+            <Tooltip title={isRecording ? "Stop Recording" : "Start Recording"}>
+              <IconButton
+                color={isRecording ? "error" : "primary"}
+                onClick={isRecording ? stopRecording : startRecording}
+              >
+                {isRecording ? <Square /> : <Mic />}
+              </IconButton>
+            </Tooltip>
           </Box>
-        )}
+        </Box>
 
-        {/* <IconButton onClick={() => fileInputRef.current?.click()>
-          <Paperclip />
-        </IconButton> */}
-        {/* Document Upload */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          hidden
-          onChange={handleDocumentUpload}
-        />
-
-        <IconButton onClick={() => fileInputRef.current?.click()}>
-          <Paperclip />
+      }
+      {activeView === 'settings' && (
+  <Box flex={1} display="flex" flexDirection="column">
+    {/* Settings Header */}
+    <Box
+      display="flex"
+      alignItems="center"
+      justifyContent="space-between"
+      p={2}
+      bgcolor="background.paper"
+      borderBottom="1px solid"
+      borderColor="divider"
+    >
+      <Box display="flex" alignItems="center" gap={1}>
+        <IconButton onClick={() => setActiveView("chat")}>
+          <ChevronLeft />
         </IconButton>
-
-        <TextField
-          fullWidth
-          placeholder="Type a message"
-          variant="outlined"
-          size="small"
-          sx={{ mx: 1 }}
-          value={newMessage}
-          onChange={(e) => {
-            setNewMessage(e.target.value);
-            handleTyping();
-          }}
-          onKeyPress={(e) => {
-            if (e.key === "Enter") handleSendMessage(newMessage);
-          }}
-        />
-
-        <Tooltip title={isRecording ? "Stop Recording" : "Start Recording"}>
-          <IconButton
-            color={isRecording ? "error" : "primary"}
-            onClick={isRecording ? stopRecording : startRecording}
-          >
-            {isRecording ? <Square /> : <Mic />}
-          </IconButton>
-        </Tooltip>
+        <Typography variant="h6">Settings</Typography>
+        
+         <ThemeSwitcher />
       </Box>
     </Box>
+
+    {/* Settings Content */}
+    <Box flex={1} p={2} overflow="auto" bgcolor="background.default">
+      <Settings />
+    </Box>
+  </Box>
+)}
+
+    </>
+
+
   );
 }

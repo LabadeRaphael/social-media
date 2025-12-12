@@ -230,8 +230,11 @@ const useSendDocument = () => {
     },
   });
 };
+const useUpdateUser=()=>{
+
+}
 
 
 
 
-export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage, useSocketChat,useJoinAllConversations,useMessages, useResetUnreadCount, useMarkMessagesAsRead,useTypingIndicator,useSendVoice,useSendDocument }
+export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage, useSocketChat,useJoinAllConversations,useMessages, useResetUnreadCount, useMarkMessagesAsRead,useTypingIndicator,useSendVoice,useSendDocument,useUpdateUser }
