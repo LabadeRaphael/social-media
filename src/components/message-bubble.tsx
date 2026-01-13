@@ -115,10 +115,10 @@ export default function MessageBubble({
   // const downloadableUrl = mediaUrl?.replace("/image/upload", "/raw/upload");
 
 
-  console.log("from document ", fileSize, fileName);
+  // console.log("from document ", fileSize, fileName);
   const getFileType = (name?: string) => {
     const ext = name?.split(".").pop()?.toLowerCase();
-    console.log("fileType", ext);
+    // console.log("fileType", ext);
     if (!ext) return "unknown";
 
     if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return "image";
@@ -131,8 +131,8 @@ export default function MessageBubble({
   const getFileIcon = (fileName?: string) => {
   
     const ext = fileName?.split(".").pop()?.toLowerCase();
-    console.log("ext",fileName);
-    console.log("ext",ext);
+    // console.log("ext",fileName);
+    // console.log("ext",ext);
     
     if (!ext) return File;
 
@@ -143,7 +143,7 @@ export default function MessageBubble({
     return File; // fallback for unknown types
   };
   const FileIcon = getFileIcon(fileName);
-  console.log("fileIcon",FileIcon);
+  // console.log("fileIcon",FileIcon);
   
   return (
     <Box

@@ -19,6 +19,7 @@ import {
   Paperclip,
   Mic,
   ChevronLeft,
+  Check,
 
 } from "lucide-react";
 import { Menu, MenuItem } from "@mui/material";
@@ -42,6 +43,8 @@ import { useOnlineUsers } from "@/socket-hook/socket";
 import dynamic from "next/dynamic";
 import VoiceRecorder, { VoiceRecorderHandle } from "./voice-recoder";
 import DocumentPreview from "./document-preview";
+import { blockUser, unblockUser } from "@/api/user";
+import toast from "react-hot-toast";
 
 
 
@@ -82,6 +85,7 @@ export default function ChatWindow({
   const open = Boolean(anchorEl);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
+  // const [isBlock, setIsBlock] = useState(false)
 
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -93,11 +97,36 @@ export default function ChatWindow({
   };
 
   const handleBlockUser = () => {
-    // call your mutation here
-    // blockUserMutation.mutate({
-    //   userId: currentUser?.id,
-    //   targetUserId: otherUser?.user.id,
-    // });
+
+    try {
+      const extractedUserId = selectedChat?.participants.find(p => p.user.id !== currentUser?.id)
+
+      const targetUserId = extractedUserId?.user.id
+      console.log("the target userId", targetUserId);
+
+      blockUser(targetUserId)
+      // setIsBlock(true)
+      toast.success("Blocking Successful")
+    } catch (error) {
+      console.log(error.message);
+      //  setIsBlock(false)
+      toast.error(error.message || "Blocking failed retry")
+    }
+    handleMenuClose();
+  };
+
+  const handleUnblockUser = () => {
+
+    try {
+      const extractedUserId = selectedChat?.participants.find(p => p.user.id !== currentUser?.id)
+      const blockedUserId = extractedUserId?.user.id
+      console.log("the target userId", blockedUserId);
+      unblockUser(blockedUserId)
+      toast.success("Unblocking Successful")
+    } catch (error) {
+      console.log(error.message);
+      toast.error(error.message || "Unblocking failed retry")
+    }
     handleMenuClose();
   };
 
@@ -133,6 +162,7 @@ export default function ChatWindow({
       conversationId: selectedChat.id,
       senderId: currentUser.id,
     });
+    console.log("the block", currentUser);
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
@@ -147,6 +177,13 @@ export default function ChatWindow({
     (p) => p.user.id !== currentUser?.id
   );
 
+  const isBlock = Boolean(
+    currentUser?.blockedUsers?.some(
+      (blockedUser) => blockedUser.id === otherUser?.user.id
+    )
+  );
+
+  console.log("blockuser", isBlock);
   console.log("otheruser", otherUser?.user.id);
   console.log("senderId", currentUser?.id);
   console.log("receiverId", otherUser?.user.id);
@@ -159,6 +196,13 @@ export default function ChatWindow({
         conversationId: selectedChat.id,
         type: "TEXT",
         receiverId: otherUser?.user.id
+      });
+      socket.on('message_blocked', (reason) => {
+        if (reason === 'BLOCKED_BY_RECEIVER') {
+          toast.error("You can’t message this user");
+        } else if (reason === 'BLOCKED_BY_SENDER') {
+          toast.error("You’ve blocked this user. Unblock them to send messages.");
+        }
       });
       setNewMessage("");
     }
@@ -247,7 +291,7 @@ export default function ChatWindow({
     setIsRecording(false);
   };
 
-  if (!selectedChat && activeView!="settings") {
+  if (!selectedChat && activeView != "settings") {
     return (
       <Box
         flex={1}
@@ -335,15 +379,32 @@ export default function ChatWindow({
               </IconButton>
 
               <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
-                <MenuItem
-                  onClick={() => {
-                    setShowBlockModal(true);
-                    handleMenuClose();
-                  }}
-                >
-                  <Ban size={18} style={{ marginRight: 8 }} />
-                  Block User
-                </MenuItem>
+                {isBlock ? (
+                  <MenuItem
+                    onClick={() => {
+                      handleUnblockUser()
+                      handleMenuClose();
+                    }}
+                  >
+                    <Check size={18} style={{ marginRight: 8 }} />
+                    Unblock User
+                  </MenuItem>
+                ) : (
+                  <MenuItem
+                    onClick={() => {
+                      setShowBlockModal(true);
+                      handleMenuClose();
+                    }}
+                  >
+
+                    <Ban size={18} style={{ marginRight: 8 }} />
+                    Block User
+                  </MenuItem>
+                )}
+
+
+
+
 
                 <MenuItem
                   onClick={() => {
@@ -622,33 +683,33 @@ export default function ChatWindow({
 
       }
       {activeView === 'settings' && (
-  <Box flex={1} display="flex" flexDirection="column">
-    {/* Settings Header */}
-    <Box
-      display="flex"
-      alignItems="center"
-      justifyContent="space-between"
-      p={2}
-      bgcolor="background.paper"
-      borderBottom="1px solid"
-      borderColor="divider"
-    >
-      <Box display="flex" alignItems="center" gap={1}>
-        <IconButton onClick={() => setActiveView("chat")}>
-          <ChevronLeft />
-        </IconButton>
-        <Typography variant="h6">Settings</Typography>
-        
-         <ThemeSwitcher />
-      </Box>
-    </Box>
+        <Box flex={1} display="flex" flexDirection="column">
+          {/* Settings Header */}
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            p={2}
+            bgcolor="background.paper"
+            borderBottom="1px solid"
+            borderColor="divider"
+          >
+            <Box display="flex" alignItems="center" gap={1}>
+              <IconButton onClick={() => setActiveView("chat")}>
+                <ChevronLeft />
+              </IconButton>
+              <Typography variant="h6">Settings</Typography>
 
-    {/* Settings Content */}
-    <Box flex={1} p={2} overflow="auto" bgcolor="background.default">
-      <Settings />
-    </Box>
-  </Box>
-)}
+              <ThemeSwitcher />
+            </Box>
+          </Box>
+
+          {/* Settings Content */}
+          <Box flex={1} p={2} overflow="auto" bgcolor="background.default">
+            <Settings />
+          </Box>
+        </Box>
+      )}
 
     </>
 

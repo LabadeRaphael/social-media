@@ -24,6 +24,39 @@ const getAllUsers = async (searchKey?: string) => {
     throw error.response?.data || error;
   }
 }
+const blockUser = async (targetUserId?: string) => {
+  try {
+    console.log("Block user",targetUserId);
+    
+    const response = await api.post(`/users/block/${targetUserId}`);
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+}
+const unblockUser = async (blockedUserId?: string) => {
+  try {
+    console.log("Block user",blockedUserId);
+    
+    const response = await api.post(`/users/unblock/${blockedUserId}`);
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+}
+const clearChat = async (conversationId?: string) => {
+  try {
+    console.log("Block user",conversationId);
+    
+    const response = await api.post(`/conversations/clear/${conversationId}`);
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+}
 
 const getAllConversations = async () => {
   try {
@@ -55,10 +88,12 @@ const sendMessage = async (messageDetails:Message) => {
   try {
     const response = await api.post("/messages", messageDetails);
     console.log("response", response);
-
+    
     return response.data.saveConversation
 
   } catch (error: any) {
+    console.log(error);
+      
     throw error.response?.data || error;
   }
 }
@@ -112,4 +147,4 @@ const sendDocument = async (formData: any) => {
     throw error.response?.data || error;
   }
 }
-export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage,resetUnreadCount,getMessages,markMessagesAsRead,sendAudio,sendDocument }
+export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage,resetUnreadCount,getMessages,markMessagesAsRead,sendAudio,sendDocument, blockUser,unblockUser,clearChat }

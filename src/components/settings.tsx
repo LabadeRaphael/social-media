@@ -37,6 +37,8 @@ export default function SettingsPage() {
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    console.log(file);
+    
     if (file) setAvatarFile(file);
   };
 
