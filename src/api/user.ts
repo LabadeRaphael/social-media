@@ -50,7 +50,7 @@ const clearChat = async (conversationId?: string) => {
   try {
     console.log("Block user",conversationId);
     
-    const response = await api.post(`/conversations/clear/${conversationId}`);
+    const response = await api.post(`/conversations/${conversationId}/clear-chat`);
     return response.data
 
   } catch (error: any) {

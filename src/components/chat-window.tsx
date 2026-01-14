@@ -43,7 +43,7 @@ import { useOnlineUsers } from "@/socket-hook/socket";
 import dynamic from "next/dynamic";
 import VoiceRecorder, { VoiceRecorderHandle } from "./voice-recoder";
 import DocumentPreview from "./document-preview";
-import { blockUser, unblockUser } from "@/api/user";
+import { blockUser, clearChat, unblockUser } from "@/api/user";
 import toast from "react-hot-toast";
 
 
@@ -126,6 +126,22 @@ export default function ChatWindow({
     } catch (error) {
       console.log(error.message);
       toast.error(error.message || "Unblocking failed retry")
+    }
+    handleMenuClose();
+  };
+  const handleClearChat = () => {
+
+    try {
+      const conversationId = selectedChat?.id
+      // const blockedUserId = extractedUserId?.user.id
+      console.log("The extracted user", selectedChat?.id);
+      
+      // console.log("the target userId", blockedUserId);
+      clearChat(conversationId)
+      toast.success("Chat clear Successful")
+    } catch (error) {
+      console.log(error.message);
+      toast.error(error.message || "Chat clear failed retry")
     }
     handleMenuClose();
   };
@@ -525,7 +541,7 @@ export default function ChatWindow({
 
                       <button
                         onClick={() => {
-                          // TODO: add your clear chat mutation here
+                          handleClearChat()
                           console.log("Chat cleared");
                           setShowClearModal(false);
                         }}
