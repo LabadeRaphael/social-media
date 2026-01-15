@@ -29,6 +29,7 @@ import Settings from "@/components/settings"
 import MessageBubble from "./message-bubble";
 import { useRef, useState } from "react";
 import {
+  useClearChat,
   useCurrentUser,
   useMessages,
   useSendDocument,
@@ -129,22 +130,26 @@ export default function ChatWindow({
     }
     handleMenuClose();
   };
-  const handleClearChat = () => {
+  const clearChatMutation = useClearChat(); // ✅ hook call at top level
 
-    try {
-      const conversationId = selectedChat?.id
-      // const blockedUserId = extractedUserId?.user.id
-      console.log("The extracted user", selectedChat?.id);
-      
-      // console.log("the target userId", blockedUserId);
-      clearChat(conversationId)
-      toast.success("Chat clear Successful")
-    } catch (error) {
-      console.log(error.message);
-      toast.error(error.message || "Chat clear failed retry")
+
+const handleClearChat = () => {
+  if (!selectedChat?.id) return;
+
+  clearChatMutation.mutate(
+    { conversationId: selectedChat.id },
+    {
+      onSuccess: () => {
+        toast.success("Chat cleared successfully");
+        handleMenuClose();
+      },
+      onError: (error: any) => {
+        toast.error(error?.message || "Chat clear failed, retry");
+      },
     }
-    handleMenuClose();
-  };
+  );
+};
+
 
 
 
@@ -198,7 +203,8 @@ export default function ChatWindow({
       (blockedUser) => blockedUser.id === otherUser?.user.id
     )
   );
-
+  console.log("The is block state", isBlock);
+  
   console.log("blockuser", isBlock);
   console.log("otheruser", otherUser?.user.id);
   console.log("senderId", currentUser?.id);

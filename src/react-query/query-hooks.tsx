@@ -1,6 +1,6 @@
 "use client"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount, markMessagesAsRead, sendAudio, sendDocument } from "@/api/user";
+import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount, markMessagesAsRead, sendAudio, sendDocument, clearChat } from "@/api/user";
 import { useDispatch } from "react-redux";
 import { setSelectedUser } from "@/redux/users-slice";
 import { Message } from "@/types/messages";
@@ -174,6 +174,22 @@ const useMarkMessagesAsRead = () => {
     });
 
 }
+const useClearChat = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ conversationId}: { conversationId: string}) =>
+      clearChat(conversationId), // ✅ pass userId
+    onSuccess: (_, { conversationId}) => {
+      // Instant UI update
+      queryClient.setQueryData(["messages", conversationId], []);
+
+      // Optional: refetch server data
+      queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+       queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
+    },
+  });
+};
 const useTypingIndicator = (conversationId: string, currentUserId: string) => {
   const [typingUser, setTypingUser] = useState<string | null>(null);
 
@@ -237,4 +253,4 @@ const useUpdateUser=()=>{
 
 
 
-export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage, useSocketChat,useJoinAllConversations,useMessages, useResetUnreadCount, useMarkMessagesAsRead,useTypingIndicator,useSendVoice,useSendDocument,useUpdateUser }
+export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage, useSocketChat,useJoinAllConversations,useMessages, useResetUnreadCount, useMarkMessagesAsRead,useTypingIndicator,useSendVoice,useSendDocument,useUpdateUser, useClearChat}
