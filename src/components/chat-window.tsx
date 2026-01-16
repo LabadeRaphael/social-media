@@ -27,7 +27,7 @@ import { Ban, Trash2 } from "lucide-react";
 import Settings from "@/components/settings"
 
 import MessageBubble from "./message-bubble";
-import { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   useClearChat,
   useCurrentUser,
@@ -44,7 +44,7 @@ import { useOnlineUsers } from "@/socket-hook/socket";
 import dynamic from "next/dynamic";
 import VoiceRecorder, { VoiceRecorderHandle } from "./voice-recoder";
 import DocumentPreview from "./document-preview";
-import { blockUser, clearChat, unblockUser } from "@/api/user";
+import { blockUser, unblockUser } from "@/api/user";
 import toast from "react-hot-toast";
 
 
@@ -86,7 +86,20 @@ export default function ChatWindow({
   const open = Boolean(anchorEl);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
-  // const [isBlock, setIsBlock] = useState(false)
+    const { data: currentUser } = useCurrentUser();
+  const [isBlock, setIsBlock] = useState(false);
+
+// Then compute whenever currentUser or otherUser changes
+ const otherUser = selectedChat?.participants.find(
+    (p) => p.user.id !== currentUser?.id
+  );
+useEffect(() => {
+  if (currentUser && otherUser) {
+    setIsBlock(
+      currentUser.blockedUsers?.some(u => u.id === otherUser.user.id) ?? false
+    );
+  }
+}, [currentUser, otherUser]);
 
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -106,12 +119,12 @@ export default function ChatWindow({
       console.log("the target userId", targetUserId);
 
       blockUser(targetUserId)
-      // setIsBlock(true)
       toast.success("Blocking Successful")
+      setIsBlock(true)
     } catch (error) {
       console.log(error.message);
-      //  setIsBlock(false)
       toast.error(error.message || "Blocking failed retry")
+      setIsBlock(false)
     }
     handleMenuClose();
   };
@@ -124,9 +137,11 @@ export default function ChatWindow({
       console.log("the target userId", blockedUserId);
       unblockUser(blockedUserId)
       toast.success("Unblocking Successful")
+      setIsBlock(false)
     } catch (error) {
       console.log(error.message);
       toast.error(error.message || "Unblocking failed retry")
+      setIsBlock(true)
     }
     handleMenuClose();
   };
@@ -160,7 +175,7 @@ const handleClearChat = () => {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useSocketChat(selectedChat?.id);
-  const { data: currentUser } = useCurrentUser();
+
   const onlineUsers = useOnlineUsers();
   console.log("onlineuser", onlineUsers);
 
@@ -194,15 +209,11 @@ const handleClearChat = () => {
       });
     }, 2000);
   };
-  const otherUser = selectedChat?.participants.find(
-    (p) => p.user.id !== currentUser?.id
-  );
+ 
 
-  const isBlock = Boolean(
-    currentUser?.blockedUsers?.some(
-      (blockedUser) => blockedUser.id === otherUser?.user.id
-    )
-  );
+
+
+
   console.log("The is block state", isBlock);
   
   console.log("blockuser", isBlock);
@@ -292,9 +303,10 @@ const handleClearChat = () => {
       });
 
       setSelectedFile(null); // remove preview
-
+      toast.success("File send successfully")
     } catch (error) {
       console.error("Failed to send file:", error.message);
+      toast.error(error.message || "Failed to send file")
     } finally {
       setIsSendingFile(false); // stop loading
     }
@@ -395,7 +407,6 @@ const handleClearChat = () => {
               <IconButton>
                 <Search />
               </IconButton>
-              <ThemeSwitcher />
               <IconButton onClick={handleMenuOpen}>
                 <MoreVertical />
               </IconButton>
@@ -602,7 +613,6 @@ const handleClearChat = () => {
                   fileSize={message.fileSize}
                   isRead={message.isRead}
                   isSender={message.sender.id === currentUser.id}
-                // isSender={message.senderId === currentUser.id}
                 />
               ))
             )}
@@ -611,7 +621,7 @@ const handleClearChat = () => {
           {/* Voice Recorder */}
           <VoiceRecorder
             ref={recorderRef}
-            conversationId={selectedChat.id}
+            conversationId={selectedChat?.id}
           />
 
           {/* {selectedFile && ( */}
@@ -722,12 +732,12 @@ const handleClearChat = () => {
               </IconButton>
               <Typography variant="h6">Settings</Typography>
 
-              <ThemeSwitcher />
+              {/* <ThemeSwitcher /> */}
             </Box>
           </Box>
 
           {/* Settings Content */}
-          <Box flex={1} p={2} overflow="auto" bgcolor="background.default">
+          <Box flex={1} overflow="auto" bgcolor="background.default">
             <Settings />
           </Box>
         </Box>

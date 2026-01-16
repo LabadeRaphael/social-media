@@ -1,8 +1,10 @@
 "use client";
 
-import { Box, Typography, IconButton, Tooltip } from "@mui/material";
+import { Box, Typography, IconButton, Tooltip, Stack } from "@mui/material";
 import { FileText, X, Check, Loader2 } from "lucide-react"; 
 import { useTheme } from "@mui/material/styles";
+import { getFileType } from "./file-type-formater";
+import FileCard from "./file-card";
 interface PreviewDocumentProps {
   fileUrl: string;
   fileName: string;
@@ -27,17 +29,17 @@ export default function DocumentPreview({
     if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
     return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
   };
-  const getFileType = (name: string) => {
-    const ext = name.split(".").pop()?.toLowerCase();
-    console.log("fileType", ext);
-    if (!ext) return "unknown";
+  // const getFileType = (name: string) => {
+  //   const ext = name.split(".").pop()?.toLowerCase();
+  //   console.log("fileType", ext);
+  //   if (!ext) return "unknown";
 
-    if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return "image";
-    if (["mp3", "wav", "ogg"].includes(ext)) return "audio";
-    if (["mp4", "mov", "webm"].includes(ext)) return "video";
-    if (["pdf", "docx"].includes(ext)) return "pdf";
-    return "other";
-  };
+  //   if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return "image";
+  //   if (["mp3", "wav", "ogg"].includes(ext)) return "audio";
+  //   if (["mp4", "mov", "webm"].includes(ext)) return "video";
+  //   if (["pdf", "docx"].includes(ext)) return "pdf";
+  //   return "other";
+  // };
   const fileType = getFileType(fileName);
   console.log("fileType", fileType);
 
@@ -87,7 +89,13 @@ export default function DocumentPreview({
           overflow: "hidden",
         }}
       >
-        {fileType === "image" && (
+       <FileCard
+              mediaUrl={fileUrl}
+              fileName={fileName}
+              theme={theme}
+            />
+        
+        {/* {fileType === "image" && (
           <Box
             component="img"
             src={fileUrl}
@@ -127,11 +135,14 @@ export default function DocumentPreview({
             <FileText size={48} />
             <Typography variant="subtitle2">Preview Not Available</Typography>
           </Box>
-        )}
+        )} */}
       </Box>
 
       <Typography sx={{ textAlign: "center" }} fontWeight={600}>{shortenFileName(fileName)}</Typography>
-      <Typography fontSize={12}>{formatFileSize(fileSize)}</Typography>
+                <Stack direction={"row"} gap={1} mb={1}>
+                  <Typography>{fileType}</Typography>
+                  <Typography fontSize={12} fontWeight={"bold"} mt={0.2}> {formatFileSize(fileSize!)}</Typography>
+                </Stack>
 
       <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
         <Tooltip title={"Cancel"}>

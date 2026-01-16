@@ -16,7 +16,13 @@ import {
   CircularProgress,
   colors,
 } from "@mui/material";
-import { Search, MoreVertical, MessageCircle, Mic } from "lucide-react";
+import { Search, MoreVertical, MessageCircle, Mic, 
+ Image as ImageIcon,
+  Music,
+  Video,
+  FileText,
+  File,
+} from "lucide-react";
 import Image from "next/image";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import debounce from "lodash/debounce";
@@ -28,6 +34,15 @@ import type { RootState } from "@/redux/store";
 import { Conversation } from "@/types/conversation";
 import { Drawer, Button } from "@mui/material";
 import { useOnlineUsers } from "@/socket-hook/socket";
+import { ThemeSwitcher } from "./Theme/themeswitcher";
+import { getFileType } from "./file-type-formater";
+// import {
+//   Image as ImageIcon,
+//   Music,
+//   Video,
+//   FileText,
+//   File,
+// } from "lucide-react";
 interface User {
   id: string;
   userName: string;
@@ -142,6 +157,64 @@ export default function Sidebar({setActiveView }: SidebarProps) {
       };
 
 
+// const getFileType = (name: string) => {
+//   const ext = name?.split(".").pop()?.toLowerCase();
+
+//   if (!ext) {
+//     return (
+//       <span className="flex items-center gap-2">
+//         <File size={16} />
+//         Unknown
+//       </span>
+//     );
+//   }
+
+//   if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+//     return (
+//       <span className="flex items-center gap-2">
+//         <ImageIcon size={16} />
+//         Image
+//       </span>
+//     );
+//   }
+
+//   if (["mp3", "wav", "ogg"].includes(ext)) {
+//     return (
+//       <span className="flex items-center gap-2">
+//         <Music size={16} />
+//         Audio
+//       </span>
+//     );
+//   }
+
+//   if (["mp4", "mov", "webm"].includes(ext)) {
+//     return (
+//       <span className="flex items-center gap-2">
+//         <Video size={16} />
+//         Video
+//       </span>
+//     );
+//   }
+
+//   if (["pdf", "docx"].includes(ext)) {
+//     return (
+//       <span className="flex items-center gap-2">
+//         <FileText size={16} />
+//         PDF
+//       </span>
+//     );
+//   }
+
+//   return (
+//     <span className="flex items-center gap-2">
+//       <File size={16} />
+//       Other
+//     </span>
+//   );
+// };
+
+
+
 
       convs = (conversations as Conversation[]).map(conv => {
         const myParticipant = conv.participants.find(p => p.user.id === currentUser?.id);
@@ -157,7 +230,7 @@ export default function Sidebar({setActiveView }: SidebarProps) {
           : false;
         console.log("The other user", otherUser);
         console.log("isOnline", isOnline);
-
+          const fileType = getFileType(conv?.lastMessage?.fileName);
         return {
           type: "conversation",
           id: conv.id,
@@ -165,8 +238,8 @@ export default function Sidebar({setActiveView }: SidebarProps) {
           lastMessage: conv.lastMessage,
           lastMessagePreview:
             conv.lastMessage?.type === "VOICE"
-              ? <Box display="flex" alignItems="center" fontWeight={"bold"} gap={1}><Mic size={16} />Voice messae {formatDuration(conv.lastMessage.duration)}</Box>
-              : conv.lastMessage?.type === "DOCUMENT" ? <Box display="flex" alignItems="center" fontWeight={"bold"} gap={1}>Document {formatFileSize(conv.lastMessage.fileSize)}<Mic size={16} /></Box> : conv.lastMessage?.text || "Click to start chat",
+              ? <Box display="flex" alignItems="center" fontWeight={"bold"} gap={1}><Mic size={16} />Voice message {formatDuration(conv && conv.lastMessage?.duration)}</Box>
+              : conv.lastMessage?.type === "DOCUMENT" ? <Box display="flex" alignItems="center" fontWeight={"bold"} gap={1}> {fileType} {formatFileSize(conv.lastMessage.fileSize)}</Box> : conv.lastMessage?.text || "Click to start chat",
           lastMessageTime: conv.lastMessage?.createdAt ?? null,
           unreadCount,
           isOnline
@@ -264,6 +337,7 @@ export default function Sidebar({setActiveView }: SidebarProps) {
           </Typography>
         </Box>
         <Box>
+        <ThemeSwitcher />
           <IconButton size="small" aria-label="Messages">
             <MessageCircle size={20} />
           </IconButton>
@@ -382,8 +456,8 @@ export default function Sidebar({setActiveView }: SidebarProps) {
                       />
                     </Box>
                   </ListItemAvatar>
-
-                  <ListItemText
+                        
+                  <ListItemText 
                     primary={conv.userName}
                     secondary={conv.lastMessagePreview}
                     primaryTypographyProps={{
@@ -404,6 +478,7 @@ export default function Sidebar({setActiveView }: SidebarProps) {
                   <Typography
                     variant="caption"
                     color="text.secondary"
+                    component="span"
                     sx={{
                       fontSize: "0.75rem",
                       whiteSpace: "nowrap",

@@ -1,10 +1,12 @@
 "use client";
 
-import { Box, Typography, IconButton } from "@mui/material";
+import { Box, Typography, IconButton, Stack } from "@mui/material";
 import moment from "moment";
-import { CheckCheck, Play, Pause, FileText,  FileImage, FileMusic, FileVideo, File,Download } from "lucide-react";
+import { CheckCheck, Play, Pause, FileText, FileImage, FileMusic, FileVideo, File, Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@mui/material/styles";
+import { getFileType } from "./file-type-formater";
+import FileCard from "./file-card";
 interface MessageBubbleProps {
   text?: string;
   timeStamp: string;
@@ -116,24 +118,24 @@ export default function MessageBubble({
 
 
   // console.log("from document ", fileSize, fileName);
-  const getFileType = (name?: string) => {
-    const ext = name?.split(".").pop()?.toLowerCase();
-    // console.log("fileType", ext);
-    if (!ext) return "unknown";
+  // const getFileType = (name?: string) => {
+  //   const ext = name?.split(".").pop()?.toLowerCase();
+  //   // console.log("fileType", ext);
+  //   if (!ext) return "unknown";
 
-    if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return "image";
-    if (["mp3", "wav", "ogg"].includes(ext)) return "audio";
-    if (["mp4", "mov", "webm"].includes(ext)) return "video";
-    if (["pdf", "docx"].includes(ext)) return "pdf";
-    return "other";
-  };
+  //   if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return "image";
+  //   if (["mp3", "wav", "ogg"].includes(ext)) return "audio";
+  //   if (["mp4", "mov", "webm"].includes(ext)) return "video";
+  //   if (["pdf", "docx"].includes(ext)) return "pdf";
+  //   return "other";
+  // };
   const fileType = getFileType(fileName);
   const getFileIcon = (fileName?: string) => {
-  
+
     const ext = fileName?.split(".").pop()?.toLowerCase();
     // console.log("ext",fileName);
     // console.log("ext",ext);
-    
+
     if (!ext) return File;
 
     if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return FileImage;
@@ -144,7 +146,7 @@ export default function MessageBubble({
   };
   const FileIcon = getFileIcon(fileName);
   // console.log("fileIcon",FileIcon);
-  
+
   return (
     <Box
       mb={2}
@@ -271,52 +273,18 @@ export default function MessageBubble({
               overflow: "hidden",
             }}
           >
-            {fileType === "image" && (
-              <Box
-                component="img"
-                src={mediaUrl}
-                alt={fileName}
-                sx={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            )}
 
-            {fileType === "audio" && (
-              <audio controls style={{ width: "100%" }}>
-                <source src={mediaUrl} />
-                Your browser does not support the audio element.
-              </audio>
-            )}
-
-            {fileType === "video" && (
-              <video controls style={{ width: "100%", height: "100%" }}>
-                <source src={mediaUrl} />
-                Your browser does not support the video element.
-              </video>
-            )}
-
-            {fileType === "pdf" && (
-              <Box sx={{
-                textAlign: "center",
-                color: `${theme.palette.mode === "light"
-                  ? theme.palette.secondary.contrastText
-                  : theme.palette.secondary.main}`
-              }}>
-                <FileIcon size={48} />
-                <Typography variant="subtitle2">PDF Preview</Typography>
-              </Box>
-            )}
-
-            {fileType === "other" && (
-              <Box sx={{ textAlign: "center" }}>
-                <FileIcon size={48} />
-                <Typography variant="subtitle2">Preview Not Available</Typography>
-              </Box>
-            )}
+            <FileCard
+              mediaUrl={mediaUrl}
+              fileName={fileName}
+              theme={theme}
+            />
           </Box>
           <Typography>{fileName}</Typography>
-          <Typography fontSize={12}>{formatFileSize(fileSize!)}</Typography>
-
-          <FileIcon size={22} />
+          <Stack direction={"row"} gap={1} mb={1}>
+            <Typography>{fileType}</Typography>
+            <Typography fontSize={12} fontWeight={"bold"} mt={0.2}> {formatFileSize(fileSize!)}</Typography>
+          </Stack>
 
           {/* Download Button */}
         </Box>

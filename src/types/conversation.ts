@@ -29,6 +29,7 @@ export interface Conversation {
     text: string;
     duration?: number;
     fileSize?: number;
+    fileName?: number;
     createdAt: string;
   };
 }
