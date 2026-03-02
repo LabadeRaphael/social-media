@@ -1,6 +1,6 @@
 "use client"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount, markMessagesAsRead, sendAudio, sendDocument, clearChat } from "@/api/user";
+import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount, markMessagesAsRead, sendAudio, sendDocument, clearChat, updateUser } from "@/api/user";
 import { useDispatch } from "react-redux";
 import { setSelectedUser } from "@/redux/users-slice";
 import { Message } from "@/types/messages";
@@ -8,6 +8,7 @@ import { setSelectedChat } from "@/redux/chats-slice";
 import { getSocket } from "@/lib/socket";
 import { useEffect, useState } from "react";
 import { UploadVoicePayload } from "@/types/audio";
+import { UpdateUserPayload } from "@/types/update-user"
 // ✅ Get single user
 const useCurrentUser = () => {
     const query = useQuery({
@@ -246,9 +247,29 @@ const useSendDocument = () => {
     },
   });
 };
-const useUpdateUser=()=>{
 
-}
+
+const useUpdateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: UpdateUserPayload) => {
+      const formData = new FormData();
+
+      if (data.userName) formData.append("userName", data.userName);
+      if (data.password) formData.append("password", data.password);
+      if (data.avatar) formData.append("avatar", data.avatar);
+      console.log(formData, "from update user");
+      
+      return updateUser(formData);
+    },
+
+    onSuccess: () => {
+      // Refetch current user data after update
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+    },
+  });
+};
 
 
 

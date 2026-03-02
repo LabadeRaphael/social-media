@@ -46,6 +46,7 @@ import VoiceRecorder, { VoiceRecorderHandle } from "./voice-recoder";
 import DocumentPreview from "./document-preview";
 import { blockUser, unblockUser } from "@/api/user";
 import toast from "react-hot-toast";
+import DynamicModal from "./dynamic-modal";
 
 
 
@@ -86,20 +87,20 @@ export default function ChatWindow({
   const open = Boolean(anchorEl);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
-    const { data: currentUser } = useCurrentUser();
+  const { data: currentUser } = useCurrentUser();
   const [isBlock, setIsBlock] = useState(false);
 
-// Then compute whenever currentUser or otherUser changes
- const otherUser = selectedChat?.participants.find(
+  // Then compute whenever currentUser or otherUser changes
+  const otherUser = selectedChat?.participants.find(
     (p) => p.user.id !== currentUser?.id
   );
-useEffect(() => {
-  if (currentUser && otherUser) {
-    setIsBlock(
-      currentUser.blockedUsers?.some(u => u.id === otherUser.user.id) ?? false
-    );
-  }
-}, [currentUser, otherUser]);
+  useEffect(() => {
+    if (currentUser && otherUser) {
+      setIsBlock(
+        currentUser.blockedUsers?.some(u => u.id === otherUser.user.id) ?? false
+      );
+    }
+  }, [currentUser, otherUser]);
 
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -148,22 +149,22 @@ useEffect(() => {
   const clearChatMutation = useClearChat(); // ✅ hook call at top level
 
 
-const handleClearChat = () => {
-  if (!selectedChat?.id) return;
+  const handleClearChat = () => {
+    if (!selectedChat?.id) return;
 
-  clearChatMutation.mutate(
-    { conversationId: selectedChat.id },
-    {
-      onSuccess: () => {
-        toast.success("Chat cleared successfully");
-        handleMenuClose();
-      },
-      onError: (error: any) => {
-        toast.error(error?.message || "Chat clear failed, retry");
-      },
-    }
-  );
-};
+    clearChatMutation.mutate(
+      { conversationId: selectedChat.id },
+      {
+        onSuccess: () => {
+          toast.success("Chat cleared successfully");
+          handleMenuClose();
+        },
+        onError: (error: any) => {
+          toast.error(error?.message || "Chat clear failed, retry");
+        },
+      }
+    );
+  };
 
 
 
@@ -209,13 +210,13 @@ const handleClearChat = () => {
       });
     }, 2000);
   };
- 
+
 
 
 
 
   console.log("The is block state", isBlock);
-  
+
   console.log("blockuser", isBlock);
   console.log("otheruser", otherUser?.user.id);
   console.log("senderId", currentUser?.id);
@@ -449,134 +450,32 @@ const handleClearChat = () => {
                   Clear Chat
                 </MenuItem>
               </Menu>
-              {showBlockModal && (
-                <Box
-                  sx={{
-                    position: "fixed",
-                    top: 0,
-                    left: 0,
-                    width: "100vw",
-                    height: "100vh",
-                    bgcolor: "rgba(0,0,0,0.5)",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    zIndex: 2000,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      bgcolor: "background.paper",
-                      p: 3,
-                      borderRadius: 2,
-                      width: "90%",
-                      maxWidth: 400,
-                    }}
-                  >
-                    <Typography variant="h6" mb={1}>
-                      Block User?
-                    </Typography>
-                    <Typography variant="body2" mb={2}>
-                      You will no longer receive messages from this user.
-                    </Typography>
 
-                    <Box display="flex" justifyContent="flex-end" gap={2}>
-                      <button
-                        onClick={() => setShowBlockModal(false)}
-                        style={{
-                          padding: "6px 12px",
-                          borderRadius: "6px",
-                          background: "#ccc",
-                          border: "none",
-                        }}
-                      >
-                        Cancel
-                      </button>
+              <DynamicModal
+                open={showBlockModal}
+                title="Block User ?"
+                description="You and this user will no longer be able to send messages to each other."
+                confirmText="Block"
+                confirmColor="error"
+                onClose={() => setShowBlockModal(false)}
+                onConfirm={() => {
+                  handleBlockUser();
+                  setShowBlockModal(false);
+                }}
+              />
 
-                      <button
-                        onClick={() => {
-                          handleBlockUser();
-                          setShowBlockModal(false);
-                        }}
-                        style={{
-                          padding: "6px 12px",
-                          borderRadius: "6px",
-                          background: "red",
-                          color: "white",
-                          border: "none",
-                        }}
-                      >
-                        Block
-                      </button>
-                    </Box>
-                  </Box>
-                </Box>
-              )}
-              {showClearModal && (
-                <Box
-                  sx={{
-                    position: "fixed",
-                    top: 0,
-                    left: 0,
-                    width: "100vw",
-                    height: "100vh",
-                    bgcolor: "rgba(0,0,0,0.5)",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    zIndex: 2000,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      bgcolor: "background.paper",
-                      p: 3,
-                      borderRadius: 2,
-                      width: "90%",
-                      maxWidth: 400,
-                    }}
-                  >
-                    <Typography variant="h6" mb={1}>
-                      Clear Chat?
-                    </Typography>
-                    <Typography variant="body2" mb={2}>
-                      This will delete all messages in this conversation.
-                    </Typography>
-
-                    <Box display="flex" justifyContent="flex-end" gap={2}>
-                      <button
-                        onClick={() => setShowClearModal(false)}
-                        style={{
-                          padding: "6px 12px",
-                          borderRadius: "6px",
-                          background: "#ccc",
-                          border: "none",
-                        }}
-                      >
-                        Cancel
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          handleClearChat()
-                          console.log("Chat cleared");
-                          setShowClearModal(false);
-                        }}
-                        style={{
-                          padding: "6px 12px",
-                          borderRadius: "6px",
-                          background: "red",
-                          color: "white",
-                          border: "none",
-                        }}
-                      >
-                        Clear Chat
-                      </button>
-                    </Box>
-                  </Box>
-                </Box>
-              )}
-
+              <DynamicModal
+                open={showClearModal}
+                title="Clear Chat ?"
+                description="This action will permanently delete all messages in this conversation."
+                confirmText=" Clear Chat"
+                confirmColor="error"
+                onClose={() => setShowClearModal(false)}
+                onConfirm={() => {
+                  handleClearChat()
+                  setShowClearModal(false);
+                }}
+              />
 
             </Box>
           </Box>

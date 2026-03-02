@@ -147,4 +147,27 @@ const sendDocument = async (formData: any) => {
     throw error.response?.data || error;
   }
 }
-export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage,resetUnreadCount,getMessages,markMessagesAsRead,sendAudio,sendDocument, blockUser,unblockUser,clearChat }
+const updateUser = async (formData: any) => {
+  try {
+    
+    const response = await api.put('/users/update', formData);
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+  
+ 
+}
+const logOut = async ()=>{
+  try {
+    
+    const response = await api.post('/auth/logout');
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+  
+}
+export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage,resetUnreadCount,getMessages,markMessagesAsRead,sendAudio,sendDocument, updateUser,blockUser,unblockUser, clearChat, logOut }

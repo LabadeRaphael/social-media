@@ -16,8 +16,12 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useCurrentUser, useUpdateUser } from "@/react-query/query-hooks";
 import { Edit, Eye, EyeOff } from "lucide-react";
+import toast from "react-hot-toast";
+import { logOut } from "@/api/user";
+import DynamicModal from "./dynamic-modal";
 
 export default function SettingsPage() {
   const theme = useTheme();
@@ -33,12 +37,15 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
+  const [isUpdate, setIsupdate] = useState(false);
+  const [isLogout, setIsLogout] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    console.log(file);
-    
+    console.log("kdkdkdkd", file);
+
     if (file) setAvatarFile(file);
   };
 
@@ -50,19 +57,43 @@ export default function SettingsPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleLogoutModal = () => {
+    setShowLogoutModal(!showLogoutModal)
+  }
+  const handleLogout = async () => {
+    try {
+      setIsLogout(true)
+      const response = await logOut()
+      toast.success(response?.message)
+      setTimeout(() => {
+        window.location.href = "/auth/login";
+      }, 2000);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update profile")
+    } finally {
+      setIsLogout(false)
+    }
+  }
+
+
   const handleSaveChanges = async () => {
     if (!validatePasswords()) return;
 
     try {
+      setIsupdate(true)
       await updateUserMutation.mutateAsync({
         userName,
         avatar: avatarFile,
         password: password || undefined,
       });
-      alert("Profile updated successfully!");
-    } catch (err: any) {
-      alert(err.message || "Failed to update profile");
+      // alert("Profile updated successfully!");
+      toast.success("Profile updated successfully!")
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update profile")
+    } finally {
+      setIsupdate(false)
     }
+
   };
 
   const getBorderColor = (error?: string) => {
@@ -101,22 +132,31 @@ export default function SettingsPage() {
             lg={1}
             display="flex"
             flexDirection="column"
-             alignItems="center"
-            justifyContent="center" 
+            alignItems="center"
+            justifyContent="center"
             justifyItems="center"
             gap={2}
             sx={{
-                 alignItems:"center",
-                 justifySelf:"center",
-                mx:"auto"
-                 
+              alignItems: "center",
+              justifySelf: "center",
+              mx: "auto"
+
             }}
-           
+
           >
             <Avatar
               sx={{ width: 120, height: 120, bgcolor: "primary.main", fontSize: 48 }}
             >
-              {currentUser?.userName?.[0]?.toUpperCase()}
+              {avatarFile ?
+
+                <Image
+                  src={avatarFile?.name}
+                  alt="Nestfinity logo"
+                  width={45}
+                  height={45}
+                  style={{ borderRadius: "50%", objectFit: "cover" }}
+                />
+                : currentUser?.userName?.[0]?.toUpperCase()}
             </Avatar>
             <Button
               variant="outlined"
@@ -129,7 +169,7 @@ export default function SettingsPage() {
           </Grid>
 
           {/* Profile Details */}
-          <Grid item xs={12} md={8} sx={{mx:"auto"}}>
+          <Grid item xs={12} md={8} sx={{ mx: "auto" }}>
             <Stack spacing={2}>
               {/* Username */}
               <TextField
@@ -242,8 +282,10 @@ export default function SettingsPage() {
                   color="primary"
                   onClick={handleSaveChanges}
                   sx={{ flex: 1 }}
+                  disabled={isUpdate}
                 >
-                  Save Changes
+                  {isUpdate ? "Please wait..." : "Save Changes"}
+
                 </Button>
                 <Button
                   variant="outlined"
@@ -262,9 +304,29 @@ export default function SettingsPage() {
 
         {/* Account Actions */}
         <Stack spacing={2}>
-          <Button variant="outlined" color="error">
-            Logout
+          <Button variant="outlined" color="error" onClick={handleLogoutModal} disabled={isLogout}>
+            {isLogout ? "please wait" : "Logout"}
           </Button>
+
+          <DynamicModal
+            open={showLogoutModal}
+            title="Logout ?"
+            description="You will be logged out of your account."
+            confirmText="Yes"
+            confirmColor="error"
+            onClose={() => setShowLogoutModal(false)}
+            onConfirm={() => {
+              handleLogout();
+              setShowLogoutModal(false);
+            }}
+          />
+
+
+
+
+
+
+
           <Button variant="outlined" color="primary">
             Delete Account
           </Button>
