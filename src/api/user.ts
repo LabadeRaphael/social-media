@@ -26,8 +26,8 @@ const getAllUsers = async (searchKey?: string) => {
 }
 const blockUser = async (targetUserId?: string) => {
   try {
-    console.log("Block user",targetUserId);
-    
+    console.log("Block user", targetUserId);
+
     const response = await api.post(`/users/block/${targetUserId}`);
     return response.data
 
@@ -37,8 +37,8 @@ const blockUser = async (targetUserId?: string) => {
 }
 const unblockUser = async (blockedUserId?: string) => {
   try {
-    console.log("Block user",blockedUserId);
-    
+    console.log("Block user", blockedUserId);
+
     const response = await api.post(`/users/unblock/${blockedUserId}`);
     return response.data
 
@@ -48,8 +48,8 @@ const unblockUser = async (blockedUserId?: string) => {
 }
 const clearChat = async (conversationId?: string) => {
   try {
-    console.log("Block user",conversationId);
-    
+    console.log("Block user", conversationId);
+
     const response = await api.post(`/conversations/${conversationId}/clear-chat`);
     return response.data
 
@@ -82,18 +82,18 @@ const createNewConversations = async (data?: { participantIds: string[] }) => {
     throw error.response?.data || error;
   }
 }
-const sendMessage = async (messageDetails:Message) => {
+const sendMessage = async (messageDetails: Message) => {
   console.log(messageDetails);
 
   try {
     const response = await api.post("/messages", messageDetails);
     console.log("response", response);
-    
+
     return response.data.saveConversation
 
   } catch (error: any) {
     console.log(error);
-      
+
     throw error.response?.data || error;
   }
 }
@@ -127,7 +127,7 @@ const getMessages = async (conversationId?: string) => {
 }
 const sendAudio = async (formData: any) => {
   try {
-    
+
     const response = await api.post('/messages/voice', formData
     );
     return response.data
@@ -138,7 +138,7 @@ const sendAudio = async (formData: any) => {
 }
 const sendDocument = async (formData: any) => {
   try {
-    
+
     const response = await api.post('/messages/document', formData
     );
     return response.data
@@ -149,25 +149,46 @@ const sendDocument = async (formData: any) => {
 }
 const updateUser = async (formData: any) => {
   try {
-    
+
     const response = await api.put('/users/update', formData);
     return response.data
 
   } catch (error: any) {
+    console.log("error",error);
+    // console.log(error.message.includes('locked'))
+    
+    // if (error.status==="403") {
+    //   setTimeout(() => {
+    //     window.location.href = "/auth/login";
+    //   }, 2000);
+    // }
     throw error.response?.data || error;
   }
-  
- 
+
+
 }
-const logOut = async ()=>{
+const logOut = async () => {
   try {
-    
+
     const response = await api.post('/auth/logout');
     return response.data
 
   } catch (error: any) {
     throw error.response?.data || error;
   }
-  
+
 }
-export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage,resetUnreadCount,getMessages,markMessagesAsRead,sendAudio,sendDocument, updateUser,blockUser,unblockUser, clearChat, logOut }
+const deleteAccount = async (password: string) => {
+  try {
+
+    const response = await api.delete('/users/delete-account', { data: { password } });
+    console.log(response.data);
+
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+
+}
+export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage, resetUnreadCount, getMessages, markMessagesAsRead, sendAudio, sendDocument, updateUser, blockUser, unblockUser, clearChat, logOut, deleteAccount }

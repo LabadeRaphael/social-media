@@ -1,5 +1,5 @@
 import { Box, Typography, Button } from "@mui/material";
-import React from "react";
+import React, { Children } from "react";
 
 interface DynamicModalProps {
   open: boolean;
@@ -10,6 +10,7 @@ interface DynamicModalProps {
   confirmColor?: string;
   onClose: () => void;
   onConfirm: () => void;
+  children?: React.ReactNode; // allows inputs inside
 }
 
 const DynamicModal: React.FC<DynamicModalProps> = ({
@@ -21,6 +22,7 @@ const DynamicModal: React.FC<DynamicModalProps> = ({
   confirmColor = "error",
   onClose,
   onConfirm,
+  children,
 }) => {
   if (!open) return null;
 
@@ -41,6 +43,7 @@ const DynamicModal: React.FC<DynamicModalProps> = ({
       }}
     >
       <Box
+        onClick={(e) => e.stopPropagation()}
         sx={{
           bgcolor: "background.paper",
           p: 3,
@@ -59,7 +62,7 @@ const DynamicModal: React.FC<DynamicModalProps> = ({
             {description}
           </Typography>
         )}
-
+        {children}
         <Box display="flex" justifyContent="flex-end" gap={2}>
           <Button variant="outlined" onClick={onClose}>
             {cancelText}

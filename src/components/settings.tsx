@@ -20,7 +20,7 @@ import Image from "next/image";
 import { useCurrentUser, useUpdateUser } from "@/react-query/query-hooks";
 import { Edit, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
-import { logOut } from "@/api/user";
+import { deleteAccount, logOut } from "@/api/user";
 import DynamicModal from "./dynamic-modal";
 
 export default function SettingsPage() {
@@ -34,14 +34,21 @@ export default function SettingsPage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   const [password, setPassword] = useState("");
+  const [reAuthPassword, setReAuthPassword] = useState("");
+  const [saveAuthPassword, setSaveAuthPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showReAuthPassword, setShowReAuthPassword] = useState(false);
+  const [showSaveAuthPassword, setShowSaveAuthPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUpdate, setIsupdate] = useState(false);
   const [isLogout, setIsLogout] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [saveChangesModal, setSaveChangesModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
+  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string, reAuthPassword?: string, saveAuthPassword?:string }>({});
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     console.log("kdkdkdkd", file);
@@ -52,13 +59,43 @@ export default function SettingsPage() {
   const validatePasswords = () => {
     const newErrors: typeof errors = {};
     if (password && password.length < 6) newErrors.password = "Password must be at least 6 characters";
+    // if (reAuthPassword && reAuthPassword.length < 6) newErrors.reAuthPassword = "Password must be at least 6 characters";
     if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+  const validateDeletePassword = () => {
+    const newErrors: typeof errors = {};
+
+    if (!reAuthPassword) {
+      newErrors.reAuthPassword = "Password is required";
+    } else if (reAuthPassword.length < 6) {
+      newErrors.reAuthPassword = "Password must be at least 6 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  const validateSavePassword = () => {
+    const newErrors: typeof errors = {};
+
+    if (!saveAuthPassword) {
+      newErrors.saveAuthPassword = "Password is required";
+    } else if (saveAuthPassword.length < 6) {
+      newErrors.saveAuthPassword = "Password must be at least 6 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+console.log("save",saveAuthPassword);
 
   const handleLogoutModal = () => {
     setShowLogoutModal(!showLogoutModal)
+  }
+  const handleShowDeleteModal = () => {
+
+    setShowDeleteModal(!showDeleteModal)
   }
   const handleLogout = async () => {
     try {
@@ -75,32 +112,38 @@ export default function SettingsPage() {
     }
   }
 
-
-  const handleSaveChanges = async () => {
+  const showSaveChangesModal = () => {
     if (!validatePasswords()) return;
+    setSaveChangesModal(!saveChangesModal)
+  }
+  // const handleSaveChanges = async () => {
+  //   if (!validatePasswords()) return;
 
-    try {
-      setIsupdate(true)
-      await updateUserMutation.mutateAsync({
-        userName,
-        avatar: avatarFile,
-        password: password || undefined,
-      });
-      // alert("Profile updated successfully!");
-      toast.success("Profile updated successfully!")
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update profile")
-    } finally {
-      setIsupdate(false)
-    }
+  //   try {
+  //     setIsupdate(true)
+  //     await updateUserMutation.mutateAsync({
+  //       userName,
+  //       avatar: avatarFile,
+  //       password: password || undefined,
+  //     });
+  //     // alert("Profile updated successfully!");
+  //     toast.success("Profile updated successfully!")
+  //   } catch (error: any) {
+  //     toast.error(error.message || "Failed to update profile")
+  //   } finally {
+  //     setIsupdate(false)
+  //   }
 
-  };
+  // }
 
   const getBorderColor = (error?: string) => {
     if (!error) return undefined;
     return error ? "error.main" : "success.main";
   };
 
+  const previewUrl = avatarFile
+    ? URL.createObjectURL(avatarFile)
+    : currentUser?.avatarUrl || "";
   return (
     <Box
       sx={{
@@ -145,18 +188,15 @@ export default function SettingsPage() {
 
           >
             <Avatar
-              sx={{ width: 120, height: 120, bgcolor: "primary.main", fontSize: 48 }}
+              src={previewUrl}
+              alt="User Avatar"
+              sx={{
+                width: 120,
+                height: 120,
+                bgcolor: "primary.main",
+              }}
             >
-              {avatarFile ?
-
-                <Image
-                  src={avatarFile?.name}
-                  alt="Nestfinity logo"
-                  width={45}
-                  height={45}
-                  style={{ borderRadius: "50%", objectFit: "cover" }}
-                />
-                : currentUser?.userName?.[0]?.toUpperCase()}
+              {!previewUrl && currentUser?.userName?.[0]?.toUpperCase()}
             </Avatar>
             <Button
               variant="outlined"
@@ -280,13 +320,85 @@ export default function SettingsPage() {
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={handleSaveChanges}
+                  onClick={showSaveChangesModal}
                   sx={{ flex: 1 }}
                   disabled={isUpdate}
                 >
-                  {isUpdate ? "Please wait..." : "Save Changes"}
-
+                  Save Changes
                 </Button>
+
+                <DynamicModal
+                  open={saveChangesModal}
+                  title="Update Account?"
+                  description="This action will update your account profile. Enter your password to confirm."
+                  confirmText={isUpdate ? "Updating..." : "Update"}
+                  confirmColor="error"
+                  onClose={() => {
+                    setSaveChangesModal(false);
+                    setPassword("");
+                  }}
+                  onConfirm={async () => {
+                    if (!validateSavePassword()) return;
+                    setLoading(true);
+                    try {
+
+                      // await handleSaveChanges(); // call your API
+                      setSaveChangesModal(false);
+                      setSaveAuthPassword("")
+                        setIsupdate(true)
+                        await updateUserMutation.mutateAsync({
+                          userName,
+                          avatar: avatarFile,
+                          password: password || undefined,
+                          re_auth_psw: saveAuthPassword
+                        });
+                        // alert("Profile updated successfully!");
+                        toast.success("Profile updated successfully!")
+
+
+                      } catch (error: any) {
+                       console.log("he errrr ",error);
+                      
+                        toast.error(error?.message || "Failed to update profile")
+                        // setError(err?.message || "Failed to delete account");
+                      } finally {
+                        setIsupdate(false)
+                      }
+                    }}
+          >
+                  <TextField
+                    label="Password"
+                    type={showSaveAuthPassword ? "text" : "password"}
+                    value={saveAuthPassword}
+                    onChange={(e) => setSaveAuthPassword(e.target.value)}
+                    error={!!errors.saveAuthPassword}
+                    helperText={errors.saveAuthPassword || " "}
+                    fullWidth
+                    size="small"
+                    variant="outlined"
+                    autoFocus
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
+                        "& fieldset": { borderColor: getBorderColor(errors.reAuthPassword) },
+                        "&:hover fieldset": { borderColor: theme.palette.primary.main },
+                      },
+                      "& .MuiInputLabel-root": { fontSize: "0.9rem" },
+                    }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={() => setShowSaveAuthPassword(!showSaveAuthPassword)}>
+                            {showSaveAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </DynamicModal>
+
+
+
                 <Button
                   variant="outlined"
                   color="error"
@@ -321,15 +433,66 @@ export default function SettingsPage() {
             }}
           />
 
-
-
-
-
-
-
-          <Button variant="outlined" color="primary">
+          <Button variant="outlined" color="primary" onClick={handleShowDeleteModal}>
             Delete Account
           </Button>
+          <DynamicModal
+            open={showDeleteModal}
+            title="Delete Account?"
+            description="This action will permanently deactivate your account. Enter your password to confirm."
+            confirmText={loading ? "Deleting..." : "Delete"}
+            confirmColor="error"
+            onClose={() => {
+              setShowDeleteModal(false);
+              setPassword("");
+            }}
+            onConfirm={async () => {
+              if (!validateDeletePassword()) return;
+              setLoading(true);
+              try {
+                await deleteAccount(reAuthPassword); // call your API
+                setShowDeleteModal(false);
+                handleLogout(); // log out user after deletion
+
+              } catch (error: any) {
+                toast.error(error?.message)
+                // setError(err?.message || "Failed to delete account");
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
+            <TextField
+              label="Password"
+              type={showReAuthPassword ? "text" : "password"}
+              value={reAuthPassword}
+              onChange={(e) => setReAuthPassword(e.target.value)}
+              error={!!errors.reAuthPassword}
+              helperText={errors.reAuthPassword || " "}
+              fullWidth
+              size="small"
+              variant="outlined"
+              autoFocus
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  "& fieldset": { borderColor: getBorderColor(errors.reAuthPassword) },
+                  "&:hover fieldset": { borderColor: theme.palette.primary.main },
+                },
+                "& .MuiInputLabel-root": { fontSize: "0.9rem" },
+              }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowReAuthPassword(!showReAuthPassword)}>
+                      {showReAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </DynamicModal>
+
         </Stack>
       </Paper>
     </Box>

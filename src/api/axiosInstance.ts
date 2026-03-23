@@ -83,12 +83,12 @@ api.interceptors.response.use(
         status: 0,
       });
     }
-
+    const { status } = error.response;
     // ❗ Login attempt failed
     if (originalRequest?.url?.includes("/auth/login")) {
       return Promise.reject(error);
     }
-
+    
     // ❗ Token expired → try refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -100,6 +100,17 @@ api.interceptors.response.use(
         
         return api(originalRequest);
       } catch (refreshError) {
+        if (typeof window !== "undefined") {
+          window.location.href = "/auth/login";
+        }
+      }
+    }
+    if (status === 403) {
+      const message = error.response.data?.message;
+      console.log("message",message);
+      
+      if (message?.includes("locked")) {
+        // optional: clear cookies first if needed
         if (typeof window !== "undefined") {
           window.location.href = "/auth/login";
         }

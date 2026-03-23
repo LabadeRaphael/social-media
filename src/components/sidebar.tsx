@@ -15,6 +15,7 @@ import {
   ListItemButton,
   CircularProgress,
   colors,
+  Stack,
 } from "@mui/material";
 import { Search, MoreVertical, MessageCircle, Mic, 
  Image as ImageIcon,
@@ -333,7 +334,8 @@ export default function Sidebar({setActiveView }: SidebarProps) {
             style={{ borderRadius: "50%", objectFit: "cover" }}
           />
           <Typography variant="h6" fontWeight={600}>
-            Nestfinity
+            NestChat
+            
           </Typography>
         </Box>
         <Box>
@@ -519,6 +521,26 @@ export default function Sidebar({setActiveView }: SidebarProps) {
           })
         )}
       </List>
+        <Box sx={{
+          display:"flex",
+          flexDirection:"column",
+          // width:"260",
+            //  alignItems: "center",
+          // justifyContent: "space-between",
+          p: 2,
+        }}>
+          <Stack direction="row"
+            spacing={2}
+            mt="auto"
+            alignItems= "center"
+          >
+            <Avatar src={currentUser?.avatarUrl}>
+            <Typography variant="body1" color="error">
+              {currentUser?.userName}
+            </Typography>
+            </Avatar>
+          </Stack>
+        </Box>
     </Box>
   );
 }
