@@ -17,8 +17,9 @@ import {
   colors,
   Stack,
 } from "@mui/material";
-import { Search, MoreVertical, MessageCircle, Mic, 
- Image as ImageIcon,
+import {
+  Search, MoreVertical, MessageCircle, Mic,
+  Image as ImageIcon,
   Music,
   Video,
   FileText,
@@ -51,24 +52,19 @@ interface User {
 interface SidebarProps {
   setActiveView: (view: 'chat' | 'settings') => void;
 }
-export default function Sidebar({setActiveView }: SidebarProps) {
+export default function Sidebar({ setActiveView }: SidebarProps) {
   const [searchTerm, setSearchTerm] = useState<string>("");
   // const [openProfile, setOpenProfile] = useState(false);
-// const [activeView, setActiveView] = useState<'chat' | 'settings'>('chat');
+  // const [activeView, setActiveView] = useState<'chat' | 'settings'>('chat');
 
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const dispatch = useDispatch();
   const selectedChat = useSelector(
     (state: RootState) => state.chatReducer.selectedChat
   );
-  console.log(selectedChat);
-  console.log("no see see it", selectedChat);
-  if (selectedChat) {
-    console.log("the selected chat we he see it", selectedChat);
-  }
 
   const { data: currentUser = null, isLoading: isLoadingCurrentUser, error: currentUserError } = useCurrentUser()
-
+  console.log("curren", currentUser);
 
   // debounce
   const debouncedHandler = useMemo(
@@ -158,61 +154,61 @@ export default function Sidebar({setActiveView }: SidebarProps) {
       };
 
 
-// const getFileType = (name: string) => {
-//   const ext = name?.split(".").pop()?.toLowerCase();
+      // const getFileType = (name: string) => {
+      //   const ext = name?.split(".").pop()?.toLowerCase();
 
-//   if (!ext) {
-//     return (
-//       <span className="flex items-center gap-2">
-//         <File size={16} />
-//         Unknown
-//       </span>
-//     );
-//   }
+      //   if (!ext) {
+      //     return (
+      //       <span className="flex items-center gap-2">
+      //         <File size={16} />
+      //         Unknown
+      //       </span>
+      //     );
+      //   }
 
-//   if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
-//     return (
-//       <span className="flex items-center gap-2">
-//         <ImageIcon size={16} />
-//         Image
-//       </span>
-//     );
-//   }
+      //   if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+      //     return (
+      //       <span className="flex items-center gap-2">
+      //         <ImageIcon size={16} />
+      //         Image
+      //       </span>
+      //     );
+      //   }
 
-//   if (["mp3", "wav", "ogg"].includes(ext)) {
-//     return (
-//       <span className="flex items-center gap-2">
-//         <Music size={16} />
-//         Audio
-//       </span>
-//     );
-//   }
+      //   if (["mp3", "wav", "ogg"].includes(ext)) {
+      //     return (
+      //       <span className="flex items-center gap-2">
+      //         <Music size={16} />
+      //         Audio
+      //       </span>
+      //     );
+      //   }
 
-//   if (["mp4", "mov", "webm"].includes(ext)) {
-//     return (
-//       <span className="flex items-center gap-2">
-//         <Video size={16} />
-//         Video
-//       </span>
-//     );
-//   }
+      //   if (["mp4", "mov", "webm"].includes(ext)) {
+      //     return (
+      //       <span className="flex items-center gap-2">
+      //         <Video size={16} />
+      //         Video
+      //       </span>
+      //     );
+      //   }
 
-//   if (["pdf", "docx"].includes(ext)) {
-//     return (
-//       <span className="flex items-center gap-2">
-//         <FileText size={16} />
-//         PDF
-//       </span>
-//     );
-//   }
+      //   if (["pdf", "docx"].includes(ext)) {
+      //     return (
+      //       <span className="flex items-center gap-2">
+      //         <FileText size={16} />
+      //         PDF
+      //       </span>
+      //     );
+      //   }
 
-//   return (
-//     <span className="flex items-center gap-2">
-//       <File size={16} />
-//       Other
-//     </span>
-//   );
-// };
+      //   return (
+      //     <span className="flex items-center gap-2">
+      //       <File size={16} />
+      //       Other
+      //     </span>
+      //   );
+      // };
 
 
 
@@ -231,7 +227,7 @@ export default function Sidebar({setActiveView }: SidebarProps) {
           : false;
         console.log("The other user", otherUser);
         console.log("isOnline", isOnline);
-          const fileType = getFileType(conv?.lastMessage?.fileName);
+        const fileType = getFileType(conv?.lastMessage?.fileName);
         return {
           type: "conversation",
           id: conv.id,
@@ -335,11 +331,11 @@ export default function Sidebar({setActiveView }: SidebarProps) {
           />
           <Typography variant="h6" fontWeight={600}>
             NestChat
-            
+
           </Typography>
         </Box>
         <Box>
-        <ThemeSwitcher />
+          <ThemeSwitcher />
           <IconButton size="small" aria-label="Messages">
             <MessageCircle size={20} />
           </IconButton>
@@ -350,7 +346,7 @@ export default function Sidebar({setActiveView }: SidebarProps) {
         </Box>
       </Box>
 
-  
+
 
 
 
@@ -458,8 +454,8 @@ export default function Sidebar({setActiveView }: SidebarProps) {
                       />
                     </Box>
                   </ListItemAvatar>
-                        
-                  <ListItemText 
+
+                  <ListItemText
                     primary={conv.userName}
                     secondary={conv.lastMessagePreview}
                     primaryTypographyProps={{
@@ -521,26 +517,47 @@ export default function Sidebar({setActiveView }: SidebarProps) {
           })
         )}
       </List>
+      {currentUser &&
+
         <Box sx={{
-          display:"flex",
-          flexDirection:"column",
-          // width:"260",
-            //  alignItems: "center",
-          // justifyContent: "space-between",
+          display: "flex",
+          flexDirection: "column",
+          fontWeight:"300",
           p: 2,
-        }}>
+          cursor:"pointer"
+        }} onClick={()=>setActiveView("settings")}>
           <Stack direction="row"
             spacing={2}
             mt="auto"
-            alignItems= "center"
+            alignItems="center"
           >
-            <Avatar src={currentUser?.avatarUrl}>
-            <Typography variant="body1" color="error">
-              {currentUser?.userName}
-            </Typography>
-            </Avatar>
+            <Avatar src={currentUser?.avatarUrl} />
+            <Box>
+              <Stack direction="column">
+                <Typography
+                  variant="caption"
+                  color="text.primary"
+                >
+                  {currentUser?.
+                    userName
+                  }
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="text.primary"
+                >
+                  {currentUser?.
+                    email
+                  }
+                </Typography>
+              </Stack>
+              <Box />
+
+            </Box>
+
           </Stack>
         </Box>
+      }
     </Box>
   );
 }

@@ -36,7 +36,6 @@ import {
   useSendMessage,
 } from "@/react-query/query-hooks";
 import { Conversation } from "@/types/conversation";
-import { ThemeSwitcher } from "./Theme/themeswitcher";
 import { useSocketChat } from "@/react-query/query-hooks";
 import { getSocket } from "@/lib/socket";
 import TypingIndicator from "./typing-indicator";
@@ -215,12 +214,12 @@ export default function ChatWindow({
 
 
 
-  console.log("The is block state", isBlock);
+  // console.log("The is block state", isBlock);
 
-  console.log("blockuser", isBlock);
-  console.log("otheruser", otherUser?.user.id);
-  console.log("senderId", currentUser?.id);
-  console.log("receiverId", otherUser?.user.id);
+  // console.log("blockuser", isBlock);
+  // console.log("otheruser", otherUser?.user.id);
+  // console.log("senderId", currentUser?.id);
+  // console.log("receiverId", otherUser?.user.id);
 
   const handleSendMessage = async (text: string) => {
     if (text.trim() && selectedChat) {
@@ -260,21 +259,9 @@ export default function ChatWindow({
       name: file.name,
       size: file.size,
     });
-
     // Clear input so same file can be selected again if needed
     e.target.value = "";
 
-    // const socket = getSocket();
-
-    // socket.emit("send_message", {
-    //   type: "DOCUMENT",
-    //   mediaUrl: message.mediaUrl,
-    //   receiverId: otherUser?.user.id,
-    //   conversationId: selectedChat.id,
-    //   fileName: message.fileName,
-    //   fileSize: message.fileSize,
-    //   fileType: message.fileType,
-    // });
   };
   const handleSendFile = async (fileData: { url: string; name: string; size: number }) => {
     if (!selectedChat) return;
@@ -313,7 +300,6 @@ export default function ChatWindow({
     }
 
   };
-
 
 
   const startRecording = () => {
@@ -630,20 +616,14 @@ export default function ChatWindow({
                 <ChevronLeft />
               </IconButton>
               <Typography variant="h6">Settings</Typography>
-
-              {/* <ThemeSwitcher /> */}
             </Box>
           </Box>
-
           {/* Settings Content */}
           <Box flex={1} overflow="auto" bgcolor="background.default">
-            <Settings />
+            <Settings setActiveView={setActiveView}/>
           </Box>
         </Box>
       )}
-
     </>
-
-
   );
 }

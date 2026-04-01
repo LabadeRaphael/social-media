@@ -155,13 +155,7 @@ const updateUser = async (formData: any) => {
 
   } catch (error: any) {
     console.log("error",error);
-    // console.log(error.message.includes('locked'))
-    
-    // if (error.status==="403") {
-    //   setTimeout(() => {
-    //     window.location.href = "/auth/login";
-    //   }, 2000);
-    // }
+
     throw error.response?.data || error;
   }
 

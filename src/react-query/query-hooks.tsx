@@ -255,7 +255,7 @@ const useUpdateUser = () => {
   return useMutation({
     mutationFn: async (data: UpdateUserPayload) => {
       const formData = new FormData();
-console.log("he aa",data);
+      console.log("he aa",data);
 
       if (data.userName) formData.append("userName", data.userName);
       if (data.password) formData.append("password", data.password);
@@ -266,7 +266,7 @@ console.log("he aa",data);
       
       return updateUser(formData);
     },
-
+    retry: false,
     onSuccess: () => {
       // Refetch current user data after update
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });

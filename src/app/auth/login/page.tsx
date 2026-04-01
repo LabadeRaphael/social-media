@@ -36,6 +36,8 @@ export default function LoginPage() {
   const mode = theme.palette.mode;
 
   const [showPassword, setShowPassword] = useState(false);
+  const [disabled, setDisabled] = useState(false);
+  const [count, setCount] = useState(0)
   const [apiMessage, setApiMessage] = useState<ApiMessage | null>(null);
   useEffect(() => {
     AOS.init({ duration: 800, easing: "ease-in-out", once: true });
@@ -102,7 +104,7 @@ export default function LoginPage() {
                 alt="Nestfinity logo"
                 height={70}
                 width={70}
-                style={{borderRadius:'50%'}}
+                style={{ borderRadius: '50%' }}
               />
               <Typography
                 variant="h3"
@@ -171,6 +173,20 @@ export default function LoginPage() {
                   // 🔹 Hide message after 3 seconds
                   setTimeout(() => setApiMessage(null), 3000);
                   console.error("Login error:", err.response?.data || err.message);
+                  if (err.response?.data?.timeLeft) {
+                    setDisabled(true);
+                    setCount(err.response.data.timeLeft);
+                    const interval = setInterval(() => {
+                      setCount((prev) => {
+                        if (prev <= 1000) {
+                          clearInterval(interval);
+                          setDisabled(false);
+                          return 0;
+                        }
+                        return prev - 1000;
+                      });
+                    }, 1000);
+                  }
                 } finally {
                   setSubmitting(false);
                 }
@@ -247,7 +263,7 @@ export default function LoginPage() {
                       color="primary"
                       fullWidth
                       type="submit"
-                      disabled={!isValid || isSubmitting}
+                      disabled={!isValid || isSubmitting || disabled}
                       sx={{
                         borderRadius: { xs: 1, sm: 2 },
                         py: { xs: 1, sm: 1.2 },
@@ -260,7 +276,11 @@ export default function LoginPage() {
                         },
                       }}
                     >
-                      {isSubmitting ? "Please wait..." : "Log In"}
+                      {isSubmitting
+                        ? "Please wait..."
+                        : disabled
+                          ? `Try again in ${Math.ceil(count / 1000)}s`
+                          : "Log In"}
 
                     </Button>
                   </Stack>

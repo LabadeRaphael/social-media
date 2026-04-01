@@ -16,18 +16,18 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { useCurrentUser, useUpdateUser } from "@/react-query/query-hooks";
 import { Edit, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import { deleteAccount, logOut } from "@/api/user";
 import DynamicModal from "./dynamic-modal";
-
-export default function SettingsPage() {
+interface SettingProp {
+  setActiveView: (view: 'chat' | 'settings') => void;
+}
+export default function SettingsPage({ setActiveView }: SettingProp) {
   const theme = useTheme();
-  const router = useRouter();
   const { data: currentUser } = useCurrentUser();
-  const updateUserMutation = useUpdateUser();
+  // const updateUserMutation = useUpdateUser();
 
   const [userName, setUserName] = useState(currentUser?.userName || "");
   const [email] = useState(currentUser?.email || "");
@@ -48,7 +48,7 @@ export default function SettingsPage() {
   const [saveChangesModal, setSaveChangesModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string, reAuthPassword?: string, saveAuthPassword?:string }>({});
+  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string, reAuthPassword?: string, saveAuthPassword?: string }>({});
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     console.log("kdkdkdkd", file);
@@ -88,7 +88,7 @@ export default function SettingsPage() {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-console.log("save",saveAuthPassword);
+  console.log("save", saveAuthPassword);
 
   const handleLogoutModal = () => {
     setShowLogoutModal(!showLogoutModal)
@@ -135,6 +135,47 @@ console.log("save",saveAuthPassword);
   //   }
 
   // }
+  const { mutateAsync: updateUserMutation } = useUpdateUser();
+  const handleUpdate = async () => {
+    if (isUpdate) return;
+    if (!validateSavePassword()) return;
+
+    setIsupdate(true);
+    try {
+      const payload = {
+        userName,
+        avatar: avatarFile,
+        password: password || undefined,
+        re_auth_psw: saveAuthPassword,
+      };
+      const response = await updateUserMutation(payload)
+      console.log(response);
+
+
+      toast.success("Profile updated successfully!");
+      setSaveChangesModal(false);
+      setSaveAuthPassword("");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to update profile");
+    } finally {
+      setIsupdate(false);
+    }
+  };
+  const handleDelete = async () => {
+    if (!validateDeletePassword()) return;
+    setLoading(true);
+    try {
+      await deleteAccount(reAuthPassword); // call your API
+      setShowDeleteModal(false);
+      handleLogout(); // log out user after deletion
+
+    } catch (error: any) {
+      toast.error(error?.message)
+    } finally {
+      setLoading(false);
+    }
+
+  }
 
   const getBorderColor = (error?: string) => {
     if (!error) return undefined;
@@ -333,39 +374,12 @@ console.log("save",saveAuthPassword);
                   description="This action will update your account profile. Enter your password to confirm."
                   confirmText={isUpdate ? "Updating..." : "Update"}
                   confirmColor="error"
+                  disabled={isUpdate}
                   onClose={() => {
                     setSaveChangesModal(false);
                     setPassword("");
                   }}
-                  onConfirm={async () => {
-                    if (!validateSavePassword()) return;
-                    setLoading(true);
-                    try {
-
-                      // await handleSaveChanges(); // call your API
-                      setSaveChangesModal(false);
-                      setSaveAuthPassword("")
-                        setIsupdate(true)
-                        await updateUserMutation.mutateAsync({
-                          userName,
-                          avatar: avatarFile,
-                          password: password || undefined,
-                          re_auth_psw: saveAuthPassword
-                        });
-                        // alert("Profile updated successfully!");
-                        toast.success("Profile updated successfully!")
-
-
-                      } catch (error: any) {
-                       console.log("he errrr ",error);
-                      
-                        toast.error(error?.message || "Failed to update profile")
-                        // setError(err?.message || "Failed to delete account");
-                      } finally {
-                        setIsupdate(false)
-                      }
-                    }}
-          >
+                  onConfirm={handleUpdate}                >
                   <TextField
                     label="Password"
                     type={showSaveAuthPassword ? "text" : "password"}
@@ -394,6 +408,7 @@ console.log("save",saveAuthPassword);
                         </InputAdornment>
                       ),
                     }}
+
                   />
                 </DynamicModal>
 
@@ -402,7 +417,7 @@ console.log("save",saveAuthPassword);
                 <Button
                   variant="outlined"
                   color="error"
-                  onClick={() => router.push("/")}
+                  onClick={() => setActiveView("chat")}
                   sx={{ flex: 1 }}
                 >
                   Cancel
@@ -442,26 +457,12 @@ console.log("save",saveAuthPassword);
             description="This action will permanently deactivate your account. Enter your password to confirm."
             confirmText={loading ? "Deleting..." : "Delete"}
             confirmColor="error"
+            disabled={loading}
             onClose={() => {
               setShowDeleteModal(false);
               setPassword("");
             }}
-            onConfirm={async () => {
-              if (!validateDeletePassword()) return;
-              setLoading(true);
-              try {
-                await deleteAccount(reAuthPassword); // call your API
-                setShowDeleteModal(false);
-                handleLogout(); // log out user after deletion
-
-              } catch (error: any) {
-                toast.error(error?.message)
-                // setError(err?.message || "Failed to delete account");
-              } finally {
-                setLoading(false);
-              }
-            }}
-          >
+            onConfirm={handleDelete}>
             <TextField
               label="Password"
               type={showReAuthPassword ? "text" : "password"}
@@ -489,6 +490,12 @@ console.log("save",saveAuthPassword);
                     </IconButton>
                   </InputAdornment>
                 ),
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleDelete();
+                }
               }}
             />
           </DynamicModal>

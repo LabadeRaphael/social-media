@@ -8,6 +8,7 @@ interface DynamicModalProps {
   confirmText?: string;
   cancelText?: string;
   confirmColor?: string;
+  disabled?:boolean;
   onClose: () => void;
   onConfirm: () => void;
   children?: React.ReactNode; // allows inputs inside
@@ -20,6 +21,7 @@ const DynamicModal: React.FC<DynamicModalProps> = ({
   confirmText = "Confirm",
   cancelText = "Cancel",
   confirmColor = "error",
+  disabled,
   onClose,
   onConfirm,
   children,
@@ -72,6 +74,7 @@ const DynamicModal: React.FC<DynamicModalProps> = ({
             variant="contained"
             color={confirmColor as any}
             onClick={onConfirm}
+            disabled={disabled}
           >
             {confirmText}
           </Button>

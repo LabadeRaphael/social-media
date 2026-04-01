@@ -75,7 +75,7 @@ api.interceptors.response.use(
   res => res,
   async error => {
     const originalRequest = error.config;
-
+    const message = error.response?.data?.message;
     // ❗ Backend is OFFLINE (Network Error)
     if (error.message === "Network Error" || !error.response) {
       return Promise.reject({
@@ -88,16 +88,20 @@ api.interceptors.response.use(
     if (originalRequest?.url?.includes("/auth/login")) {
       return Promise.reject(error);
     }
-    
+
     // ❗ Token expired → try refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+      if (message?.includes("Incorrect password")) {
+        return Promise.reject(error);
+      }
 
+      originalRequest._retry = true;
       try {
         console.log("visit the refresh-token");
         await api.post("/auth/refresh-token");
         console.log("after visiting the refresh-token");
-        
+
         return api(originalRequest);
       } catch (refreshError) {
         if (typeof window !== "undefined") {
@@ -107,8 +111,8 @@ api.interceptors.response.use(
     }
     if (status === 403) {
       const message = error.response.data?.message;
-      console.log("message",message);
-      
+      console.log("message", message);
+
       if (message?.includes("locked")) {
         // optional: clear cookies first if needed
         if (typeof window !== "undefined") {

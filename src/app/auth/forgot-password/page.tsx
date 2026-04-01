@@ -83,10 +83,10 @@ export default function ForgotPasswordPage() {
                                     ? theme.palette.primary.contrastText
                                     : theme.palette.secondary.contrastText,
                             color: mode === "light" ? theme.palette.background.paper : theme.palette.background.default,
-                            display: { xs: "flex", sm: "flex" },
+                              display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            p: { xs: 2, sm: 3, md: 4, lg: 5 },
+                            p: { xs: 2, sm: 3, md: 4 },
                             textAlign: "center",
                             minHeight: { xs: 150, sm: 200, md: "100%" },
                         }}
@@ -102,16 +102,19 @@ export default function ForgotPasswordPage() {
                                 style={{ borderRadius: '50%' }}
                             />
                             <Typography
-                                variant="h3"
+                                variant="h4"
                                 fontWeight="bold"
-                                sx={{ fontSize: { xs: "1.5rem", sm: "1.8rem", md: "2rem", lg: "2.2rem" }, mb: 1 }}
+                                sx={{ mt: 1 }}
+                            // sx={{ fontSize: { xs: "1.5rem", sm: "1.8rem", md: "2rem", lg: "2.2rem" }, mb: 1 }}
                             >
                                 Forgot Password?
                             </Typography>
                             <Typography
-                                variant="body1"
-                                sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem", lg: "1.1rem" } }}
-                            >
+                                variant="body2"
+                                // sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem", lg: "1.1rem" } }}
+                                data-aos="flip-left"
+                                data-aos-easing="ease-out-cubic"
+                                data-aos-duration="2000">
                                 Enter your email and we’ll send you reset instructions.
                             </Typography>
                         </Box>
@@ -133,7 +136,7 @@ export default function ForgotPasswordPage() {
                         data-aos-delay="400"
                     >
                         <Typography
-                            variant="h4"
+                            variant="h5"
                             fontWeight="bold"
                             sx={{
                                 fontSize: { xs: "1.3rem", sm: "1.5rem", md: "1.7rem", lg: "1.9rem" },
@@ -142,7 +145,7 @@ export default function ForgotPasswordPage() {
                             data-aos="fade-up"
                             data-aos-delay="500"
                         >
-                            Reset Password
+                            Enter your email
                         </Typography>
 
                         <Formik
@@ -216,11 +219,11 @@ export default function ForgotPasswordPage() {
 
                                         {/* Submit Button */}
                                         <Button
-                                            variant="contained"
-                                            size="large"
-                                            color="primary"
-                                            fullWidth
                                             type="submit"
+                                            variant="contained"
+                                            fullWidth
+                                            // size="large"
+                                            color="primary"
                                             disabled={!isValid || isSubmitting}
                                             sx={{
                                                 borderRadius: { xs: 1, sm: 2 },
@@ -237,7 +240,7 @@ export default function ForgotPasswordPage() {
                                                 },
                                             }}
                                         >
-                                            {isSubmitting ? "Please wait..." : "Send Reset Link"}
+                                            {isSubmitting ? "Processing..." : "Send Reset Link"}
 
                                         </Button>
                                     </Stack>
