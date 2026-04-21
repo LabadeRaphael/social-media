@@ -19,15 +19,11 @@ import * as Yup from "yup";
 import api from "@/api/axiosInstance";
 import MessageAlert from "@/components/message-alert";
 import Image from "next/image";
+import { ApiMessage } from "@/types/api-response";
 
 const RecoverySchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Email is required"),
 });
-
-interface ApiMessage {
-  message: string;
-  status: boolean;
-}
 
 export default function RecoverAccountPage() {
   const theme = useTheme();

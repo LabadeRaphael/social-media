@@ -16,7 +16,7 @@ import Image from "next/image";
 import api from "@/api/axiosInstance";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ApiMessage } from "@/types/api-response";
-import { verifyRecoverAccount } from "@/api/user";
+import { verifyEmailChange } from "@/api/user";
 
 export default function VerifyRecoverAccountPage() {
     const theme = useTheme();
@@ -26,6 +26,8 @@ export default function VerifyRecoverAccountPage() {
 
     const [apiMessage, setApiMessage] = useState<ApiMessage | null>(null);
     const [isLoading, setIsLoading] = useState(true)
+    // const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+    // const [message, setMessage] = useState("Verifying your account...");
 const isSuccess = apiMessage?.status === true;
 const isError = apiMessage?.status === false;
     useEffect(() => {
@@ -34,14 +36,14 @@ const isError = apiMessage?.status === false;
         console.log("token", token);
 
         if (!token) {
-            setApiMessage({ message: "Invalid recovery link.", status: false })
+            setApiMessage({ message: "Invalid verification link.", status: false })
             setIsLoading(false)
             return;
         }
 
         const verify = async () => {
             try {
-                const res = await verifyRecoverAccount(token);
+                const res = await verifyEmailChange(token);
                 const message = res?.message
                 const status = res?.status
                 setApiMessage({ message: message, status: status })
@@ -50,9 +52,10 @@ const isError = apiMessage?.status === false;
                 }, 2000);
             } catch (err: any) {
                 const message = err?.message || "Recovery link expired or invalid"
-                const status = err?.data?.status || false
+                const status = err?.status || false
                 setApiMessage({ message: message, status: status })
                 console.log(message);
+
                 setIsLoading(false)
             } finally {
                 setIsLoading(false)
@@ -124,7 +127,7 @@ const isError = apiMessage?.status === false;
                             <Typography variant="body2" data-aos="flip-left"
                                 data-aos-easing="ease-out-cubic"
                                 data-aos-duration="2000">
-                                Secure account recovery
+                                Secure change email verification
                             </Typography>
                         </Box>
                     </Grid>
@@ -170,7 +173,7 @@ const isError = apiMessage?.status === false;
                             </Typography>
                             :
                             <Typography variant="body2" mt={1} color="error">
-                                Please request a new recovery link.
+                                Please request a new email verification link.
                             </Typography>
                         }
                         {/* {status === "success" && (

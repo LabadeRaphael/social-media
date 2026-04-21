@@ -1,130 +1,77 @@
-// // src/api/api.js
-// import axios from "axios";
-
-// // Create a single Axios instance
-// const api = axios.create({
-//   baseURL: "http://localhost:3003", // your NestJS backend URL
-//   withCredentials: true, // ✅ send cookies automatically
-// });
-
-// // Add a response interceptor
-// api.interceptors.response.use(
-//   // 1. If response is OK (status 200–299) → just return it
-//   (res) => res,
-
-//   // 2. If response is an error
-//   async (error) => {
-//     // Case: Unauthorized → token probably expired
-//     if (error.response?.status === 401) {
-//       try {
-//         // Call refresh endpoint to get new access token
-//         // await api.post("/auth/refresh-token");
-
-//         // Retry the failed request with the new token
-//         // return api(error.config);
-//       } catch (refreshError) {
-//         console.error("Refresh failed, logging out...");
-//         // Optional: redirect to login page
-//         window.location.href = "/auth/login"; // redirect to login
-//       }
-//     }
-
-//     // For other errors (403, 404, 500, etc.), just pass them on
-//     return Promise.reject(error);
-//   }
-// );
-
-// export default api;
-
-// src/api/api.ts
 import axios from "axios";
 
-// Create a single Axios instance
+// Create Axios instance
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3003",
-  withCredentials: true, // ✅ send cookies automatically
+  withCredentials: true, // send cookies
 });
 
-// api.interceptors.response.use(
-//   res => res,
-//   async error => {
-//     const originalRequest = error.config;
+// Public routes (no auth logic should touch these)
+const PUBLIC_ROUTES = [
+  "/auth/login",
+  "/auth/signup",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/recover-account",
+  "/auth/recover-account-verify",
+];
 
-//     // Case 1: Login attempt failed
-//     if (originalRequest?.url?.includes("/auth/login")) {
-//       return Promise.reject(error); // just return the error to show "invalid credentials"
-//     }
-
-//     // Case 2: Expired token, try refresh
-//     if (error.response?.status === 401 && !originalRequest._retry) {
-//       originalRequest._retry = true;
-//       try {
-//         await api.post("/auth/refresh-token");
-//         return api(originalRequest); // retry with new token
-//       } catch (refreshError) {
-//         if (typeof window !== 'undefined') {
-//           window.location.href = "/auth/login";
-//         }
-//       }
-//     }
-
-//     return Promise.reject(error);
-//   }
-// );
 api.interceptors.response.use(
-  res => res,
-  async error => {
+  (res) => res,
+  async (error) => {
     const originalRequest = error.config;
+    const url = originalRequest?.url || "";
     const message = error.response?.data?.message;
-    // ❗ Backend is OFFLINE (Network Error)
+    const status = error.response?.status;
+
+    // ❗ Backend offline / network error
     if (error.message === "Network Error" || !error.response) {
       return Promise.reject({
         message: "Unable to connect to the server. Please try again later.",
         status: 0,
       });
     }
-    const { status } = error.response;
-    // ❗ Login attempt failed
-    if (originalRequest?.url?.includes("/auth/login")) {
-      return Promise.reject(error);
+
+    // ✅ 1. IGNORE PUBLIC ROUTES (VERY IMPORTANT)
+    const isPublicRoute = PUBLIC_ROUTES.some((route) =>
+      url.includes(route)
+    );
+
+    if (isPublicRoute) {
+      console.log("public");
+      
+      return Promise.reject(error); // 🔥 do nothing extra
     }
 
-    // ❗ Token expired → try refresh
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // ❗ 2. HANDLE 401 (token expired → refresh)
+    if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      if (message?.includes("Incorrect password")) {
-        return Promise.reject(error);
-      }
 
-      originalRequest._retry = true;
       try {
-        console.log("visit the refresh-token");
         await api.post("/auth/refresh-token");
-        console.log("after visiting the refresh-token");
-
-        return api(originalRequest);
+        return api(originalRequest); // retry original request
       } catch (refreshError) {
         if (typeof window !== "undefined") {
           window.location.href = "/auth/login";
         }
+        return Promise.reject(refreshError);
       }
     }
-    if (status === 403) {
-      const message = error.response.data?.message;
-      console.log("message", message);
 
-      if (message?.includes("locked")) {
-        // optional: clear cookies first if needed
+    // ❗ 3. HANDLE 403 (forbidden / locked account)
+    if (status === 403) {
+      if (message?.toLowerCase().includes("locked")) {
         if (typeof window !== "undefined") {
           window.location.href = "/auth/login";
         }
       }
+      //  window.location.href = "/auth/login";
+      // Optional: log for debugging only
+      console.log("Forbidden:", message);
     }
 
     return Promise.reject(error);
   }
 );
-
-
 
 export default api;

@@ -1,6 +1,7 @@
 import { Message } from "@/types/messages";
 import api from "./axiosInstance";
 import { UploadVoicePayload } from "@/types/audio";
+import { RequestEmailChangePayload } from "@/types/email-change";
 
 const getCurrentUser = async () => {
   try {
@@ -154,7 +155,7 @@ const updateUser = async (formData: any) => {
     return response.data
 
   } catch (error: any) {
-    console.log("error",error);
+    console.log("error", error);
 
     throw error.response?.data || error;
   }
@@ -185,4 +186,42 @@ const deleteAccount = async (password: string) => {
   }
 
 }
-export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage, resetUnreadCount, getMessages, markMessagesAsRead, sendAudio, sendDocument, updateUser, blockUser, unblockUser, clearChat, logOut, deleteAccount }
+const requestEmailChange = async (requestEmailDetails:RequestEmailChangePayload) => {
+  try {
+    console.log("requestEmailDetails",requestEmailDetails);
+    
+    const response = await api.post('/auth/request-email-change', requestEmailDetails);
+    console.log(response.data);
+
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+}
+const verifyRecoverAccount = async (token?:string) => {
+  try {
+    const response = await api.post("/auth/recover-account-verify", { token });
+    console.log(response.data);
+
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+    
+  } 
+}
+const verifyEmailChange = async (token: string) => {
+  try {
+
+    const response = await api.post('/auth/verify-email-change', { token });
+    console.log(response.data);
+
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+
+}
+export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage, resetUnreadCount, getMessages, markMessagesAsRead, sendAudio, sendDocument, updateUser, blockUser, unblockUser, clearChat, logOut, deleteAccount, requestEmailChange, verifyRecoverAccount,verifyEmailChange }

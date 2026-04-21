@@ -184,11 +184,9 @@ export default function ChatWindow({
   );
   console.log(selectedChat);
   console.log(messages)
+  // if (!selectedChat?.id) return;
 
 
-  // console.log(messages);
-
-  // const { mutateAsync: sendMessage } = useSendMessage();
 
   const handleTyping = () => {
     if (!selectedChat || !currentUser) return;
@@ -384,10 +382,6 @@ export default function ChatWindow({
                 <Typography variant="caption" color="text.secondary">
                   {isOtherUserOnline ? "Online" : "Offline"}
                 </Typography>
-                <TypingIndicator
-                  conversationId={selectedChat?.id}
-                  currentUserId={currentUser?.id}
-                />
               </Box>
             </Box>
             <Box>
@@ -498,6 +492,8 @@ export default function ChatWindow({
                   fileSize={message.fileSize}
                   isRead={message.isRead}
                   isSender={message.sender.id === currentUser.id}
+                  selectedId={selectedChat?.id}
+                  currentUserId={currentUser?.id}
                 />
               ))
             )}
@@ -620,7 +616,7 @@ export default function ChatWindow({
           </Box>
           {/* Settings Content */}
           <Box flex={1} overflow="auto" bgcolor="background.default">
-            <Settings setActiveView={setActiveView}/>
+            <Settings setActiveView={setActiveView} />
           </Box>
         </Box>
       )}

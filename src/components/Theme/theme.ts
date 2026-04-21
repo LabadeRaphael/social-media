@@ -8,7 +8,7 @@ const baseTheme: ThemeOptions = {
       main: '#ffc244', // Gold
       contrastText: '#120802', // Dark text
     },
-     secondary: {
+    secondary: {
       main: '#120802',
       contrastText: '#fdf8f4',
     },
@@ -16,7 +16,7 @@ const baseTheme: ThemeOptions = {
       default: '#fdf8f4', // Cream
       paper: '#ffffff',
     },
-     text: {
+    text: {
       primary: '#120802',
     },
   },
@@ -35,16 +35,19 @@ export const getTheme = (mode: 'light' | 'dark') =>
         },
         primary: {
           main: '#ffc244',
-        },    
+        },
         text: {
-            primary: '#fdf8f4',
-          },
-    //        secondary: {
-    //   main: '#fdf8f4',
-    //   contrastText: '  #120802',
-    // },
- 
-      
+          primary: '#fdf8f4',
+        },
+        error: {
+          main: "#73040F",
+        }
+        //        secondary: {
+        //   main: '#fdf8f4',
+        //   contrastText: '  #120802',
+        // },
+
+
       }),
     },
   });

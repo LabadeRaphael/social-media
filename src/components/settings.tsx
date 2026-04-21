@@ -15,15 +15,28 @@ import {
   Paper,
 } from "@mui/material";
 import { useState } from "react";
+import * as Yup from "yup";
 import { useRouter } from "next/navigation";
 import { useCurrentUser, useUpdateUser } from "@/react-query/query-hooks";
 import { Edit, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
-import { deleteAccount, logOut } from "@/api/user";
+import { useFormik } from "formik";
+import { deleteAccount, logOut, requestEmailChange } from "@/api/user";
 import DynamicModal from "./dynamic-modal";
 interface SettingProp {
   setActiveView: (view: 'chat' | 'settings') => void;
 }
+
+const ChangeEmailSchema = Yup.object({
+  newEmail: Yup.string()
+    .email("Invalid email")
+    .required("Email is required"),
+
+  password: Yup.string()
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required"),
+});
+
 export default function SettingsPage({ setActiveView }: SettingProp) {
   const theme = useTheme();
   const { data: currentUser } = useCurrentUser();
@@ -40,6 +53,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   const [showPassword, setShowPassword] = useState(false);
   const [showReAuthPassword, setShowReAuthPassword] = useState(false);
   const [showSaveAuthPassword, setShowSaveAuthPassword] = useState(false);
+  const [showEmailAuthPassword, setShowEmailAuthPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUpdate, setIsupdate] = useState(false);
   const [isLogout, setIsLogout] = useState(false);
@@ -47,15 +61,35 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [saveChangesModal, setSaveChangesModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [openEmailModal, setOpenEmailModal] = useState(false)
+  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string, reAuthPassword?: string, saveAuthPassword?: string, newEmail?: string, emailAuthPassword?: string; }>({});
+  const formik = useFormik({
+    initialValues: {
+      newEmail: "",
+      password: "",
+    },
+    validationSchema: ChangeEmailSchema,
+    onSubmit: async (values) => {
+      try {
+        const res = await requestEmailChange({
+          newEmail: values.newEmail,
+          emailAuthPassword: values.password,
+        });
 
-  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string, reAuthPassword?: string, saveAuthPassword?: string }>({});
+        toast.success(res?.message);
+        setOpenEmailModal(false);
+        formik.resetForm();
+      } catch (error: any) {
+        toast.error(error?.message || "Something went wrong");
+      }
+    },
+  });
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    console.log("kdkdkdkd", file);
+    console.log("file", file);
 
     if (file) setAvatarFile(file);
   };
-
   const validatePasswords = () => {
     const newErrors: typeof errors = {};
     if (password && password.length < 6) newErrors.password = "Password must be at least 6 characters";
@@ -88,7 +122,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  console.log("save", saveAuthPassword);
 
   const handleLogoutModal = () => {
     setShowLogoutModal(!showLogoutModal)
@@ -116,25 +149,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
     if (!validatePasswords()) return;
     setSaveChangesModal(!saveChangesModal)
   }
-  // const handleSaveChanges = async () => {
-  //   if (!validatePasswords()) return;
-
-  //   try {
-  //     setIsupdate(true)
-  //     await updateUserMutation.mutateAsync({
-  //       userName,
-  //       avatar: avatarFile,
-  //       password: password || undefined,
-  //     });
-  //     // alert("Profile updated successfully!");
-  //     toast.success("Profile updated successfully!")
-  //   } catch (error: any) {
-  //     toast.error(error.message || "Failed to update profile")
-  //   } finally {
-  //     setIsupdate(false)
-  //   }
-
-  // }
+  
   const { mutateAsync: updateUserMutation } = useUpdateUser();
   const handleUpdate = async () => {
     if (isUpdate) return;
@@ -287,8 +302,78 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                   },
                   "& .MuiInputLabel-root": { fontSize: "0.9rem" },
                 }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Button
+                        size="small"
+                        onClick={() => setOpenEmailModal(true)}
+                        sx={{ textTransform: "none" }}
+                      >
+                        Change
+                      </Button>
+                    </InputAdornment>
+                  ),
+                }}
               />
+              <DynamicModal
+                open={openEmailModal}
+                title="Change Email"
+                description="Enter your new email. A verification link will be sent to confirm the change."
+                confirmText="Send Link"
+                onClose={() => setOpenEmailModal(false)}
+                onConfirm={formik.handleSubmit}
+                disabled={!formik.isValid || formik.isSubmitting}
+              >
+                <TextField
+                  label="New Email"
+                  name="newEmail"
+                  value={formik.values.newEmail}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.newEmail && Boolean(formik.errors.newEmail)}
+                  helperText={formik.touched.newEmail && formik.errors.newEmail}
+                  fullWidth
+                  size="small"
+                   sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                      "&:hover fieldset": { borderColor: formik.errors.newEmail ? theme.palette.error.main : theme.palette.primary.main },
+                      
+                    },
+                    "& .MuiInputLabel-root": { fontSize: "0.9rem" },
+                  }}
+                />
 
+                <TextField
+                  label="Password"
+                  name="password"
+                  type={showEmailAuthPassword ? "text" : "password"}
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.password && Boolean(formik.errors.password)}
+                  helperText={formik.touched.password && formik.errors.password}
+                  fullWidth
+                  size="small"
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowEmailAuthPassword(!showEmailAuthPassword)}>
+                          {showEmailAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                   sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                       "&:hover fieldset": { borderColor: formik.errors.password ? theme.palette.error.main : theme.palette.primary.main},
+                    },
+                    "& .MuiInputLabel-root": { fontSize: "0.9rem" },
+                  }}
+                />
+              </DynamicModal>
               {/* Passwords Side by Side */}
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
@@ -411,9 +496,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
 
                   />
                 </DynamicModal>
-
-
-
                 <Button
                   variant="outlined"
                   color="error"
@@ -499,7 +581,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
               }}
             />
           </DynamicModal>
-
         </Stack>
       </Paper>
     </Box>

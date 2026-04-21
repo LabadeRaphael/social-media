@@ -6,19 +6,25 @@ import {useTypingIndicator} from "@/react-query/query-hooks";
 interface TypingIndicatorProps {
   conversationId: string;
   currentUserId: string;
+  fallback?:any
+  // children?: React.ReactNode;
 }
 
 const TypingIndicator: React.FC<TypingIndicatorProps> = ({
   conversationId,
   currentUserId,
+  fallback
+ 
 }) => {
   const typingUser = useTypingIndicator(conversationId, currentUserId);
   // console.log('typinguser',typingUser);
   
-  if (!typingUser) return null;
+  if (!typingUser){
+    return <>{fallback}</>
+  } 
 
   return (
-    <Box sx={{ px: 2, py: 0.5 }}>
+    <Box sx={{ py: 0.5 }}>
       <Typography
         variant="body2"
         sx={{

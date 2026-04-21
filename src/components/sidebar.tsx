@@ -16,6 +16,7 @@ import {
   CircularProgress,
   colors,
   Stack,
+  LinearProgress,
 } from "@mui/material";
 import {
   Search, MoreVertical, MessageCircle, Mic,
@@ -29,7 +30,7 @@ import Image from "next/image";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import debounce from "lodash/debounce";
 import { useDispatch, useSelector } from "react-redux";
-import { useAllUsers, useAllConversations, useCreateConversation, useCurrentUser, useResetUnreadCount, useMarkMessagesAsRead, useJoinAllConversations } from "@/react-query/query-hooks";
+import { useAllUsers, useAllConversations, useCreateConversation, useCurrentUser, useResetUnreadCount, useMarkMessagesAsRead, useJoinAllConversations, useTypingIndicator } from "@/react-query/query-hooks";
 import { setSelectedChat } from "@/redux/chats-slice";
 import toast from "react-hot-toast";
 import type { RootState } from "@/redux/store";
@@ -38,6 +39,7 @@ import { Drawer, Button } from "@mui/material";
 import { useOnlineUsers } from "@/socket-hook/socket";
 import { ThemeSwitcher } from "./Theme/themeswitcher";
 import { getFileType } from "./file-type-formater";
+import TypingIndicator from "./typing-indicator";
 // import {
 //   Image as ImageIcon,
 //   Music,
@@ -221,6 +223,7 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
           .map(p => p.user)
           .find(u => u.id !== currentUser?.id);
         console.log("The conv", conv);
+        //  const typingUser = useTypingIndicator(conv.id, currentUser?.id);
         console.log(otherUser);
         const isOnline = otherUser
           ? onlineUsers.has(otherUser?.id)
@@ -255,6 +258,8 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
   }, [conversations, users, searchTerm, currentUser, onlineUsers]);
 
   // selection
+
+  //  const typingUser = useTypingIndicator(conversationId, currentUserId);
   const { mutateAsync } = useCreateConversation()
   const { mutate: resetUnread } = useResetUnreadCount();
   const { mutate: markRead } = useMarkMessagesAsRead();
@@ -381,13 +386,25 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
       {/* Chats */}
       <List sx={{ flex: 1, overflowY: "auto", bgcolor: "background.paper" }}>
         {isLoadingConversations || (isLoadingUsers && searchTerm) ? (
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            minHeight={100}
-          >
-            <CircularProgress size={24} />
+          // <Box
+          //   display="flex"
+          //   justifyContent="center"
+          //   alignItems="center"
+          //   minHeight={100}
+          // >
+          //   <CircularProgress size={24} />
+          // </Box>
+          <Box sx={{ px: 2 }}>
+            <LinearProgress
+              sx={{
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: "rgba(255,194,68,0.2)", // light yellow background
+                "& .MuiLinearProgress-bar": {
+                  backgroundColor: "rgb(255,194,68)", // your yellow
+                },
+              }}
+            />
           </Box>
         ) : displayConversations.length === 0 ? (
           <Box p={3} textAlign="center">
@@ -400,6 +417,9 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
         ) : (
           displayConversations.map((conv) => {
             const { isOnline } = conv;
+            // console.log("conv",conv);
+
+            //  const typingUser = useTypingIndicator(conversationId, currentUserId);
             return (
               <ListItem key={conv.id} disablePadding>
                 <ListItemButton
@@ -454,10 +474,18 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
                       />
                     </Box>
                   </ListItemAvatar>
-
                   <ListItemText
                     primary={conv.userName}
-                    secondary={conv.lastMessagePreview}
+                    secondary={
+                      <>
+                        <TypingIndicator
+                          conversationId={conv.id}
+                          currentUserId={currentUser?.id}
+                          fallback={conv.lastMessagePreview}
+                        />
+                        {/* {conv.lastMessagePreview} */}
+                      </>
+                    }
                     primaryTypographyProps={{
                       fontWeight: selectedChat?.id === conv.id ? 600 : 400,
                       color:
@@ -522,10 +550,10 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
         <Box sx={{
           display: "flex",
           flexDirection: "column",
-          fontWeight:"300",
+          fontWeight: "300",
           p: 2,
-          cursor:"pointer"
-        }} onClick={()=>setActiveView("settings")}>
+          cursor: "pointer"
+        }} onClick={() => setActiveView("settings")}>
           <Stack direction="row"
             spacing={2}
             mt="auto"

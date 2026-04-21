@@ -8,7 +8,7 @@ interface DynamicModalProps {
   confirmText?: string;
   cancelText?: string;
   confirmColor?: string;
-  disabled?:boolean;
+  disabled?:boolean|string;
   onClose: () => void;
   onConfirm: () => void;
   children?: React.ReactNode; // allows inputs inside

@@ -22,19 +22,18 @@ import { Eye, EyeOff } from "lucide-react";
 import api from "@/api/axiosInstance";
 import MessageAlert from "@/components/message-alert";
 import Image from "next/image";
+import { ApiMessage } from "@/types/api-response";
+import { useRouter } from "next/navigation";
 // Yup validation schema
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Email is required"),
   password: Yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
 });
-interface ApiMessage {
-  message: string;
-  status: boolean;
-}
+
 export default function LoginPage() {
   const theme = useTheme();
   const mode = theme.palette.mode;
-
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const [count, setCount] = useState(0)
@@ -164,7 +163,7 @@ export default function LoginPage() {
 
                   // 🔹 Redirect after 2 seconds
                   setTimeout(() => {
-                    window.location.href = "/dashboard/chats";
+                    router.push("/dashboard/chats")
                   }, 2000);
                 } catch (err: any) {
                   const message = err.response?.data?.message || err.message
@@ -186,6 +185,12 @@ export default function LoginPage() {
                         return prev - 1000;
                       });
                     }, 1000);
+                  }
+                  if (message?.includes("temporarily disabled")) {
+                    setTimeout(() => {
+                      router.push("/auth/recover-account");
+                    }, 2000);
+                    return;
                   }
                 } finally {
                   setSubmitting(false);

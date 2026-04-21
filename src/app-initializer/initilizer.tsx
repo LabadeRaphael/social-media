@@ -10,6 +10,7 @@ export default function AppInitializer({ children }: { children: React.ReactNode
    const { data: user, isSuccess } = useCurrentUser();
  useEffect(() => {
     async function initTokenWatcher() {
+      if (!isSuccess || !user) return
       try {
         // Optional: get current access token info from backend
         const res = await api.get("/auth/token-info"); 

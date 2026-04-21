@@ -1,12 +1,14 @@
 "use client";
 
-import { Box, Typography, IconButton, Stack } from "@mui/material";
+import { Box, Typography, IconButton, Stack, Tooltip } from "@mui/material";
 import moment from "moment";
 import { CheckCheck, Play, Pause, FileText, FileImage, FileMusic, FileVideo, File, Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@mui/material/styles";
 import { getFileType } from "./file-type-formater";
 import FileCard from "./file-card";
+import TypingIndicator from "./typing-indicator";
+
 interface MessageBubbleProps {
   text?: string;
   timeStamp: string;
@@ -16,6 +18,8 @@ interface MessageBubbleProps {
   mediaUrl?: string;
   fileName?: string;
   fileSize?: number;
+  selectedId?: string
+  currentUserId?: string
 }
 
 
@@ -28,6 +32,8 @@ export default function MessageBubble({
   mediaUrl,
   fileName,
   fileSize,
+  selectedId,
+  currentUserId
 }: MessageBubbleProps) {
   const formatTime = (timeStamp: string) => {
     const now = moment();
@@ -40,10 +46,14 @@ export default function MessageBubble({
   };
   const theme = useTheme();
   const mode = theme.palette.mode;
-
+  // const { data: currentUser } = useCurrentUser();
   const getTickIcon = () => {
     if (!isSender) return null;
-    return <CheckCheck size={16} color={isRead ? "#0084ff" : "#888"} />;
+    return (
+      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+        <CheckCheck size={16} color={isRead ? "#0084ff" : "#888"} />
+      </Box>
+    )
   };
 
   // VOICE state
@@ -51,7 +61,7 @@ export default function MessageBubble({
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-
+  const [downloading, setDownloading] = useState(false);
   useEffect(() => {
     if (!audioRef.current) return;
     const audio = audioRef.current;
@@ -91,50 +101,11 @@ export default function MessageBubble({
     if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
     return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
   }
-  // const downloadFile = async () => {
-  //   if (!mediaUrl) return;
 
-  //   try {
-  //     const response = await fetch(mediaUrl);
-  //     console.log(response);
-
-  //     const blob = await response.blob();
-  //     const url = URL.createObjectURL(blob);
-
-  //     const link = document.createElement("a");
-  //     link.href = url;
-  //     link.download = fileName ?? "file.jpg"; // fallback filename
-  //     link.click();
-
-  //     // Clean up
-  //     URL.revokeObjectURL(url);
-  //   } catch (err) {
-  //     console.error("Download failed:", err);
-  //   }
-  // };
-
-
-  // const downloadableUrl = mediaUrl?.replace("/image/upload", "/raw/upload");
-
-
-  // console.log("from document ", fileSize, fileName);
-  // const getFileType = (name?: string) => {
-  //   const ext = name?.split(".").pop()?.toLowerCase();
-  //   // console.log("fileType", ext);
-  //   if (!ext) return "unknown";
-
-  //   if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return "image";
-  //   if (["mp3", "wav", "ogg"].includes(ext)) return "audio";
-  //   if (["mp4", "mov", "webm"].includes(ext)) return "video";
-  //   if (["pdf", "docx"].includes(ext)) return "pdf";
-  //   return "other";
-  // };
-  const fileType = getFileType(fileName);
+  const fileType = getFileType(fileName!);
   const getFileIcon = (fileName?: string) => {
 
     const ext = fileName?.split(".").pop()?.toLowerCase();
-    // console.log("ext",fileName);
-    // console.log("ext",ext);
 
     if (!ext) return File;
 
@@ -146,7 +117,37 @@ export default function MessageBubble({
   };
   const FileIcon = getFileIcon(fileName);
   // console.log("fileIcon",FileIcon);
+  // const downloadUrl = mediaUrl?.replace(
+  //   "/upload/",
+  //   "/upload/fl_attachment/"
+  // )
+  const handleDownload = async () => {
+    if (!mediaUrl) return;
+    console.log("mediaUrl", mediaUrl);
+    setDownloading(true);
+    try {
+      const res = await fetch(mediaUrl);
+      console.log("both", res, mediaUrl);
 
+      const blob = await res.blob();
+      console.log("blob", blob);
+
+      const url = window.URL.createObjectURL(blob);
+      console.log("url", url);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName || "download"; // 👈 your real name here
+      document.body.appendChild(a);
+      a.click();
+
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download failed", err);
+    } finally {
+      setDownloading(false);
+    }
+  };
   return (
     <Box
       mb={2}
@@ -158,7 +159,8 @@ export default function MessageBubble({
 
         <Box
           sx={{
-            bgcolor: mode === 'light' ? theme.palette.secondary.main : theme.palette.secondary.contrastText,
+            // bgcolor: mode === 'light' ? theme.palette.primary.contrastText : theme.palette.secondary.contrastText,
+            bgcolor: isSender ? mode === 'light' ? "#18033bff" : theme.palette.primary.main : mode === 'light' ? theme.palette.primary.contrastText : theme.palette.secondary.contrastText,
             color: mode === 'light' ? "secondary.contrastText" : "primary.contrastText",
             p: 1.2,
             borderRadius: 2,
@@ -168,9 +170,12 @@ export default function MessageBubble({
         >
           {/* TEXT MESSAGE */}
           {type === "TEXT" && text != null && (
-            <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
-              {text} {getTickIcon()}
-            </Typography>
+            <>
+              <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
+                {text}
+              </Typography>
+              {getTickIcon()}
+            </>
           )}
           {/* DOCUMENT */}
 
@@ -234,6 +239,8 @@ export default function MessageBubble({
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            // mx:"auto",
+            // justifyItems:"space-between",
             ml: 2,
             mb: 2,
             border: `1px solid ${theme.palette.mode === "light"
@@ -245,19 +252,6 @@ export default function MessageBubble({
             gap: 1,
           }}
         >
-          {/* <Box
-            component="img"
-            src={mediaUrl}
-            alt="document"
-            sx={{
-              width: 250,
-              height: 200,
-              objectFit: "cover",
-              borderRadius: 2,
-              // mt: 1,
-              cursor: "pointer",
-            }} /> */}
-          {/* Preview based on type */}
           <Box
             sx={{
               width: 250,
@@ -283,10 +277,44 @@ export default function MessageBubble({
           <Typography>{fileName}</Typography>
           <Stack direction={"row"} gap={1} mb={1}>
             <Typography>{fileType}</Typography>
-            <Typography fontSize={12} fontWeight={"bold"} mt={0.2}> {formatFileSize(fileSize!)}</Typography>
+            <Typography fontSize={16} fontWeight={"bold"} mt={0.3}> {formatFileSize(fileSize!)}</Typography>
+
+            {mediaUrl &&
+              <Tooltip title="Download">
+                <IconButton
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  sx={{
+                    ml: "30px",
+                    backgroundColor:
+                      theme.palette.mode === "light"
+                        ? theme.palette.secondary.main
+                        : theme.palette.secondary.contrastText,
+
+                    color:
+                      theme.palette.mode === "light"
+                        ? theme.palette.secondary.contrastText
+                        : theme.palette.secondary.main,
+
+                    transition: "all 0.2s ease",
+
+                    "&:hover": {
+                      backgroundColor:
+                        theme.palette.mode === "light"
+                          ? theme.palette.secondary.main
+                          : theme.palette.secondary.contrastText,
+
+                      transform: "scale(1.05)",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    },
+                  }}
+                >
+                  <Download size={18} />
+                </IconButton>
+              </Tooltip>
+            }
           </Stack>
 
-          {/* Download Button */}
         </Box>
 
 
@@ -298,6 +326,10 @@ export default function MessageBubble({
       >
         {formatTime(timeStamp)}
       </Typography>
+      <TypingIndicator
+        conversationId={selectedId!}
+        currentUserId={currentUserId!}
+      />
     </Box>
   );
 }
