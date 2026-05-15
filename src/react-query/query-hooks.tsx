@@ -1,100 +1,155 @@
 "use client"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount, markMessagesAsRead, sendAudio, sendDocument, clearChat, updateUser } from "@/api/user";
+import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount, markMessagesAsRead, sendAudio, sendDocument, clearChat, updateUser, loadOlderMessages } from "@/api/user";
 import { useDispatch } from "react-redux";
-import { setSelectedUser } from "@/redux/users-slice";
 import { Message } from "@/types/messages";
 import { setSelectedChat } from "@/redux/chats-slice";
 import { getSocket } from "@/lib/socket";
 import { useEffect, useState } from "react";
 import { UploadVoicePayload } from "@/types/audio";
 import { UpdateUserPayload } from "@/types/update-user"
+
 // ✅ Get single user
 const useCurrentUser = () => {
-    const query = useQuery({
-        queryKey: ["profile"], // unique cache key
-        queryFn: () => getCurrentUser(),
-    });
+  const query = useQuery({
+    queryKey: ["profile"], // unique cache key
+    queryFn: () => getCurrentUser(),
+  });
 
-    return query
+  return query
 }
 
 
 // ✅ Get all users
 const useAllUsers = (searchKey?: string) => {
-    const query = useQuery({
-        queryKey: ["users", searchKey],
-        queryFn: () => getAllUsers(searchKey),
-    });
+  const query = useQuery({
+    queryKey: ["users", searchKey],
+    queryFn: () => getAllUsers(searchKey),
+  });
 
-    return query;
+  return query;
 }
 const useAllConversations = () => {
-    const query = useQuery({
-        queryKey: ["current-user-conv"],
-        queryFn: () => getAllConversations(),
-    });
+  const query = useQuery({
+    queryKey: ["current-user-conv"],
+    queryFn: () => getAllConversations(),
+  });
 
-    return query;
+  return query;
 }
 const useCreateConversation = () => {
-    const dispatch = useDispatch();
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (data: { participantIds: string[] }) => {
-            console.log("mutationFn data:", data);
-            return createNewConversations(data); // ✅ return the promise
-        },
-        onSuccess: (response) => {
+  const dispatch = useDispatch();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { participantIds: string[] }) => {
+      console.log("mutationFn data:", data);
+      return createNewConversations(data); // ✅ return the promise
+    },
+    onSuccess: (response) => {
 
-            console.log("onSuccess data:", response);
-            // ✅ select only the actual conversation object
-            const newConversation = response?.saveConversation;
+      console.log("onSuccess data:", response);
+      // ✅ select only the actual conversation object
+      const newConversation = response?.saveConversation;
 
-            queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
-            dispatch(setSelectedChat(newConversation));
-        },
-    });
+      queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
+      dispatch(setSelectedChat(newConversation));
+    },
+  });
 };
+// const useSendMessage = () => {
+//   return useMutation({
+//     mutationFn: (messageDetails: Message) => {
+//       console.log("mutationFn data:", messageDetails);
+//       return sendMessage(messageDetails);
+//     },
+//     onSuccess: (newMessage) => {
+//       console.log("onSuccess data:", newMessage);
+//     },
+//   });
+// };
 const useSendMessage = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (messageDetails: Message) => {
-            console.log("mutationFn data:", messageDetails);
-            return sendMessage(messageDetails);
-        },
-        onSuccess: (newMessage, variables) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (messageDetails: Message) => sendMessage(messageDetails),
 
-            console.log("onSuccess data:", newMessage);
-
-            // queryClient.invalidateQueries({ queryKey: ["messages", variables.conversationId] });
-        },
-    });
+    onSuccess: (newMessage) => {
+      queryClient.setQueryData(
+        ["messages", newMessage.conversationId],
+        (old: any[] = []) => {
+          return [...old, newMessage];
+        }
+      );
+    },
+  });
 };
-const useJoinAllConversations = () => {
-  const socket = getSocket();
-  const { data: conversations, isSuccess: convReady } = useAllConversations();
-  const { data: currentUser, isSuccess: userReady } = useCurrentUser();
 
-  useEffect(() => {
-    if (!socket) return;
-    if (!userReady || !convReady){
-      console.log("kahhhehhe");
-      
+const useLoadOlder = () => {
+  const queryClient = useQueryClient();
+  const loadOlder = async (
+    conversationId: string,
+    skip: number,
+    setHasOlderMessages: any
+  ) => {
+    try {
+      const olderMessages = await loadOlderMessages(
+        conversationId,
+        skip
+      );
+       if (olderMessages.length < 10) {
+        setHasOlderMessages(false);
+      }
+        console.log("OlderMessages",olderMessages);
+
+      queryClient.setQueryData(
+  ["messages", conversationId],
+  (old: any[] = []) => {
+    const merged = [
+      ...olderMessages.reverse(),
+      ...old,
+    ];
+
+    const uniqueMessages = merged.filter(
+      (message, index, self) =>
+        index ===
+        self.findIndex(
+          (m) => m.id === message.id
+        )
+    );
+
+    return uniqueMessages;
+  }
+);
+    } catch (error) {
+      console.log(error);
     }
+  };
 
-    if (conversations?.length && currentUser?.id) {
-      conversations.forEach((conv) => {
-        socket.emit("join_conversation", conv.id);
-      });
-      console.log("✅ Joined all conversations for", currentUser.id);
-    }
-
-    return () => {
-      socket.off("join_conversation");
-    };
-  }, [socket, conversations, convReady, currentUser, userReady]);
+  return { loadOlder };
 };
+// const useJoinAllConversations = () => {
+//   const socket = getSocket();
+//   const { data: conversations, isSuccess: convReady } = useAllConversations();
+//   const { data: currentUser, isSuccess: userReady } = useCurrentUser();
+
+//   useEffect(() => {
+//     if (!socket) return;
+//     if (!userReady || !convReady) {
+//       console.log("kahhhehhe");
+
+//     }
+
+//     if (conversations?.length && currentUser?.id) {
+//       conversations.forEach((conv) => {
+//         socket.emit("join_conversation", conv.id);
+//       });
+//       console.log("✅ Joined all conversations for", currentUser.id);
+//     }
+
+//     return () => {
+//       socket.off("join_conversation");
+//     };
+//   }, [socket, conversations, convReady, currentUser, userReady]);
+// };
 
 
 const useSocketChat = (conversationId?: string) => {
@@ -103,7 +158,7 @@ const useSocketChat = (conversationId?: string) => {
   useEffect(() => {
     const socket = getSocket();
     console.log(socket);
-    
+
     if (conversationId) {
       // ✅ join conversation room
       socket.emit("join_conversation", conversationId);
@@ -111,7 +166,7 @@ const useSocketChat = (conversationId?: string) => {
     }
 
     socket.on("receive_message", (message) => {
-        // if (!message.conversationId) return;
+      // if (!message.conversationId) return;
       console.log("📩 New message received:", message);
 
 
@@ -119,75 +174,60 @@ const useSocketChat = (conversationId?: string) => {
       queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
       queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
     });
-    
-   
-
-    //   socket.on("messages_read", ({ conversationId, userId }) => {
-    //   console.log("✅ Messages read by:", userId);
-    //   // queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
-    //   queryClient.invalidateQueries({ queryKey: ["current-user-conv", conversationId] });
-
-    // });
-
-    // return () => {
-    //   socket.off("receive_message");
-    //   socket.off("messages_read");
-    // };
   }, [conversationId, queryClient]);
 };
 
 const useMessages = (conversationId: string | null) => {
-    return useQuery({
-        queryKey: ["messages", conversationId],
-        queryFn: async () => {
-            if (!conversationId) throw new Error("No conversationId"); // no chat selected yet
-            return getMessages(conversationId);
-        },
-        enabled: !!conversationId,
-    });
+  return useQuery({
+    queryKey: ["messages", conversationId],
+    queryFn: async () => {
+      if (!conversationId) throw new Error("No conversationId"); // no chat selected yet
+      return getMessages(conversationId);
+    },
+    enabled: !!conversationId,
+  });
 }
 const useResetUnreadCount = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (conversationId: string) => resetUnreadCount(conversationId),
-        onSuccess: (_, conversationId) => {
-            // refetch messages for this conversation
-            queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
-            // optionally invalidate conversation list to update unread counts
-            queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
-        }
-    });
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (conversationId: string) => resetUnreadCount(conversationId),
+    onSuccess: (_, conversationId) => {
+      // refetch messages for this conversation
+      queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+      // optionally invalidate conversation list to update unread counts
+      queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
+    }
+  });
 }
 
 const useMarkMessagesAsRead = () => {
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-    return useMutation({
-        mutationFn: ({ conversationId }: { conversationId: string }) =>
-            markMessagesAsRead(conversationId),
+  return useMutation({
+    mutationFn: ({ conversationId }: { conversationId: string }) =>
+      markMessagesAsRead(conversationId),
 
-        onSuccess: (_, { conversationId }) => {
-            // Refresh messages for this conversation
-            queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
-            // Refresh the conversation list (to update unread badges)
-            queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
-        },
-    });
+    onSuccess: (_, { conversationId }) => {
+      // Refresh messages for this conversation
+      queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+      // Refresh the conversation list (to update unread badges)
+      queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
+    },
+  });
 
 }
 const useClearChat = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: ({ conversationId}: { conversationId: string}) =>
+    mutationFn: ({ conversationId }: { conversationId: string }) =>
       clearChat(conversationId), // ✅ pass userId
-    onSuccess: (_, { conversationId}) => {
+    onSuccess: (_, { conversationId }) => {
       // Instant UI update
       queryClient.setQueryData(["messages", conversationId], []);
 
       // Optional: refetch server data
       queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
-       queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
+      queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
     },
   });
 };
@@ -198,9 +238,9 @@ const useTypingIndicator = (conversationId: string, currentUserId: string) => {
     const socket = getSocket();
     if (!conversationId) return;
     socket.emit("join_conversation", conversationId);
-  
+
     socket.on("user_typing", (data) => {
-        console.log("🟢 Received user_typing:", data); // ✅ Add this
+      console.log("🟢 Received user_typing:", data); // ✅ Add this
       if (data.conversationId === conversationId && data.senderId !== currentUserId) {
         setTypingUser(data.senderId);
       }
@@ -220,12 +260,6 @@ const useTypingIndicator = (conversationId: string, currentUserId: string) => {
 
   return typingUser;
 };
-
-
-
-
-
-
 
 const useSendVoice = () => {
   return useMutation({
@@ -248,22 +282,21 @@ const useSendDocument = () => {
   });
 };
 
-
 const useUpdateUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: UpdateUserPayload) => {
       const formData = new FormData();
-      console.log("he aa",data);
+      console.log("he aa", data);
 
       if (data.userName) formData.append("userName", data.userName);
       if (data.password) formData.append("password", data.password);
       if (data.avatar) formData.append("avatar", data.avatar);
       if (data.re_auth_psw) formData.append("re_auth_psw", data.re_auth_psw);
       console.log(formData, "from update user");
-    
-      
+
+
       return updateUser(formData);
     },
     retry: false,
@@ -273,8 +306,46 @@ const useUpdateUser = () => {
     },
   });
 };
+ const useOnlineUsers = () => {
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return
+    const interval = setInterval(() => {
+    socket.emit('heartbeat');
+    console.log("see heartbeat");
+    
+  }, 10000); // every 10 seconds
+
+    const handleOnlineUsers = (userIds: string[]) => {
+      console.log("Updated online users:", userIds);
+      setOnlineUsers(new Set(userIds));
+    };
+
+    socket.on("online_users", handleOnlineUsers);
+
+    return () => {
+      clearInterval(interval)
+      socket.off("online_users", handleOnlineUsers);
+    };
+  }, []);
+
+  return onlineUsers;
+};
 
 
 
 
-export { useAllUsers, useCurrentUser, useAllConversations, useCreateConversation, useSendMessage, useSocketChat,useJoinAllConversations,useMessages, useResetUnreadCount, useMarkMessagesAsRead,useTypingIndicator,useSendVoice,useSendDocument,useUpdateUser, useClearChat}
+export {
+  useAllUsers, useCurrentUser,
+  useAllConversations, useCreateConversation,
+  useSendMessage, useSocketChat,
+  // useJoinAllConversations, 
+  useLoadOlder,
+  useMessages, useResetUnreadCount,
+  useMarkMessagesAsRead, useTypingIndicator,
+  useSendVoice, useSendDocument,
+  useUpdateUser, useClearChat,
+  useOnlineUsers
+}

@@ -14,7 +14,8 @@ export default function ChatPage() {
   const dispatch = useDispatch();
   const selectedChat = useSelector((state: RootState) => state.chatReducer.selectedChat);
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down("md"));
-  const { data: conversations = [], isLoading, error } = useAllConversations();
+  // const { data: conversations = [], isLoading, error } = useAllConversations();
+  const { error } = useAllConversations();
   const [activeView, setActiveView] = useState<'chat' | 'settings'>('chat');
   // Display error toast if conversation fetch fails
   useEffect(() => {

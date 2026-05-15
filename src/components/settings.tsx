@@ -38,14 +38,14 @@ const ChangeEmailSchema = Yup.object({
 });
 
 export default function SettingsPage({ setActiveView }: SettingProp) {
-  const theme = useTheme();
-  const { data: currentUser } = useCurrentUser();
-  // const updateUserMutation = useUpdateUser();
 
+  const theme = useTheme();
+  const mode = theme.palette.mode;
+  const router = useRouter()
+  const { data: currentUser } = useCurrentUser();
   const [userName, setUserName] = useState(currentUser?.userName || "");
   const [email] = useState(currentUser?.email || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-
   const [password, setPassword] = useState("");
   const [reAuthPassword, setReAuthPassword] = useState("");
   const [saveAuthPassword, setSaveAuthPassword] = useState("");
@@ -62,7 +62,13 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   const [saveChangesModal, setSaveChangesModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [openEmailModal, setOpenEmailModal] = useState(false)
-  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string, reAuthPassword?: string, saveAuthPassword?: string, newEmail?: string, emailAuthPassword?: string; }>({});
+
+  const [errors, setErrors] = useState<{
+    password?: string; confirmPassword?: string,
+    reAuthPassword?: string, saveAuthPassword?: string,
+    // newEmail?: string, emailAuthPassword?: string;
+  }>({});
+
   const formik = useFormik({
     initialValues: {
       newEmail: "",
@@ -80,24 +86,26 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
         setOpenEmailModal(false);
         formik.resetForm();
       } catch (error: any) {
-        toast.error(error?.message || "Something went wrong");
+        toast.error(error.message || "Something went wrong");
       }
     },
   });
+
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     console.log("file", file);
 
     if (file) setAvatarFile(file);
   };
+
   const validatePasswords = () => {
     const newErrors: typeof errors = {};
     if (password && password.length < 6) newErrors.password = "Password must be at least 6 characters";
-    // if (reAuthPassword && reAuthPassword.length < 6) newErrors.reAuthPassword = "Password must be at least 6 characters";
     if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
   const validateDeletePassword = () => {
     const newErrors: typeof errors = {};
 
@@ -110,6 +118,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
   const validateSavePassword = () => {
     const newErrors: typeof errors = {};
 
@@ -126,17 +135,19 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   const handleLogoutModal = () => {
     setShowLogoutModal(!showLogoutModal)
   }
+
   const handleShowDeleteModal = () => {
 
     setShowDeleteModal(!showDeleteModal)
   }
+
   const handleLogout = async () => {
     try {
       setIsLogout(true)
       const response = await logOut()
       toast.success(response?.message)
       setTimeout(() => {
-        window.location.href = "/auth/login";
+        router.push("/auth/login")
       }, 2000);
     } catch (error: any) {
       toast.error(error.message || "Failed to update profile")
@@ -149,7 +160,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
     if (!validatePasswords()) return;
     setSaveChangesModal(!saveChangesModal)
   }
-  
+
   const { mutateAsync: updateUserMutation } = useUpdateUser();
   const handleUpdate = async () => {
     if (isUpdate) return;
@@ -189,7 +200,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
     } finally {
       setLoading(false);
     }
-
   }
 
   const getBorderColor = (error?: string) => {
@@ -203,8 +213,9 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   return (
     <Box
       sx={{
-        p: { xs: 2, md: 6 },
+        p: { xs: 2, md: 2 },
         mx: "auto",
+        width: "100%",
         display: "flex",
         flexDirection: "column",
         gap: 4,
@@ -217,9 +228,11 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
       <Paper
         elevation={3}
         sx={{
-          p: { xs: 3, md: 5 },
+          p: { xs: 3, md: 2 },
           borderRadius: 3,
-          backgroundColor: theme.palette.mode === "light" ? "#fff" : "#1A1A1A",
+          backgroundColor: theme.palette.mode === "light"
+            ? theme.palette.background.paper :
+            theme.palette.background.default,
         }}
       >
         <Grid container spacing={4}>
@@ -228,7 +241,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
             item
             xs={12}
             md={4}
-            lg={1}
+            lg={4}
             display="flex"
             flexDirection="column"
             alignItems="center"
@@ -239,9 +252,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
               alignItems: "center",
               justifySelf: "center",
               mx: "auto"
-
             }}
-
           >
             <Avatar
               src={previewUrl}
@@ -263,7 +274,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
               <input type="file" hidden onChange={handleAvatarChange} />
             </Button>
           </Grid>
-
           {/* Profile Details */}
           <Grid item xs={12} md={8} sx={{ mx: "auto" }}>
             <Stack spacing={2}>
@@ -284,7 +294,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                   "& .MuiInputLabel-root": { fontSize: "0.9rem" },
                 }}
               />
-
               {/* Email */}
               <TextField
                 label="Email"
@@ -324,6 +333,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                 onClose={() => setOpenEmailModal(false)}
                 onConfirm={formik.handleSubmit}
                 disabled={!formik.isValid || formik.isSubmitting}
+                type="Change Email"
               >
                 <TextField
                   label="New Email"
@@ -335,11 +345,11 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                   helperText={formik.touched.newEmail && formik.errors.newEmail}
                   fullWidth
                   size="small"
-                   sx={{
+                  sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 2,
                       "&:hover fieldset": { borderColor: formik.errors.newEmail ? theme.palette.error.main : theme.palette.primary.main },
-                      
+
                     },
                     "& .MuiInputLabel-root": { fontSize: "0.9rem" },
                   }}
@@ -365,10 +375,10 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                       </InputAdornment>
                     ),
                   }}
-                   sx={{
+                  sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 2,
-                       "&:hover fieldset": { borderColor: formik.errors.password ? theme.palette.error.main : theme.palette.primary.main},
+                      "&:hover fieldset": { borderColor: formik.errors.password ? theme.palette.error.main : theme.palette.primary.main },
                     },
                     "& .MuiInputLabel-root": { fontSize: "0.9rem" },
                   }}
@@ -440,7 +450,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                   />
                 </Grid>
               </Grid>
-
               {/* Buttons */}
               <Box display="flex" gap={2} mt={2} flexWrap="wrap">
                 <Button
@@ -493,6 +502,12 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                         </InputAdornment>
                       ),
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleUpdate();
+                      }
+                    }}
 
                   />
                 </DynamicModal>
@@ -500,7 +515,11 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                   variant="outlined"
                   color="error"
                   onClick={() => setActiveView("chat")}
-                  sx={{ flex: 1 }}
+                  sx={{
+                    flex: 1,
+                    color: mode === "light" ? theme.palette.error.main : theme.palette.primary.main,
+                    borderColor: mode === "light" ? theme.palette.error.main : theme.palette.primary.main,
+                  }}
                 >
                   Cancel
                 </Button>
@@ -512,77 +531,91 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
         <Divider sx={{ my: 3 }} />
 
         {/* Account Actions */}
-        <Stack spacing={2}>
-          <Button variant="outlined" color="error" onClick={handleLogoutModal} disabled={isLogout}>
-            {isLogout ? "please wait" : "Logout"}
-          </Button>
+        <Grid container spacing={2} sx={{ display: "flex", justifyContent: "end" }}>
+          <Grid item xs={12} sm={3}>
+            <Box>
+              <Button variant="outlined" onClick={handleLogoutModal} disabled={isLogout} sx={{
+                color: mode === "light" ? theme.palette.error.main : theme.palette.primary.main,
+                borderColor: mode === "light" ? theme.palette.error.main : theme.palette.primary.main,
+              }}>
+                {isLogout ? "please wait" : "Logout"}
+              </Button>
+            </Box>
 
-          <DynamicModal
-            open={showLogoutModal}
-            title="Logout ?"
-            description="You will be logged out of your account."
-            confirmText="Yes"
-            confirmColor="error"
-            onClose={() => setShowLogoutModal(false)}
-            onConfirm={() => {
-              handleLogout();
-              setShowLogoutModal(false);
-            }}
-          />
-
-          <Button variant="outlined" color="primary" onClick={handleShowDeleteModal}>
-            Delete Account
-          </Button>
-          <DynamicModal
-            open={showDeleteModal}
-            title="Delete Account?"
-            description="This action will permanently deactivate your account. Enter your password to confirm."
-            confirmText={loading ? "Deleting..." : "Delete"}
-            confirmColor="error"
-            disabled={loading}
-            onClose={() => {
-              setShowDeleteModal(false);
-              setPassword("");
-            }}
-            onConfirm={handleDelete}>
-            <TextField
-              label="Password"
-              type={showReAuthPassword ? "text" : "password"}
-              value={reAuthPassword}
-              onChange={(e) => setReAuthPassword(e.target.value)}
-              error={!!errors.reAuthPassword}
-              helperText={errors.reAuthPassword || " "}
-              fullWidth
-              size="small"
-              variant="outlined"
-              autoFocus
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  "& fieldset": { borderColor: getBorderColor(errors.reAuthPassword) },
-                  "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                },
-                "& .MuiInputLabel-root": { fontSize: "0.9rem" },
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowReAuthPassword(!showReAuthPassword)}>
-                      {showReAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleDelete();
-                }
+            <DynamicModal
+              open={showLogoutModal}
+              title="Logout ?"
+              description="You will be logged out of your account."
+              confirmText="Yes"
+              confirmColor="error"
+              onClose={() => setShowLogoutModal(false)}
+              onConfirm={() => {
+                handleLogout();
+                setShowLogoutModal(false);
               }}
             />
-          </DynamicModal>
-        </Stack>
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <Button variant="outlined" onClick={handleShowDeleteModal}
+              sx={{
+                color: mode === "light" ? theme.palette.error.main : theme.palette.primary.main,
+                borderColor: mode === "light" ? theme.palette.error.main : theme.palette.primary.main,
+              }}
+            >
+              Delete Account
+            </Button>
+            <DynamicModal
+              open={showDeleteModal}
+              title="Delete Account?"
+              description="This action will permanently deactivate your account. Enter your password to confirm."
+              confirmText={loading ? "Deleting..." : "Delete"}
+              confirmColor="error"
+              disabled={loading}
+              onClose={() => {
+                setShowDeleteModal(false);
+                setPassword("");
+              }}
+              onConfirm={handleDelete}>
+              <TextField
+                label="Password"
+                type={showReAuthPassword ? "text" : "password"}
+                value={reAuthPassword}
+                onChange={(e) => setReAuthPassword(e.target.value)}
+                error={!!errors.reAuthPassword}
+                helperText={errors.reAuthPassword || " "}
+                fullWidth
+                size="small"
+                variant="outlined"
+                autoFocus
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    "& fieldset": { borderColor: getBorderColor(errors.reAuthPassword) },
+                    "&:hover fieldset": { borderColor: theme.palette.primary.main },
+                  },
+                  "& .MuiInputLabel-root": { fontSize: "0.9rem" },
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowReAuthPassword(!showReAuthPassword)}>
+                        {showReAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleDelete();
+                  }
+                }}
+              />
+            </DynamicModal>
+          </Grid>
+        </Grid>
       </Paper>
+
     </Box>
   );
 }

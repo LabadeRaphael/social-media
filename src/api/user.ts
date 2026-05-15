@@ -1,7 +1,20 @@
+// import { getMessages } from '@/api/user';
 import { Message } from "@/types/messages";
 import api from "./axiosInstance";
-import { UploadVoicePayload } from "@/types/audio";
 import { RequestEmailChangePayload } from "@/types/email-change";
+// import { useState } from "react";
+// import { useQueryClient } from "@tanstack/react-query";
+// const [skip, setSkip] = useState(0);
+
+const  getUserToken = async () => {
+  try {
+    const response = await api.get("/auth/token-info");
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+}
 
 const getCurrentUser = async () => {
   try {
@@ -12,6 +25,7 @@ const getCurrentUser = async () => {
     throw error.response?.data || error;
   }
 }
+
 const getAllUsers = async (searchKey?: string) => {
   try {
     const response = await api.get("/users/search", {
@@ -25,10 +39,10 @@ const getAllUsers = async (searchKey?: string) => {
     throw error.response?.data || error;
   }
 }
+
 const blockUser = async (targetUserId?: string) => {
   try {
     console.log("Block user", targetUserId);
-
     const response = await api.post(`/users/block/${targetUserId}`);
     return response.data
 
@@ -36,6 +50,7 @@ const blockUser = async (targetUserId?: string) => {
     throw error.response?.data || error;
   }
 }
+
 const unblockUser = async (blockedUserId?: string) => {
   try {
     console.log("Block user", blockedUserId);
@@ -47,6 +62,7 @@ const unblockUser = async (blockedUserId?: string) => {
     throw error.response?.data || error;
   }
 }
+
 const clearChat = async (conversationId?: string) => {
   try {
     console.log("Block user", conversationId);
@@ -68,6 +84,7 @@ const getAllConversations = async () => {
     throw error.response?.data || error;
   }
 }
+
 const createNewConversations = async (data?: { participantIds: string[] }) => {
   console.log(data);
 
@@ -76,7 +93,6 @@ const createNewConversations = async (data?: { participantIds: string[] }) => {
       participants: data?.participantIds
     });
     console.log("response", response);
-
     return response.data.saveConversation
 
   } catch (error: any) {
@@ -108,6 +124,7 @@ const resetUnreadCount = async (conversationId?: string) => {
     throw error.response?.data || error;
   }
 }
+
 const markMessagesAsRead = async (conversationId: string) => {
   try {
     const response = await api.post("/mark-read", { conversationId });
@@ -126,6 +143,17 @@ const getMessages = async (conversationId?: string) => {
     throw error.response?.data || error;
   }
 }
+
+
+const loadOlderMessages = async (conversationId: string, skip: number) => {
+  try {
+    const response = await api.get(`/conversations/${conversationId}/messages?skip=${skip}`);
+    return response.data
+
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+};
 const sendAudio = async (formData: any) => {
   try {
 
@@ -160,8 +188,8 @@ const updateUser = async (formData: any) => {
     throw error.response?.data || error;
   }
 
-
 }
+
 const logOut = async () => {
   try {
 
@@ -173,6 +201,7 @@ const logOut = async () => {
   }
 
 }
+
 const deleteAccount = async (password: string) => {
   try {
 
@@ -186,6 +215,7 @@ const deleteAccount = async (password: string) => {
   }
 
 }
+
 const requestEmailChange = async (requestEmailDetails:RequestEmailChangePayload) => {
   try {
     console.log("requestEmailDetails",requestEmailDetails);
@@ -199,6 +229,7 @@ const requestEmailChange = async (requestEmailDetails:RequestEmailChangePayload)
     throw error.response?.data || error;
   }
 }
+
 const verifyRecoverAccount = async (token?:string) => {
   try {
     const response = await api.post("/auth/recover-account-verify", { token });
@@ -211,6 +242,7 @@ const verifyRecoverAccount = async (token?:string) => {
     
   } 
 }
+
 const verifyEmailChange = async (token: string) => {
   try {
 
@@ -224,4 +256,16 @@ const verifyEmailChange = async (token: string) => {
   }
 
 }
-export { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, sendMessage, resetUnreadCount, getMessages, markMessagesAsRead, sendAudio, sendDocument, updateUser, blockUser, unblockUser, clearChat, logOut, deleteAccount, requestEmailChange, verifyRecoverAccount,verifyEmailChange }
+export { 
+  getCurrentUser, getAllUsers, 
+  getAllConversations, createNewConversations, 
+  sendMessage, resetUnreadCount, 
+  getMessages, loadOlderMessages,
+  markMessagesAsRead, 
+  sendAudio, sendDocument, 
+  updateUser, blockUser, 
+  unblockUser, clearChat, 
+  logOut, deleteAccount, 
+  requestEmailChange, verifyRecoverAccount,
+  verifyEmailChange, getUserToken 
+}

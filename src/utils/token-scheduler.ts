@@ -1,64 +1,30 @@
-// import api from "@/api/axiosInstance"; // your Axios instance
-
-// let refreshTimeout: NodeJS.Timeout | null = null;
-// const scheduleTokenRefresh=(expireAt: number)=> {
-//   if (!expireAt) return;
-
-//   const now = Date.now();
-//   const msLeft = expireAt - now;
-
-//   // refresh 1 minute before expiration
-//   const refreshTime = msLeft - 60_000;
-//     console.log("scheduleTokenRefresh", { expireAt, now, msLeft, refreshTime });
-
-//   if (refreshTime <= 0) {
-//     // token almost expired, refresh immediately
-//     api.post("/auth/refresh-token");
-//     return;
-//   }
-
-//   if (refreshTimeout) clearTimeout(refreshTimeout);
-
-//   refreshTimeout = setTimeout(() => {
-//     api.post("/auth/refresh-token");
-//   }, refreshTime);
-// }
-
-// const clearTokenRefresh=()=> {
-//   if (refreshTimeout) clearTimeout(refreshTimeout);
-//   refreshTimeout = null;
-// }
-// export {scheduleTokenRefresh ,clearTokenRefresh}
 import api from "@/api/axiosInstance";
-
 let refreshTimeout: NodeJS.Timeout | null = null;
-
-const scheduleTokenRefresh = (expireAt: number) => {
+const scheduleTokenRefresh = (expireAt: number, router: any) => {
   if (!expireAt) return;
-
+  
   const now = Date.now();
   const msLeft = expireAt - now;
-
   // refresh 1 minute before expiration
   const refreshTime = msLeft - 60_000;
   console.log("scheduleTokenRefresh", { expireAt, now, msLeft, refreshTime });
-
+  
   if (refreshTime <= 0) {
     console.log("almost expire");
     
     // token almost expired, refresh immediately
-    refreshToken();
+    refreshToken(router);
     return;
   }
-
+  
   if (refreshTimeout) clearTimeout(refreshTimeout);
-
+  
   refreshTimeout = setTimeout(() => {
-    refreshToken();
+    refreshToken(router);
   }, refreshTime);
 };
 
-const refreshToken = async () => {
+const refreshToken = async (router:any) => {
   try {
     const res = await api.post("/auth/refresh-token");
     console.log("Token refreshed", res.data);
@@ -67,12 +33,12 @@ const refreshToken = async () => {
     console.log(res.data.accessTokenExpireAt);
     
     if (res.data.accessTokenExpireAt) {
-      scheduleTokenRefresh(res.data.accessTokenExpireAt);
+      scheduleTokenRefresh(res.data.accessTokenExpireAt, router);
     }
   } catch (err) {
     console.error("Refresh token failed", err);
     // Optionally log out
-    if (typeof window !== "undefined") window.location.href = "/auth/login";
+    router.push("/auth/login")
   }
 };
 

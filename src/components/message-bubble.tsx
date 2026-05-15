@@ -8,20 +8,7 @@ import { useTheme } from "@mui/material/styles";
 import { getFileType } from "./file-type-formater";
 import FileCard from "./file-card";
 import TypingIndicator from "./typing-indicator";
-
-interface MessageBubbleProps {
-  text?: string;
-  timeStamp: string;
-  isRead: boolean;
-  isSender: boolean;
-  type: "TEXT" | "VOICE" | "DOCUMENT";
-  mediaUrl?: string;
-  fileName?: string;
-  fileSize?: number;
-  selectedId?: string
-  currentUserId?: string
-}
-
+import {MessageBubbleProps} from "@types/MessageBubbleProps"
 
 export default function MessageBubble({
   text,
@@ -156,11 +143,12 @@ export default function MessageBubble({
       alignItems={isSender ? "flex-end" : "flex-start"}
     >
       {(type === 'TEXT' && text) || (type === 'VOICE' && mediaUrl) ? (
-
         <Box
           sx={{
-            // bgcolor: mode === 'light' ? theme.palette.primary.contrastText : theme.palette.secondary.contrastText,
-            bgcolor: isSender ? mode === 'light' ? "#18033bff" : theme.palette.primary.main : mode === 'light' ? theme.palette.primary.contrastText : theme.palette.secondary.contrastText,
+            bgcolor: isSender ? mode === 'light'? theme.palette.chat.sender: theme.palette.primary.main : mode === 'light' ? theme.palette.primary.contrastText : theme.palette.secondary.contrastText,
+            // bgcolor: isSender  ? theme.palette.chat.sender
+            // : theme.palette.chat.receiver,
+            
             color: mode === 'light' ? "secondary.contrastText" : "primary.contrastText",
             p: 1.2,
             borderRadius: 2,
@@ -176,11 +164,8 @@ export default function MessageBubble({
               </Typography>
               {getTickIcon()}
             </>
+
           )}
-          {/* DOCUMENT */}
-
-
-
           {/* VOICE MESSAGE */}
           {type === "VOICE" && mediaUrl && (
             <Box display="flex" alignItems="center" gap={1}
@@ -199,8 +184,6 @@ export default function MessageBubble({
                       : theme.palette.secondary.main,
                 }} />}
               </IconButton>
-
-
               {/* Waveform Bars */}
               <Box
                 sx={{
@@ -233,14 +216,13 @@ export default function MessageBubble({
           )}
         </Box>
       ) : null}
+       {/* DOCUMENT */}
       {type === "DOCUMENT" && (
         <Box
           sx={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            // mx:"auto",
-            // justifyItems:"space-between",
             ml: 2,
             mb: 2,
             border: `1px solid ${theme.palette.mode === "light"
@@ -260,7 +242,6 @@ export default function MessageBubble({
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              // backgroundColor: "#f5f5f5",
               backgroundColor: `${theme.palette.mode === "light"
                 ? theme.palette.secondary.main
                 : theme.palette.secondary.contrastText}`,
@@ -314,22 +295,21 @@ export default function MessageBubble({
               </Tooltip>
             }
           </Stack>
-
         </Box>
-
-
       )}
-
       <Typography
         variant="body2"
         sx={{ mt: 0.3, fontSize: "0.8rem", color: "text.secondary" }}
       >
         {formatTime(timeStamp)}
       </Typography>
-      <TypingIndicator
-        conversationId={selectedId!}
-        currentUserId={currentUserId!}
-      />
+      {type === "TEXT" && text != null && !isSender && (
+        <TypingIndicator
+          conversationId={selectedId!}
+          currentUserId={currentUserId!}
+        />
+      )}
     </Box>
+
   );
 }

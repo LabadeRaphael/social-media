@@ -1,5 +1,5 @@
 import { Box, Typography, Button } from "@mui/material";
-import React, { Children } from "react";
+import React from "react";
 
 interface DynamicModalProps {
   open: boolean;
@@ -9,6 +9,7 @@ interface DynamicModalProps {
   cancelText?: string;
   confirmColor?: string;
   disabled?:boolean|string;
+  type?:string;
   onClose: () => void;
   onConfirm: () => void;
   children?: React.ReactNode; // allows inputs inside
@@ -30,7 +31,6 @@ const DynamicModal: React.FC<DynamicModalProps> = ({
 
   return (
     <Box
-      onClick={onClose} 
       sx={{
         position: "fixed",
         top: 0,

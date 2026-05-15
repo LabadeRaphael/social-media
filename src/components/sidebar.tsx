@@ -14,17 +14,11 @@ import {
   ListItemText,
   ListItemButton,
   CircularProgress,
-  colors,
   Stack,
   LinearProgress,
 } from "@mui/material";
 import {
   Search, MoreVertical, MessageCircle, Mic,
-  Image as ImageIcon,
-  Music,
-  Video,
-  FileText,
-  File,
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useCallback, useMemo, useEffect } from "react";
@@ -35,18 +29,11 @@ import { setSelectedChat } from "@/redux/chats-slice";
 import toast from "react-hot-toast";
 import type { RootState } from "@/redux/store";
 import { Conversation } from "@/types/conversation";
-import { Drawer, Button } from "@mui/material";
 import { useOnlineUsers } from "@/socket-hook/socket";
 import { ThemeSwitcher } from "./Theme/themeswitcher";
 import { getFileType } from "./file-type-formater";
 import TypingIndicator from "./typing-indicator";
-// import {
-//   Image as ImageIcon,
-//   Music,
-//   Video,
-//   FileText,
-//   File,
-// } from "lucide-react";
+import { useTheme } from "@mui/material/styles";
 interface User {
   id: string;
   userName: string;
@@ -55,10 +42,8 @@ interface SidebarProps {
   setActiveView: (view: 'chat' | 'settings') => void;
 }
 export default function Sidebar({ setActiveView }: SidebarProps) {
+  const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState<string>("");
-  // const [openProfile, setOpenProfile] = useState(false);
-  // const [activeView, setActiveView] = useState<'chat' | 'settings'>('chat');
-
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const dispatch = useDispatch();
   const selectedChat = useSelector(
@@ -66,7 +51,7 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
   );
 
   const { data: currentUser = null, isLoading: isLoadingCurrentUser, error: currentUserError } = useCurrentUser()
-  console.log("curren", currentUser);
+  console.log("current", currentUser);
 
   // debounce
   const debouncedHandler = useMemo(
@@ -85,7 +70,6 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
     isLoading: isLoadingConversations,
     error: conversationsError,
   } = useAllConversations();
-
 
   // search input
   const handleSearchChange = useCallback(
@@ -118,7 +102,6 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
       type: "user" | "conversation";
       id: string;
       userName: string;
-      // lastMessageText: string;
       lastMessagePreview: string;
       lastMessageTime: string | null;
       unreadCount: number;
@@ -147,74 +130,12 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
         };
       });
     } else {
-
       const formatDuration = (seconds: number) => {
         if (!seconds || isNaN(seconds)) return "0:00";
         const m = Math.floor(seconds / 60);
         const s = Math.floor(seconds % 60);
         return `${m}:${s.toString().padStart(2, "0")}`;
       };
-
-
-      // const getFileType = (name: string) => {
-      //   const ext = name?.split(".").pop()?.toLowerCase();
-
-      //   if (!ext) {
-      //     return (
-      //       <span className="flex items-center gap-2">
-      //         <File size={16} />
-      //         Unknown
-      //       </span>
-      //     );
-      //   }
-
-      //   if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
-      //     return (
-      //       <span className="flex items-center gap-2">
-      //         <ImageIcon size={16} />
-      //         Image
-      //       </span>
-      //     );
-      //   }
-
-      //   if (["mp3", "wav", "ogg"].includes(ext)) {
-      //     return (
-      //       <span className="flex items-center gap-2">
-      //         <Music size={16} />
-      //         Audio
-      //       </span>
-      //     );
-      //   }
-
-      //   if (["mp4", "mov", "webm"].includes(ext)) {
-      //     return (
-      //       <span className="flex items-center gap-2">
-      //         <Video size={16} />
-      //         Video
-      //       </span>
-      //     );
-      //   }
-
-      //   if (["pdf", "docx"].includes(ext)) {
-      //     return (
-      //       <span className="flex items-center gap-2">
-      //         <FileText size={16} />
-      //         PDF
-      //       </span>
-      //     );
-      //   }
-
-      //   return (
-      //     <span className="flex items-center gap-2">
-      //       <File size={16} />
-      //       Other
-      //     </span>
-      //   );
-      // };
-
-
-
-
       convs = (conversations as Conversation[]).map(conv => {
         const myParticipant = conv.participants.find(p => p.user.id === currentUser?.id);
         const unreadCount = myParticipant?.unreadCount ?? 0;
@@ -246,7 +167,6 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
         };
       });
     }
-
     // Sort by lastMessageTime descending (newest first)
     convs.sort((a, b) => {
       const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
@@ -257,9 +177,6 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
     return convs;
   }, [conversations, users, searchTerm, currentUser, onlineUsers]);
 
-  // selection
-
-  //  const typingUser = useTypingIndicator(conversationId, currentUserId);
   const { mutateAsync } = useCreateConversation()
   const { mutate: resetUnread } = useResetUnreadCount();
   const { mutate: markRead } = useMarkMessagesAsRead();
@@ -299,12 +216,9 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
       } catch (err: any) {
         toast.error(err.message || "Failed to start conversation");
       }
-      // dispatch(setSelectedChat(userId));
     },
     [dispatch, conversations, currentUser, mutateAsync, resetUnread]
   );
-  // const color = isOtherUserOnline === null ? "gray" : (isOtherUserOnline ? "green" : "red");
-
   return (
     <Box
       sx={{
@@ -335,8 +249,7 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
             style={{ borderRadius: "50%", objectFit: "cover" }}
           />
           <Typography variant="h6" fontWeight={600}>
-            NestChat
-
+            NestFinity
           </Typography>
         </Box>
         <Box>
@@ -347,14 +260,8 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
           <IconButton size="small" aria-label="More options" onClick={() => setActiveView('settings')}>
             <MoreVertical size={20} />
           </IconButton>
-
         </Box>
       </Box>
-
-
-
-
-
       {/* Search */}
       <Box p={1.5}>
         <TextField
@@ -386,14 +293,6 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
       {/* Chats */}
       <List sx={{ flex: 1, overflowY: "auto", bgcolor: "background.paper" }}>
         {isLoadingConversations || (isLoadingUsers && searchTerm) ? (
-          // <Box
-          //   display="flex"
-          //   justifyContent="center"
-          //   alignItems="center"
-          //   minHeight={100}
-          // >
-          //   <CircularProgress size={24} />
-          // </Box>
           <Box sx={{ px: 2 }}>
             <LinearProgress
               sx={{
@@ -401,7 +300,7 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
                 borderRadius: 2,
                 backgroundColor: "rgba(255,194,68,0.2)", // light yellow background
                 "& .MuiLinearProgress-bar": {
-                  backgroundColor: "rgb(255,194,68)", // your yellow
+                  backgroundColor: theme.palette.primary.main, // your yellow
                 },
               }}
             />
@@ -417,9 +316,6 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
         ) : (
           displayConversations.map((conv) => {
             const { isOnline } = conv;
-            // console.log("conv",conv);
-
-            //  const typingUser = useTypingIndicator(conversationId, currentUserId);
             return (
               <ListItem key={conv.id} disablePadding>
                 <ListItemButton
@@ -483,7 +379,6 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
                           currentUserId={currentUser?.id}
                           fallback={conv.lastMessagePreview}
                         />
-                        {/* {conv.lastMessagePreview} */}
                       </>
                     }
                     primaryTypographyProps={{
@@ -517,8 +412,6 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
                         minute: "2-digit",
                       })
                       : "--:--"}
-
-
                   </Typography>
                   {conv.unreadCount > 0 && (
                     <Box
@@ -538,7 +431,6 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
                       {conv.unreadCount}
                     </Box>
                   )}
-
                 </ListItemButton>
               </ListItem>
             )
@@ -546,7 +438,6 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
         )}
       </List>
       {currentUser &&
-
         <Box sx={{
           display: "flex",
           flexDirection: "column",
@@ -580,9 +471,7 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
                 </Typography>
               </Stack>
               <Box />
-
             </Box>
-
           </Stack>
         </Box>
       }

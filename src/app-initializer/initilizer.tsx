@@ -1,30 +1,22 @@
 "use client";
 
-import api from "@/api/axiosInstance";
-import { useCurrentUser, useJoinAllConversations } from "@/react-query/query-hooks";
-import { scheduleTokenRefresh } from "@/utils/token-scheduler";
+import { getUserToken } from "@/api/user";
+import { clearTokenRefresh, scheduleTokenRefresh } from "@/utils/token-scheduler";
 import { useEffect } from "react";
-
+import { useRouter } from "next/navigation"
 export default function AppInitializer({ children }: { children: React.ReactNode }) {
   // const { data: user, isLoading } = useCurrentUser();
-   const { data: user, isSuccess } = useCurrentUser();
- useEffect(() => {
-    async function initTokenWatcher() {
-      if (!isSuccess || !user) return
-      try {
-        // Optional: get current access token info from backend
-        const res = await api.get("/auth/token-info"); 
-        if (res.data.accessTokenExpireAt) {
-          scheduleTokenRefresh(res.data.accessTokenExpireAt);
-        }
-      } catch (err) {
-        console.log("User not logged in or token expired");
-      }
-    }
+  const { data: user, isSuccess } = getUserToken();
+  const router = useRouter()
+  useEffect(() => {
+    if (!isSuccess || !user?.accessTokenExpireAt) return;
 
-    initTokenWatcher();
-  }, []);
+    scheduleTokenRefresh(user.accessTokenExpireAt, router);
 
+    return () => {
+      clearTokenRefresh(); 
+    };
+  }, [isSuccess, user?.accessTokenExpireAt, router]);
 
   return <>{children}</>;
 }

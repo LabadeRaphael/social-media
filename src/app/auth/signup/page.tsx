@@ -22,6 +22,7 @@ import { Eye, EyeOff } from "lucide-react";
 import api from "@/api/axiosInstance";
 import MessageAlert from "@/components/message-alert";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 // Yup validation schema
 const SignupSchema = Yup.object().shape({
   userName: Yup.string()
@@ -44,7 +45,7 @@ interface ApiMessage {
 export default function SignupPage() {
   const theme = useTheme();
   const mode = theme.palette.mode;
-
+   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [apiMessage, setApiMessage] = useState<ApiMessage | null>(null);
@@ -181,7 +182,7 @@ export default function SignupPage() {
 
                   // 🔹 Redirect after 2 seconds
                   setTimeout(() => {
-                    window.location.href = "/auth/login";
+                    router.push("/auth/login")
                   }, 2000);
 
                 } catch (err: any) {

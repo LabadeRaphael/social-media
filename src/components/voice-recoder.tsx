@@ -229,4 +229,5 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(({ conversationId }
 });
 
 VoiceRecorder.displayName = "VoiceRecorder";
+
 export default VoiceRecorder;

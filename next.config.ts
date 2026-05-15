@@ -1,20 +1,13 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === "production";
+
 const nextConfig: NextConfig = {
-  /* config options here */
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: isProd
+      ? { exclude: ["error"] }
+      : false,
   },
-  
 };
-// next.config.js
-// const nextConfig = {
-//   compiler: {
-//     removeConsole: process.env.NODE_ENV === 'production',
-//   },
-// };
-
-module.exports = nextConfig;
-
 
 export default nextConfig;

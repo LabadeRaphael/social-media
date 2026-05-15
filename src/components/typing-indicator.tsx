@@ -7,7 +7,6 @@ interface TypingIndicatorProps {
   conversationId: string;
   currentUserId: string;
   fallback?:any
-  // children?: React.ReactNode;
 }
 
 const TypingIndicator: React.FC<TypingIndicatorProps> = ({
@@ -17,7 +16,6 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({
  
 }) => {
   const typingUser = useTypingIndicator(conversationId, currentUserId);
-  // console.log('typinguser',typingUser);
   
   if (!typingUser){
     return <>{fallback}</>

@@ -1,5 +1,4 @@
 "use client";
-
 import {
   Box,
   Typography,
@@ -8,7 +7,7 @@ import {
   Avatar,
   Tooltip,
   CircularProgress,
-  Button,
+  Button
 } from "@mui/material";
 import {
   ArrowLeft,
@@ -20,25 +19,24 @@ import {
   Mic,
   ChevronLeft,
   Check,
+  ChevronUp
 
 } from "lucide-react";
 import { Menu, MenuItem } from "@mui/material";
 import { Ban, Trash2 } from "lucide-react";
 import Settings from "@/components/settings"
-
 import MessageBubble from "./message-bubble";
 import React, { useEffect, useRef, useState } from "react";
 import {
   useClearChat,
   useCurrentUser,
+  useLoadOlder,
   useMessages,
   useSendDocument,
-  useSendMessage,
 } from "@/react-query/query-hooks";
 import { Conversation } from "@/types/conversation";
 import { useSocketChat } from "@/react-query/query-hooks";
 import { getSocket } from "@/lib/socket";
-import TypingIndicator from "./typing-indicator";
 import { useOnlineUsers } from "@/socket-hook/socket";
 import dynamic from "next/dynamic";
 import VoiceRecorder, { VoiceRecorderHandle } from "./voice-recoder";
@@ -46,16 +44,9 @@ import DocumentPreview from "./document-preview";
 import { blockUser, unblockUser } from "@/api/user";
 import toast from "react-hot-toast";
 import DynamicModal from "./dynamic-modal";
-
-
-
-
-
-
-
+// import useLoadOlder from "@/hooks/useLoadOlder";
 // Dynamically import emoji picker for performance
 const Picker = dynamic(() => import("emoji-picker-react"), { ssr: false });
-
 interface ChatWindowProps {
   selectedChat: Conversation | null;
   onBack: () => void;
@@ -76,7 +67,7 @@ export default function ChatWindow({
   const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isSendingFile, setIsSendingFile] = useState(false);
-
+   const [hasOlderMessages, setHasOlderMessages] = useState(true);
   const [selectedFile, setSelectedFile] = useState<{
     url: string;
     name: string;
@@ -87,9 +78,8 @@ export default function ChatWindow({
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
   const { data: currentUser } = useCurrentUser();
+  const { loadOlder } = useLoadOlder();
   const [isBlock, setIsBlock] = useState(false);
-
-  // Then compute whenever currentUser or otherUser changes
   const otherUser = selectedChat?.participants.find(
     (p) => p.user.id !== currentUser?.id
   );
@@ -101,7 +91,6 @@ export default function ChatWindow({
     }
   }, [currentUser, otherUser]);
 
-
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -111,17 +100,14 @@ export default function ChatWindow({
   };
 
   const handleBlockUser = () => {
-
     try {
       const extractedUserId = selectedChat?.participants.find(p => p.user.id !== currentUser?.id)
-
       const targetUserId = extractedUserId?.user.id
       console.log("the target userId", targetUserId);
-
       blockUser(targetUserId)
       toast.success("Blocking Successful")
       setIsBlock(true)
-    } catch (error) {
+    } catch (error: any) {
       console.log(error.message);
       toast.error(error.message || "Blocking failed retry")
       setIsBlock(false)
@@ -130,7 +116,6 @@ export default function ChatWindow({
   };
 
   const handleUnblockUser = () => {
-
     try {
       const extractedUserId = selectedChat?.participants.find(p => p.user.id !== currentUser?.id)
       const blockedUserId = extractedUserId?.user.id
@@ -138,7 +123,7 @@ export default function ChatWindow({
       unblockUser(blockedUserId)
       toast.success("Unblocking Successful")
       setIsBlock(false)
-    } catch (error) {
+    } catch (error: any) {
       console.log(error.message);
       toast.error(error.message || "Unblocking failed retry")
       setIsBlock(true)
@@ -150,7 +135,6 @@ export default function ChatWindow({
 
   const handleClearChat = () => {
     if (!selectedChat?.id) return;
-
     clearChatMutation.mutate(
       { conversationId: selectedChat.id },
       {
@@ -165,29 +149,16 @@ export default function ChatWindow({
     );
   };
 
-
-
-
-
-
-
-
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   useSocketChat(selectedChat?.id);
-
   const onlineUsers = useOnlineUsers();
   console.log("onlineuser", onlineUsers);
 
   const { data: messages = [], isLoading, isError } = useMessages(
     selectedChat?.id ?? ""
   );
-  console.log(selectedChat);
-  console.log(messages)
-  // if (!selectedChat?.id) return;
-
-
-
+  console.log("selectedChat", selectedChat);
+  console.log("message", messages)
   const handleTyping = () => {
     if (!selectedChat || !currentUser) return;
     const socket = getSocket();
@@ -199,25 +170,13 @@ export default function ChatWindow({
     console.log("the block", currentUser);
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit("stop_typing", {
         conversationId: selectedChat.id,
         senderId: currentUser.id,
       });
-    }, 2000);
+    }, 1000);
   };
-
-
-
-
-
-  // console.log("The is block state", isBlock);
-
-  // console.log("blockuser", isBlock);
-  // console.log("otheruser", otherUser?.user.id);
-  // console.log("senderId", currentUser?.id);
-  // console.log("receiverId", otherUser?.user.id);
 
   const handleSendMessage = async (text: string) => {
     if (text.trim() && selectedChat) {
@@ -240,17 +199,10 @@ export default function ChatWindow({
   };
   // Document
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   const { mutateAsync: sendDocumentMutation } = useSendDocument();
-
   const handleDocumentUpload = async (e: any) => {
     const file = e.target.files?.[0];
     if (!file || !selectedChat) return;
-
-    // const message = await sendDocumentMutation({
-    //   file,
-    //   conversationId: selectedChat.id,
-    // });
     const fileUrl = URL.createObjectURL(file); // preview
     setSelectedFile({
       url: fileUrl,
@@ -272,12 +224,10 @@ export default function ChatWindow({
         file,
         conversationId: selectedChat.id,
       });
-
       const socket = getSocket();
       const otherUser = selectedChat.participants.find(
         (p) => p.user.id !== currentUser?.id
       );
-
       socket.emit("send_message", {
         type: "DOCUMENT",
         mediaUrl: message.mediaUrl,
@@ -287,10 +237,9 @@ export default function ChatWindow({
         fileSize: message.fileSize,
         fileType: message.fileType,
       });
-
       setSelectedFile(null); // remove preview
       toast.success("File send successfully")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to send file:", error.message);
       toast.error(error.message || "Failed to send file")
     } finally {
@@ -298,7 +247,6 @@ export default function ChatWindow({
     }
 
   };
-
 
   const startRecording = () => {
     recorderRef.current?.startRecording();
@@ -327,22 +275,17 @@ export default function ChatWindow({
       </Box>
     );
   }
-
   console.log("Other user ID (string):", String(otherUser?.user.id));
   console.log("OnlineUsers:", Array.from(onlineUsers));
-
-
   const isOtherUserOnline = otherUser
     ? onlineUsers.has(otherUser.user.id)
     : false;
   console.log("isOtherUserOnline:", isOtherUserOnline);
-
   return (
     <>
       {activeView === 'chat' &&
         <Box flex={1} display="flex" flexDirection="column">
           {/* Chat Header */}
-
           <Box
             display="flex"
             alignItems="center"
@@ -373,8 +316,6 @@ export default function ChatWindow({
                   }}
                 />
               </Box>
-
-              {/* <Avatar>{otherUser?.user.userName[0]}</Avatar> */}
               <Box>
                 <Typography variant="subtitle1">
                   {otherUser?.user.userName ?? "Unknown User"}
@@ -410,16 +351,10 @@ export default function ChatWindow({
                       handleMenuClose();
                     }}
                   >
-
                     <Ban size={18} style={{ marginRight: 8 }} />
                     Block User
                   </MenuItem>
                 )}
-
-
-
-
-
                 <MenuItem
                   onClick={() => {
                     setShowClearModal(true);
@@ -430,7 +365,6 @@ export default function ChatWindow({
                   Clear Chat
                 </MenuItem>
               </Menu>
-
               <DynamicModal
                 open={showBlockModal}
                 title="Block User ?"
@@ -443,7 +377,6 @@ export default function ChatWindow({
                   setShowBlockModal(false);
                 }}
               />
-
               <DynamicModal
                 open={showClearModal}
                 title="Clear Chat ?"
@@ -456,10 +389,14 @@ export default function ChatWindow({
                   setShowClearModal(false);
                 }}
               />
-
             </Box>
           </Box>
-
+          <Box
+            display="flex"
+            justifyContent="center"
+            mb={2}
+          >
+          </Box>
           {/* Messages */}
           <Box flex={1} p={2} overflow="auto" bgcolor="background.default">
             {isLoading ? (
@@ -481,32 +418,58 @@ export default function ChatWindow({
                 <Typography variant="caption">Start the conversation 👋</Typography>
               </Box>
             ) : (
-              messages.map((message: any) => (
-                <MessageBubble
-                  key={message.id}
-                  text={message.text}
-                  timeStamp={message.createdAt}
-                  type={message.type}
-                  mediaUrl={message.mediaUrl}
-                  fileName={message.fileName}
-                  fileSize={message.fileSize}
-                  isRead={message.isRead}
-                  isSender={message.sender.id === currentUser.id}
-                  selectedId={selectedChat?.id}
-                  currentUserId={currentUser?.id}
-                />
-              ))
+              <>
+                {/* LOAD OLDER BUTTON */}
+                {hasOlderMessages && (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  mb={2}
+                >
+                  <Button
+                    variant="outlined"
+                    startIcon={<ChevronUp size={18} />}
+                    onClick={() => {
+                      if (!selectedChat?.id) return;
+
+                      loadOlder(
+                        selectedChat.id,
+                        messages.length,
+                        setHasOlderMessages
+                      );
+                    }}
+                    sx={{
+                      borderRadius: "12px",
+                      textTransform: "none",
+                    }}
+                  >
+                    Older Messages
+                  </Button>
+                </Box>
+                )}
+                {messages.map((message: any) => (
+                  <MessageBubble
+                    key={message.id}
+                    text={message.text}
+                    timeStamp={message.createdAt}
+                    type={message.type}
+                    mediaUrl={message.mediaUrl}
+                    fileName={message.fileName}
+                    fileSize={message.fileSize}
+                    isRead={message.isRead}
+                    isSender={message.sender.id === currentUser.id}
+                    selectedId={selectedChat?.id}
+                    currentUserId={currentUser?.id}
+                  />
+                ))}
+              </>
             )}
           </Box>
-
           {/* Voice Recorder */}
           <VoiceRecorder
             ref={recorderRef}
             conversationId={selectedChat?.id}
           />
-
-          {/* {selectedFile && ( */}
-
           {selectedFile && (
             <DocumentPreview
               fileUrl={selectedFile.url}
@@ -517,10 +480,6 @@ export default function ChatWindow({
               isSending={isSendingFile}
             />
           )}
-
-          {/* )} */}
-
-
           {/* Chat Input */}
           <Box
             position="relative"
@@ -551,10 +510,6 @@ export default function ChatWindow({
                 />
               </Box>
             )}
-
-            {/* <IconButton onClick={() => fileInputRef.current?.click()>
-              <Paperclip />
-            </IconButton> */}
             {/* Document Upload */}
             <input
               ref={fileInputRef}
@@ -593,7 +548,6 @@ export default function ChatWindow({
             </Tooltip>
           </Box>
         </Box>
-
       }
       {activeView === 'settings' && (
         <Box flex={1} display="flex" flexDirection="column">

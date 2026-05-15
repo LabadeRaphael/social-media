@@ -9,7 +9,6 @@ import {
 
 export const getFileType = (name: string) => {
   const ext = name?.split(".").pop()?.toLowerCase();
-
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <Box display="flex" alignItems="center" gap={1}>
       {children}

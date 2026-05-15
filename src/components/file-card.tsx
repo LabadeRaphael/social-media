@@ -1,27 +1,23 @@
 import { Box, Typography } from "@mui/material";
 import { FileIcon } from "lucide-react";
-
 const FileCard = ({
   mediaUrl,
   fileName,
   theme,
   sx = {},
 }) => {
-   
-      const getFileType = (name?: string) => {
-    const ext = name?.split(".").pop()?.toLowerCase();
-    // console.log("fileType", ext);
-    if (!ext) return "unknown";
 
+  const getFileType = (name?: string) => {
+    const ext = name?.split(".").pop()?.toLowerCase();
+    if (!ext) return "unknown";
     if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return "image";
     if (["mp3", "wav", "ogg"].includes(ext)) return "audio";
     if (["mp4", "mov", "webm"].includes(ext)) return "video";
     if (["pdf", "docx"].includes(ext)) return "pdf";
     return "other";
   };
-    const fileType = getFileType(fileName);
-
-    console.log("fileName", fileType);
+  const fileType = getFileType(fileName);
+  console.log("fileName", fileType);
   switch (fileType) {
     case "image":
       return (
@@ -45,7 +41,7 @@ const FileCard = ({
           Your browser does not support the audio element.
         </audio>
       );
-
+      
     case "video":
       return (
         <video controls style={{ width: "100%", height: "100%" }}>

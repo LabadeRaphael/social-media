@@ -1,6 +1,6 @@
 import axios from "axios";
-
 // Create Axios instance
+
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3003",
   withCredentials: true, // send cookies
@@ -14,6 +14,7 @@ const PUBLIC_ROUTES = [
   "/auth/reset-password",
   "/auth/recover-account",
   "/auth/recover-account-verify",
+  "/auth/token-info",
 ];
 
 api.interceptors.response.use(
@@ -23,7 +24,6 @@ api.interceptors.response.use(
     const url = originalRequest?.url || "";
     const message = error.response?.data?.message;
     const status = error.response?.status;
-
     // ❗ Backend offline / network error
     if (error.message === "Network Error" || !error.response) {
       return Promise.reject({
@@ -36,10 +36,13 @@ api.interceptors.response.use(
     const isPublicRoute = PUBLIC_ROUTES.some((route) =>
       url.includes(route)
     );
+    console.log(isPublicRoute);
+    console.log(url);
+
 
     if (isPublicRoute) {
       console.log("public");
-      
+
       return Promise.reject(error); // 🔥 do nothing extra
     }
 
@@ -64,6 +67,13 @@ api.interceptors.response.use(
         if (typeof window !== "undefined") {
           window.location.href = "/auth/login";
         }
+      }
+      if (message?.toLowerCase().includes("forbidden") && !isPublicRoute) {
+        console.log("hitting");
+        if (typeof window !== "undefined") {
+          window.location.href = "/auth/login";
+        }
+
       }
       //  window.location.href = "/auth/login";
       // Optional: log for debugging only

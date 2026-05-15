@@ -1,13 +1,8 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
-
-type MessageAlertProps = {
-  message: string;
-  status: boolean; 
-};
-
-export default function MessageAlert({ message, status }: MessageAlertProps) {
+import {MessageAlertProps} from "@/types/MessageAlertProps"
+const MessageAlert = ({ message, status }: MessageAlertProps) => {
   return (
     <Box
       sx={{
@@ -33,3 +28,5 @@ export default function MessageAlert({ message, status }: MessageAlertProps) {
     </Box>
   );
 }
+
+export default MessageAlert

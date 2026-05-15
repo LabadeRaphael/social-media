@@ -17,21 +17,6 @@ export default function SpecificChatPage() {
   const { data: conversation, isLoading, error } = useAllConversations();
   useJoinAllConversations()
 
-// useEffect(() => {
-//   if (userId && conversation) {
-//     const existingConv = conversation.find((c: any) =>
-//       c.participants.some((p: any) => p.user.id === userId)
-//     );
-
-//     if (existingConv) {
-//       dispatch(setSelectedChat(existingConv));
-//     }
-//   }
-
-//   return () => {
-//     dispatch(setSelectedChat(null));
-//   };
-// }, [userId, conversation, dispatch]);
 
   // Display error toast if conversation fetch fails
   useEffect(() => {

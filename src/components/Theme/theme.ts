@@ -1,6 +1,17 @@
 // theme/theme.ts
 import { createTheme, ThemeOptions } from '@mui/material/styles';
-
+declare module '@mui/material/styles' {
+  interface Palette {
+    chat: {
+      sender: string;
+    };
+  }
+  interface PaletteOptions {
+    chat?: {
+      sender?: string;
+    };
+  }
+}
 const baseTheme: ThemeOptions = {
   palette: {
     mode: 'light',
@@ -28,6 +39,10 @@ export const getTheme = (mode: 'light' | 'dark') =>
     palette: {
       ...baseTheme.palette,
       mode,
+       chat: {
+        sender: "#3a1f0f", // ✅ your new color
+      },
+
       ...(mode === 'dark' && {
         background: {
           default: '#1a1a1a',
@@ -42,41 +57,8 @@ export const getTheme = (mode: 'light' | 'dark') =>
         error: {
           main: "#73040F",
         }
-        //        secondary: {
-        //   main: '#fdf8f4',
-        //   contrastText: '  #120802',
-        // },
-
-
       }),
     },
   });
 
-// theme/theme.ts
-// export const getTheme = (mode: 'light' | 'dark') =>
-//   createTheme({
-//     ...baseTheme,
-//     palette: {
-//       ...baseTheme.palette,
-//       mode,
-//       ...(mode === 'dark' && {
-//         primary: {
-//           main: '#ffc244', // Still Gold
-//           contrastText: '#120802', // Deep Brown text
-//         },
-//         secondary: {
-//           main: '#fdf8f4', // Light Cream
-//           contrastText: '#120802',
-//         },
-//         background: {
-//           default: '#120802', // Very dark brown base
-//           paper: '#f9e6c1', // Light Gold Paper
-//         },
-//         text: {
-//           primary: '#120802', // Deep brown text on cream paper
-//           secondary: '#ffc244', // Gold as accent
-//         },
-//       }),
-//     },
-//   });
 
