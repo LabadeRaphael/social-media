@@ -20,6 +20,7 @@ import api from "@/api/axiosInstance";
 import MessageAlert from "@/components/message-alert";
 import Image from "next/image";
 import { ApiMessage } from "@/types/api-response";
+import { getAuthTextFieldSx } from "@/utils/textFieldStyles";
 
 const RecoverySchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Email is required"),
@@ -97,7 +98,7 @@ export default function RecoverAccountPage() {
                 style={{ borderRadius: "50%" }}
               />
               <Typography variant="h4" fontWeight="bold" sx={{ mt: 1 }}
-             
+
               >
                 Recover Account
               </Typography>
@@ -181,14 +182,13 @@ export default function RecoverAccountPage() {
                       size="small"
                       error={touched.email && Boolean(errors.email)}
                       helperText={touched.email ? errors.email : " "}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
-                          "& fieldset": {
-                            borderColor: getBorderColor(touched.email, errors.email),
-                          },
-                        },
-                      }}
+                      sx={
+                        getAuthTextFieldSx({
+                          theme,
+                          mode,
+                          touched: touched.email,
+                          error: errors.email,
+                        })}
                     />
 
                     <Button

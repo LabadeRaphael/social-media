@@ -24,6 +24,7 @@ import MessageAlert from "@/components/message-alert";
 import Image from "next/image";
 import { ApiMessage } from "@/types/api-response";
 import { useRouter } from "next/navigation";
+import { getAuthTextFieldSx } from "@/utils/textFieldStyles";
 // Yup validation schema
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Email is required"),
@@ -68,7 +69,7 @@ export default function LoginPage() {
           overflow: "hidden",
           width: { xs: "100%", sm: "90%", md: "80%", lg: 900 },
           maxWidth: "100%",
-          background: mode === "light" ? "rgba(255,255,255,0.95)" : "rgba(18,18,18,0.95)",
+          background: mode === "light" ? theme.palette.secondary.contrastText : theme.palette.primary.contrastText,
           boxShadow: { xs: "0 2px 8px rgba(0,0,0,0.1)", sm: "0 4px 16px rgba(0,0,0,0.1)" },
         }}
         data-aos="fade-up"
@@ -219,14 +220,14 @@ export default function LoginPage() {
                       variant="outlined"
                       error={touched.email && Boolean(errors.email)}
                       helperText={touched.email ? errors.email : " "}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: { xs: 1, sm: 2 },
-                          "& fieldset": { borderColor: getBorderColor(touched.email, errors.email) },
-                          "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                        },
-                        "& .MuiInputLabel-root": { fontSize: { xs: "0.85rem", sm: "0.9rem" } },
-                      }}
+                      sx={
+                        getAuthTextFieldSx({
+                          theme,
+                          mode,
+                          touched: touched.email,
+                          error: errors.email,
+                        })
+                      }
                     />
 
                     {/* Password */}
@@ -242,14 +243,12 @@ export default function LoginPage() {
                       variant="outlined"
                       error={touched.password && Boolean(errors.password)}
                       helperText={touched.password ? errors.password : " "}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: { xs: 1, sm: 2 },
-                          "& fieldset": { borderColor: getBorderColor(touched.password, errors.password) },
-                          "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                        },
-                        "& .MuiInputLabel-root": { fontSize: { xs: "0.85rem", sm: "0.9rem" } },
-                      }}
+                      sx={getAuthTextFieldSx({
+                        theme,
+                        mode,
+                        touched: touched.password,
+                        error: errors.password,
+                      })}
                       InputProps={{
                         endAdornment: (
                           <InputAdornment position="end">

@@ -19,6 +19,7 @@ import * as Yup from "yup";
 import MessageAlert from "@/components/message-alert";
 import api from "@/api/axiosInstance";
 import Image from "next/image";
+import { getAuthTextFieldSx } from "@/utils/textFieldStyles";
 
 // Yup validation schema
 const ForgotPasswordSchema = Yup.object().shape({
@@ -64,7 +65,7 @@ export default function ForgotPasswordPage() {
                     overflow: "hidden",
                     width: { xs: "100%", sm: "90%", md: "80%", lg: 900 },
                     maxWidth: "100%",
-                    background: mode === "light" ? "rgba(255,255,255,0.95)" : "rgba(18,18,18,0.95)",
+                    background: mode === "light" ? theme.palette.secondary.contrastText : theme.palette.primary.contrastText,
                     boxShadow: { xs: "0 2px 8px rgba(0,0,0,0.1)", sm: "0 4px 16px rgba(0,0,0,0.1)" },
                 }}
                 data-aos="fade-up"
@@ -83,7 +84,7 @@ export default function ForgotPasswordPage() {
                                     ? theme.palette.primary.contrastText
                                     : theme.palette.secondary.contrastText,
                             color: mode === "light" ? theme.palette.background.paper : theme.palette.background.default,
-                              display: "flex",
+                            display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             p: { xs: 2, sm: 3, md: 4 },
@@ -207,14 +208,14 @@ export default function ForgotPasswordPage() {
                                             variant="outlined"
                                             error={touched.email && Boolean(errors.email)}
                                             helperText={touched.email ? errors.email : " "}
-                                            sx={{
-                                                "& .MuiOutlinedInput-root": {
-                                                    borderRadius: { xs: 1, sm: 2 },
-                                                    "& fieldset": { borderColor: getBorderColor(touched.email, errors.email) },
-                                                    "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                                                },
-                                                "& .MuiInputLabel-root": { fontSize: { xs: "0.85rem", sm: "0.9rem" } },
-                                            }}
+                                            sx={
+                                                getAuthTextFieldSx({
+                                                    theme,
+                                                    mode,
+                                                    touched: touched.email,
+                                                    error: errors.email,
+                                                })
+                                            }
                                         />
 
                                         {/* Submit Button */}

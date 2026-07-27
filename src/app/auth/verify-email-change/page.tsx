@@ -26,10 +26,8 @@ export default function VerifyRecoverAccountPage() {
 
     const [apiMessage, setApiMessage] = useState<ApiMessage | null>(null);
     const [isLoading, setIsLoading] = useState(true)
-    // const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-    // const [message, setMessage] = useState("Verifying your account...");
-const isSuccess = apiMessage?.status === true;
-const isError = apiMessage?.status === false;
+    const isSuccess = apiMessage?.status === true;
+    const isError = apiMessage?.status === false;
     useEffect(() => {
         AOS.init({ duration: 800, easing: "ease-in-out", once: true });
         const token = searchParams.get("token");
@@ -86,9 +84,8 @@ const isError = apiMessage?.status === false;
                     width: { xs: "100%", sm: "90%", md: "80%", lg: 900 },
                     background:
                         mode === "light"
-                            ? "rgba(255,255,255,0.95)"
-                            : "rgba(18,18,18,0.95)",
-                    // color: mode === "light" ? theme.palette.background.paper : theme.palette.background.default,
+                            ? theme.palette.secondary.contrastText
+                            : theme.palette.primary.contrastText,
                 }}
             >
                 <Grid container>
@@ -145,14 +142,11 @@ const isError = apiMessage?.status === false;
                             justifyContent: "center",
                             alignItems: "center",
                             textAlign: "center",
-                            // color: mode === "light" ? "red" : theme.palette.background.default,
                         }}
                     >
-                        {/* {status === "loading" && <CircularProgress />} */}
-                        {/* {!isLoading && <CircularProgress />} */}
                         {isLoading && (
                             <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
-                                <CircularProgress  size={30}/>
+                                <CircularProgress size={30} />
                                 <Typography variant="body2">Verifying your account...</Typography>
                             </Box>
                         )}
@@ -166,7 +160,7 @@ const isError = apiMessage?.status === false;
                                 {apiMessage?.message}
                             </Typography>
                         )}
-                       
+
                         {apiMessage?.status ?
                             <Typography variant="body2" mt={1}>
                                 Redirecting to login in 2 seconds...
@@ -176,17 +170,6 @@ const isError = apiMessage?.status === false;
                                 Please request a new email verification link.
                             </Typography>
                         }
-                        {/* {status === "success" && (
-                            <Typography variant="body2" mt={1}>
-                                Redirecting to login...
-                            </Typography>
-                        )} */}
-
-                        {/* {status === "error" && (
-                            <Typography variant="body2" mt={1} color="error">
-                                Please request a new recovery link.
-                            </Typography>
-                        )} */}
                     </Grid>
                 </Grid>
             </Paper>

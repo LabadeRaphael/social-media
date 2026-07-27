@@ -65,7 +65,7 @@ const DynamicModal: React.FC<DynamicModalProps> = ({
           </Typography>
         )}
         {children}
-        <Box display="flex" justifyContent="flex-end" gap={2}>
+        <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
           <Button variant="outlined" onClick={onClose}>
             {cancelText}
           </Button>

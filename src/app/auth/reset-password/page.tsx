@@ -23,6 +23,7 @@ import api from "@/api/axiosInstance";
 import MessageAlert from "@/components/message-alert";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import { getAuthTextFieldSx } from "@/utils/textFieldStyles";
 // Yup validation schema
 const ResetPasswordSchema = Yup.object().shape({
   newPassword: Yup.string()
@@ -278,23 +279,12 @@ export default function ResetPasswordPage() {
                           </InputAdornment>
                         ),
                       }}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: { xs: 1, sm: 2 },
-                          "& fieldset": {
-                            borderColor: getBorderColor(
-                              touched.newPassword,
-                              errors.newPassword
-                            ),
-                          },
-                          "&:hover fieldset": {
-                            borderColor: theme.palette.primary.main,
-                          },
-                        },
-                        "& .MuiInputLabel-root": {
-                          fontSize: { xs: "0.85rem", sm: "0.9rem" },
-                        },
-                      }}
+                      sx={getAuthTextFieldSx({
+                        theme,
+                        mode,
+                        touched: touched.newPassword,
+                        error: errors.newPassword,
+                      })}
                     />
 
                     {/* Confirm Password */}
@@ -334,23 +324,13 @@ export default function ResetPasswordPage() {
                           </InputAdornment>
                         ),
                       }}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: { xs: 1, sm: 2 },
-                          "& fieldset": {
-                            borderColor: getBorderColor(
-                              touched.confirmPassword,
-                              errors.confirmPassword
-                            ),
-                          },
-                          "&:hover fieldset": {
-                            borderColor: theme.palette.primary.main,
-                          },
-                        },
-                        "& .MuiInputLabel-root": {
-                          fontSize: { xs: "0.85rem", sm: "0.9rem" },
-                        },
-                      }}
+                      sx={
+                        getAuthTextFieldSx({
+                          theme,
+                          mode,
+                          touched: touched.confirmPassword,
+                          error: errors.confirmPassword,
+                        })}
                     />
 
                     {/* Submit Button */}

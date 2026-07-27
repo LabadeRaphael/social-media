@@ -23,6 +23,7 @@ import api from "@/api/axiosInstance";
 import MessageAlert from "@/components/message-alert";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { getAuthTextFieldSx } from "@/utils/textFieldStyles";
 // Yup validation schema
 const SignupSchema = Yup.object().shape({
   userName: Yup.string()
@@ -45,7 +46,7 @@ interface ApiMessage {
 export default function SignupPage() {
   const theme = useTheme();
   const mode = theme.palette.mode;
-   const router = useRouter()
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [apiMessage, setApiMessage] = useState<ApiMessage | null>(null);
@@ -80,7 +81,7 @@ export default function SignupPage() {
           overflow: "hidden",
           width: { xs: "100%", sm: "90%", md: "80%", lg: 900 },
           maxWidth: "100%",
-          background: mode === "light" ? "rgba(255,255,255,0.95)" : "rgba(18,18,18,0.95)",
+          background: mode === "light" ? theme.palette.secondary.contrastText : theme.palette.primary.contrastText,
           boxShadow: { xs: "0 2px 8px rgba(0,0,0,0.1)", sm: "0 4px 16px rgba(0,0,0,0.1)" },
         }}
         data-aos="fade-up"
@@ -163,7 +164,7 @@ export default function SignupPage() {
               validationSchema={SignupSchema}
               validateOnChange={true}
               validateOnBlur={true}
-              onSubmit={async (values, { setSubmitting}) => {
+              onSubmit={async (values, { setSubmitting }) => {
                 try {
                   setSubmitting(true)
 
@@ -218,16 +219,12 @@ export default function SignupPage() {
                       variant="outlined"
                       error={touched.userName && Boolean(errors.userName)}
                       helperText={touched.userName ? errors.userName : " "} // Reserve space
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: { xs: 1, sm: 2 },
-                          "& fieldset": {
-                            borderColor: getBorderColor(touched.userName, errors.userName),
-                          },
-                          "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                        },
-                        "& .MuiInputLabel-root": { fontSize: { xs: "0.85rem", sm: "0.9rem" } },
-                      }}
+                      sx={getAuthTextFieldSx({
+                        theme,
+                        mode,
+                        touched: touched.userName,
+                        error: errors.userName,
+                      })}
                     />
 
                     {/* Email */}
@@ -243,14 +240,13 @@ export default function SignupPage() {
                       variant="outlined"
                       error={touched.email && Boolean(errors.email)}
                       helperText={touched.email ? errors.email : " "} // Reserve space
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: { xs: 1, sm: 2 },
-                          "& fieldset": { borderColor: getBorderColor(touched.email, errors.email) },
-                          "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                        },
-                        "& .MuiInputLabel-root": { fontSize: { xs: "0.85rem", sm: "0.9rem" } },
-                      }}
+                      sx={getAuthTextFieldSx({
+                        theme,
+                        mode,
+                        touched: touched.email,
+                        error: errors.email,
+                      })
+                      }
                     />
 
                     {/* Password */}
@@ -266,14 +262,12 @@ export default function SignupPage() {
                       variant="outlined"
                       error={touched.password && Boolean(errors.password)}
                       helperText={touched.password ? errors.password : " "} // Reserve space
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: { xs: 1, sm: 2 },
-                          "& fieldset": { borderColor: getBorderColor(touched.password, errors.password) },
-                          "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                        },
-                        "& .MuiInputLabel-root": { fontSize: { xs: "0.85rem", sm: "0.9rem" } },
-                      }}
+                      sx={getAuthTextFieldSx({
+                        theme,
+                        mode,
+                        touched: touched.password,
+                        error: errors.password,
+                      })}
                       InputProps={{
                         endAdornment: (
                           <InputAdornment position="end">
@@ -298,16 +292,12 @@ export default function SignupPage() {
                       variant="outlined"
                       error={touched.confirmPassword && Boolean(errors.confirmPassword)}
                       helperText={touched.confirmPassword ? errors.confirmPassword : " "} // Reserve space
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: { xs: 1, sm: 2 },
-                          "& fieldset": {
-                            borderColor: getBorderColor(touched.confirmPassword, errors.confirmPassword),
-                          },
-                          "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                        },
-                        "& .MuiInputLabel-root": { fontSize: { xs: "0.85rem", sm: "0.9rem" } },
-                      }}
+                      sx={getAuthTextFieldSx({
+                        theme,
+                        mode,
+                        touched: touched.confirmPassword,
+                        error: errors.confirmPassword,
+                      })}
                       InputProps={{
                         endAdornment: (
                           <InputAdornment position="end">

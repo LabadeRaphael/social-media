@@ -173,17 +173,7 @@ const isError = apiMessage?.status === false;
                                 Please request a new recovery link.
                             </Typography>
                         }
-                        {/* {status === "success" && (
-                            <Typography variant="body2" mt={1}>
-                                Redirecting to login...
-                            </Typography>
-                        )} */}
-
-                        {/* {status === "error" && (
-                            <Typography variant="body2" mt={1} color="error">
-                                Please request a new recovery link.
-                            </Typography>
-                        )} */}
+                        
                     </Grid>
                 </Grid>
             </Paper>

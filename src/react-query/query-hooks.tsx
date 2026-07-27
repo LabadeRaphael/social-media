@@ -95,30 +95,41 @@ const useLoadOlder = () => {
         conversationId,
         skip
       );
-       if (olderMessages.length < 10) {
+      if (olderMessages.length < 10) {
         setHasOlderMessages(false);
       }
-        console.log("OlderMessages",olderMessages);
+      console.log("OlderMessages", olderMessages);
+      console.log("OlderMessages Reverse", olderMessages.reverse());
 
       queryClient.setQueryData(
-  ["messages", conversationId],
-  (old: any[] = []) => {
-    const merged = [
-      ...olderMessages.reverse(),
-      ...old,
-    ];
+        ["messages", conversationId],
+        (old: any[] = []) => {
+          if (old.some(m => m.id === olderMessages.id)) {
+            return old;
+          }
 
-    const uniqueMessages = merged.filter(
-      (message, index, self) =>
-        index ===
-        self.findIndex(
-          (m) => m.id === message.id
-        )
-    );
+          const merged = [
+            ...olderMessages,
+            ...old,
+          ];
 
-    return uniqueMessages;
-  }
-);
+          // remove duplicates using Map
+          const uniqueMessages = Array.from(
+            new Map(
+              merged.map((message) => [
+                message.id,
+                message,
+              ])
+            ).values()
+          );
+          const sortMessages = uniqueMessages.sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() -
+              new Date(b.createdAt).getTime()
+          );
+          return sortMessages;
+        }
+      );
     } catch (error) {
       console.log(error);
     }
@@ -306,17 +317,17 @@ const useUpdateUser = () => {
     },
   });
 };
- const useOnlineUsers = () => {
+const useOnlineUsers = () => {
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return
     const interval = setInterval(() => {
-    socket.emit('heartbeat');
-    console.log("see heartbeat");
-    
-  }, 10000); // every 10 seconds
+      socket.emit('heartbeat');
+      console.log("see heartbeat");
+
+    }, 10000); // every 10 seconds
 
     const handleOnlineUsers = (userIds: string[]) => {
       console.log("Updated online users:", userIds);

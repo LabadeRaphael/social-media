@@ -19,6 +19,7 @@ import * as Yup from "yup";
 import { useRouter } from "next/navigation";
 import { useCurrentUser, useUpdateUser } from "@/react-query/query-hooks";
 import { Edit, Eye, EyeOff } from "lucide-react";
+import { getAuthTextFieldSx } from "@/utils/textFieldStyles";
 import toast from "react-hot-toast";
 import { useFormik } from "formik";
 import { deleteAccount, logOut, requestEmailChange } from "@/api/user";
@@ -335,54 +336,56 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                 disabled={!formik.isValid || formik.isSubmitting}
                 type="Change Email"
               >
-                <TextField
-                  label="New Email"
-                  name="newEmail"
-                  value={formik.values.newEmail}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.newEmail && Boolean(formik.errors.newEmail)}
-                  helperText={formik.touched.newEmail && formik.errors.newEmail}
-                  fullWidth
-                  size="small"
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
-                      "&:hover fieldset": { borderColor: formik.errors.newEmail ? theme.palette.error.main : theme.palette.primary.main },
+                <Stack spacing={2}>
 
-                    },
-                    "& .MuiInputLabel-root": { fontSize: "0.9rem" },
-                  }}
-                />
-
-                <TextField
-                  label="Password"
-                  name="password"
-                  type={showEmailAuthPassword ? "text" : "password"}
-                  value={formik.values.password}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.password && Boolean(formik.errors.password)}
-                  helperText={formik.touched.password && formik.errors.password}
-                  fullWidth
-                  size="small"
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton onClick={() => setShowEmailAuthPassword(!showEmailAuthPassword)}>
-                          {showEmailAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
-                      "&:hover fieldset": { borderColor: formik.errors.password ? theme.palette.error.main : theme.palette.primary.main },
-                    },
-                    "& .MuiInputLabel-root": { fontSize: "0.9rem" },
-                  }}
-                />
+                  <TextField
+                    label="New Email"
+                    name="newEmail"
+                    value={formik.values.newEmail}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.newEmail && Boolean(formik.errors.newEmail)}
+                    helperText={formik.touched.newEmail && formik.errors.newEmail}
+                    fullWidth
+                    size="small"
+                    sx={
+                      getAuthTextFieldSx({
+                        theme,
+                        mode,
+                        touched: formik.touched.newEmail,
+                        error: formik.errors.newEmail,
+                      })}
+                  />
+                  <TextField
+                    label="Password"
+                    name="password"
+                    type={showEmailAuthPassword ? "text" : "password"}
+                    value={formik.values.password}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.password && Boolean(formik.errors.password)}
+                    helperText={formik.touched.password && formik.errors.password}
+                    fullWidth
+                    size="small"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={() => setShowEmailAuthPassword(!showEmailAuthPassword)}>
+                            {showEmailAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={
+                      getAuthTextFieldSx({
+                        theme,
+                        mode,
+                        touched: formik.touched.password,
+                        error: formik.errors.password,
+                      })
+                    }
+                  />
+                </Stack>
               </DynamicModal>
               {/* Passwords Side by Side */}
               <Grid container spacing={2}>
@@ -485,14 +488,13 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                     size="small"
                     variant="outlined"
                     autoFocus
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 2,
-                        "& fieldset": { borderColor: getBorderColor(errors.reAuthPassword) },
-                        "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                      },
-                      "& .MuiInputLabel-root": { fontSize: "0.9rem" },
-                    }}
+                    sx={
+                      getAuthTextFieldSx({
+                        theme,
+                        mode,
+                        touched: !!saveAuthPassword,
+                        error: errors.saveAuthPassword,
+                      })}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
@@ -587,14 +589,12 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                 size="small"
                 variant="outlined"
                 autoFocus
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                    "& fieldset": { borderColor: getBorderColor(errors.reAuthPassword) },
-                    "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                  },
-                  "& .MuiInputLabel-root": { fontSize: "0.9rem" },
-                }}
+                sx={getAuthTextFieldSx({
+                  theme,
+                  mode,
+                  touched: !!reAuthPassword,
+                  error: errors.reAuthPassword,
+                })}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -615,7 +615,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
           </Grid>
         </Grid>
       </Paper>
-
     </Box>
   );
 }
