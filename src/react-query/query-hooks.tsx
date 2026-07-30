@@ -1,6 +1,6 @@
 "use client"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount, markMessagesAsRead, sendAudio, sendDocument, clearChat, updateUser, loadOlderMessages } from "@/api/user";
+import { getCurrentUser, getAllUsers, getAllConversations, createNewConversations, getMessages, sendMessage, resetUnreadCount, markMessagesAsRead, sendAudio, sendDocument, clearChat, updateUser, loadOlderMessages, searchConversationMessages } from "@/api/user";
 import { useDispatch } from "react-redux";
 import { Message } from "@/types/messages";
 import { setSelectedChat } from "@/redux/chats-slice";
@@ -344,7 +344,18 @@ const useOnlineUsers = () => {
 
   return onlineUsers;
 };
+const useSearchConversationMessages = (
+  conversationId: string | null,
+  search: string
+) => {
+  return useQuery({
+    queryKey: ["conversation-search", conversationId, search],
+    queryFn: () =>
+      searchConversationMessages(conversationId!, search),
 
+    enabled: !!conversationId && search.trim().length > 0,
+  });
+};
 
 
 
@@ -358,5 +369,5 @@ export {
   useMarkMessagesAsRead, useTypingIndicator,
   useSendVoice, useSendDocument,
   useUpdateUser, useClearChat,
-  useOnlineUsers
+  useOnlineUsers, useSearchConversationMessages
 }

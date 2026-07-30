@@ -7,8 +7,10 @@ import {
   Avatar,
   Tooltip,
   CircularProgress,
-  Button
+  Button,
+  LinearProgress
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
   ArrowLeft,
   Search,
@@ -19,14 +21,16 @@ import {
   Mic,
   ChevronLeft,
   Check,
-  ChevronUp
+  ChevronUp,
+  X
 
 } from "lucide-react";
 import { Menu, MenuItem } from "@mui/material";
-import { Ban, Trash2 } from "lucide-react";
+import { Ban, Trash2, MessageCircleX } from "lucide-react";
 import Settings from "@/components/settings"
 import MessageBubble from "./message-bubble";
 import React, { useEffect, useRef, useState } from "react";
+import Collapse from "@mui/material/Collapse";
 import {
   useClearChat,
   useCurrentUser,
@@ -44,6 +48,10 @@ import DocumentPreview from "./document-preview";
 import { blockUser, unblockUser } from "@/api/user";
 import toast from "react-hot-toast";
 import DynamicModal from "./dynamic-modal";
+import {
+  useSearchConversationMessages,
+} from "@/react-query/query-hooks";
+import { Message } from "@/types/messages";
 // import useLoadOlder from "@/hooks/useLoadOlder";
 // Dynamically import emoji picker for performance
 const Picker = dynamic(() => import("emoji-picker-react"), { ssr: false });
@@ -67,7 +75,7 @@ export default function ChatWindow({
   const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isSendingFile, setIsSendingFile] = useState(false);
-   const [hasOlderMessages, setHasOlderMessages] = useState(true);
+  const [hasOlderMessages, setHasOlderMessages] = useState(true);
   const [selectedFile, setSelectedFile] = useState<{
     url: string;
     name: string;
@@ -80,6 +88,42 @@ export default function ChatWindow({
   const { data: currentUser } = useCurrentUser();
   const { loadOlder } = useLoadOlder();
   const [isBlock, setIsBlock] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const theme = useTheme();
+  const mode = theme.palette.mode;
+  const [search, setSearch] = useState("");
+
+  const [debouncedSearch, setDebouncedSearch] =
+    useState("");
+  const highlightText = (text: string, keyword: string) => {
+    if (!keyword.trim()) return text;
+
+    // Escape regex special characters
+    const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const regex = new RegExp(`(${escapedKeyword})`, "gi");
+
+    return text.split(regex).map((part, index) =>
+      regex.test(part) ? (
+        <Box
+          key={index}
+          component="span"
+          sx={{
+            bgcolor: mode === "light" ? theme.palette.primary.main : theme.palette.secondary.contrastText,
+            color: "warning.contrastText",
+            px: 0.4,
+            py: 0.1,
+            borderRadius: 1,
+            fontWeight: 600,
+          }}
+        >
+          {part}
+        </Box>
+      ) : (
+        part
+      )
+    );
+  };
   const otherUser = selectedChat?.participants.find(
     (p) => p.user.id !== currentUser?.id
   );
@@ -90,7 +134,32 @@ export default function ChatWindow({
       );
     }
   }, [currentUser, otherUser]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
 
+    return () => clearTimeout(timer);
+  }, [search]);
+  // const {
+  //   data: searchMessages = [],
+  //   isLoading: isSearchLoading,
+  //   isError: isSearchError,
+  // } = useSearchConversationMessages(
+  //   selectedChat?.id ?? null,
+  //   debouncedSearch
+  // );
+  const {
+    data: searchResults = [],
+    isLoading: isSearching,
+    isError: searchError,
+  } = useSearchConversationMessages(
+    selectedChat?.id ?? null,
+    debouncedSearch
+  );
+  const matchedMessageIds = new Set(
+    searchResults.map((m: Message) => m.id)
+  );
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -99,12 +168,12 @@ export default function ChatWindow({
     setAnchorEl(null);
   };
 
-  const handleBlockUser = () => {
+  const handleBlockUser = async () => {
     try {
       const extractedUserId = selectedChat?.participants.find(p => p.user.id !== currentUser?.id)
       const targetUserId = extractedUserId?.user.id
       console.log("the target userId", targetUserId);
-      blockUser(targetUserId)
+      await blockUser(targetUserId)
       toast.success("Blocking Successful")
       setIsBlock(true)
     } catch (error: any) {
@@ -115,12 +184,12 @@ export default function ChatWindow({
     handleMenuClose();
   };
 
-  const handleUnblockUser = () => {
+  const handleUnblockUser = async () => {
     try {
       const extractedUserId = selectedChat?.participants.find(p => p.user.id !== currentUser?.id)
       const blockedUserId = extractedUserId?.user.id
       console.log("the target userId", blockedUserId);
-      unblockUser(blockedUserId)
+      await unblockUser(blockedUserId)
       toast.success("Unblocking Successful")
       setIsBlock(false)
     } catch (error: any) {
@@ -130,7 +199,7 @@ export default function ChatWindow({
     }
     handleMenuClose();
   };
-  const clearChatMutation = useClearChat(); // ✅ hook call at top level
+  const clearChatMutation = useClearChat();
 
 
   const handleClearChat = () => {
@@ -284,112 +353,298 @@ export default function ChatWindow({
   return (
     <>
       {activeView === 'chat' &&
+
         <Box flex={1} display="flex" flexDirection="column">
           {/* Chat Header */}
           <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="space-between"
-            p={2}
             bgcolor="background.paper"
             borderBottom="1px solid"
             borderColor="divider"
           >
-            <Box display="flex" alignItems="center" gap={2}>
-              {isMobile && (
-                <IconButton onClick={onBack}>
-                  <ArrowLeft />
-                </IconButton>
-              )}
-              <Box position="relative" display="inline-block">
-                <Avatar>{otherUser?.user.userName[0]}</Avatar>
-                <Box
-                  sx={{
-                    position: "absolute",
-                    bottom: 2,
-                    right: 2,
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    bgcolor: isOtherUserOnline ? "green" : "grey.400",
-                    border: "2px solid white", // adds a border to separate dot from avatar
-                  }}
-                />
-              </Box>
-              <Box>
-                <Typography variant="subtitle1">
-                  {otherUser?.user.userName ?? "Unknown User"}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {isOtherUserOnline ? "Online" : "Offline"}
-                </Typography>
-              </Box>
-            </Box>
-            <Box>
-              <IconButton>
-                <Search />
-              </IconButton>
-              <IconButton onClick={handleMenuOpen}>
-                <MoreVertical />
-              </IconButton>
 
-              <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
-                {isBlock ? (
-                  <MenuItem
-                    onClick={() => {
-                      handleUnblockUser()
-                      handleMenuClose();
-                    }}
+            <Collapse in={!showSearch}>
+
+              <Box
+                display="flex"
+                alignItems="center"
+                justifyContent="space-between"
+                p={2}
+              >
+
+                <Box display="flex" alignItems="center" gap={2}>
+
+                  {isMobile && (
+                    <IconButton onClick={onBack}>
+                      <ArrowLeft />
+                    </IconButton>
+                  )}
+
+                  <Box position="relative">
+
+                    <Avatar>
+                      {otherUser?.user.userName[0].toUpperCase()}
+                    </Avatar>
+
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        bottom: 2,
+                        right: 2,
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        bgcolor:
+                          isOtherUserOnline
+                            ? "green"
+                            : "grey.400",
+                        border:
+                          "2px solid white",
+                      }}
+                    />
+
+                  </Box>
+
+                  <Box>
+
+                    <Typography variant="subtitle1">
+
+                      {otherUser?.user.userName}
+
+                    </Typography>
+
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                    >
+
+                      {isOtherUserOnline
+                        ? "Online"
+                        : "Offline"}
+
+                    </Typography>
+
+                  </Box>
+
+                </Box>
+
+                <Box>
+
+                  <IconButton
+                    onClick={() =>
+                      setShowSearch(true)
+                    }
                   >
-                    <Check size={18} style={{ marginRight: 8 }} />
-                    Unblock User
-                  </MenuItem>
-                ) : (
-                  <MenuItem
-                    onClick={() => {
-                      setShowBlockModal(true);
-                      handleMenuClose();
+                    <Search />
+                  </IconButton>
+
+                  <IconButton onClick={handleMenuOpen}>
+                    <MoreVertical />
+                  </IconButton>
+
+                  <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+                    {isBlock ? (
+                      <MenuItem
+                        onClick={() => {
+                          handleUnblockUser()
+                          handleMenuClose();
+                        }}
+                      >
+                        <Check size={18} style={{ marginRight: 8 }} />
+                        Unblock User
+                      </MenuItem>
+                    ) : (
+                      <MenuItem
+                        onClick={() => {
+                          setShowBlockModal(true);
+                          handleMenuClose();
+                        }}
+                      >
+                        <Ban size={18} style={{ marginRight: 8 }} />
+                        Block User
+                      </MenuItem>
+                    )}
+                    <MenuItem
+                      onClick={() => {
+                        setShowClearModal(true);
+                        handleMenuClose();
+                      }}
+                    >
+                      <Trash2 size={18} style={{ marginRight: 8 }} />
+                      Clear Chat
+                    </MenuItem>
+                  </Menu>
+
+                  <DynamicModal
+                    open={showBlockModal}
+                    title="Block User ?"
+                    description="You and this user will no longer be able to send messages to each other."
+                    confirmText="Block"
+                    confirmColor="error"
+                    onClose={() => setShowBlockModal(false)}
+                    onConfirm={() => {
+                      handleBlockUser();
+                      setShowBlockModal(false);
                     }}
-                  >
-                    <Ban size={18} style={{ marginRight: 8 }} />
-                    Block User
-                  </MenuItem>
-                )}
-                <MenuItem
+                  />
+                  <DynamicModal
+                    open={showClearModal}
+                    title="Clear Chat ?"
+                    description="This action will permanently delete all messages in this conversation."
+                    confirmText=" Clear Chat"
+                    confirmColor="error"
+                    onClose={() => setShowClearModal(false)}
+                    onConfirm={() => {
+                      handleClearChat()
+                      setShowClearModal(false);
+                    }}
+                  />
+                </Box>
+
+              </Box>
+
+            </Collapse>
+
+            <Collapse in={showSearch}>
+
+              <Box
+                display="flex"
+                alignItems="center"
+                gap={1}
+                p={2}
+              >
+
+                <IconButton
                   onClick={() => {
-                    setShowClearModal(true);
-                    handleMenuClose();
+                    setShowSearch(false);
+                    setSearch("");
                   }}
                 >
-                  <Trash2 size={18} style={{ marginRight: 8 }} />
-                  Clear Chat
-                </MenuItem>
-              </Menu>
-              <DynamicModal
-                open={showBlockModal}
-                title="Block User ?"
-                description="You and this user will no longer be able to send messages to each other."
-                confirmText="Block"
-                confirmColor="error"
-                onClose={() => setShowBlockModal(false)}
-                onConfirm={() => {
-                  handleBlockUser();
-                  setShowBlockModal(false);
+                  <ArrowLeft />
+                </IconButton>
+
+                <TextField
+                  autoFocus
+                  fullWidth
+                  size="small"
+                  placeholder="Search messages..."
+
+                  value={search}
+
+                  onChange={(e) =>
+                    setSearch(e.target.value)
+                  }
+
+                  InputProps={{
+
+                    endAdornment:
+                      search && (
+
+                        <IconButton
+                          size="small"
+                          onClick={() =>
+                            setSearch("")
+                          }
+                        >
+
+                          <X size={18} />
+
+                        </IconButton>
+
+                      ),
+                  }}
+                />
+
+              </Box>
+
+            </Collapse>
+
+            {showSearch && search.trim() !== "" && (
+              <Box
+                sx={{
+                  maxHeight: 220,
+                  overflowY: "auto",
+                  borderBottom: "1px solid",
+                  borderColor: "divider",
                 }}
-              />
-              <DynamicModal
-                open={showClearModal}
-                title="Clear Chat ?"
-                description="This action will permanently delete all messages in this conversation."
-                confirmText=" Clear Chat"
-                confirmColor="error"
-                onClose={() => setShowClearModal(false)}
-                onConfirm={() => {
-                  handleClearChat()
-                  setShowClearModal(false);
-                }}
-              />
-            </Box>
+              >
+                {isSearching && (
+                  <Box p={2}>
+                    <LinearProgress
+                      sx={{
+                        height: 4,
+                        borderRadius: 2,
+                        backgroundColor: "rgba(255,194,68,0.2)",
+                        "& .MuiLinearProgress-bar": {
+                          backgroundColor: theme.palette.primary.main,
+                        },
+                      }}
+                    />
+                  </Box>
+                )}
+                {/* {isSearchError && } */}
+
+                {!isSearching &&
+                  searchResults?.length === 0 && (
+                    <Box
+                      p={3}
+                      textAlign="center"
+                    >
+
+                      <Typography
+                        color="text.secondary"
+                      >
+
+                        No matching messages
+
+                      </Typography>
+
+                    </Box>
+                  )}
+
+                {/* {searchResults?.map((message: Message) => (
+                  <Box
+                    key={message?.id}
+                    sx={{
+                      px: 2,
+                      py: 1,
+                      cursor: "pointer",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                      },
+                    }}
+                    onClick={() => {
+                      setSelectedSearchMessageId(message.id);
+
+                      document
+                        .getElementById(`message-${message.id}`)
+                        ?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "center",
+                        });
+                    }}
+                  >
+                    <Typography variant="body2">
+                      {message.text}
+                    </Typography>
+                    <Typography variant="body2">
+                      {highlightText(
+                        message.text,
+                        debouncedSearch
+                      )}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                    >
+                      {new Date(
+                        message.createdAt
+                      ).toLocaleString()}
+                    </Typography>
+                  </Box>
+                ))} */}
+              </Box>
+            )}
+
           </Box>
           <Box
             display="flex"
@@ -421,46 +676,83 @@ export default function ChatWindow({
               <>
                 {/* LOAD OLDER BUTTON */}
                 {hasOlderMessages && (
-                <Box
-                  display="flex"
-                  justifyContent="center"
-                  mb={2}
-                >
-                  <Button
-                    variant="outlined"
-                    startIcon={<ChevronUp size={18} />}
-                    onClick={() => {
-                      if (!selectedChat?.id) return;
-
-                      loadOlder(
-                        selectedChat.id,
-                        messages.length,
-                        setHasOlderMessages
-                      );
-                    }}
-                    sx={{
-                      borderRadius: "12px",
-                      textTransform: "none",
-                    }}
+                  <Box
+                    display="flex"
+                    justifyContent="center"
+                    mb={2}
                   >
-                    Older Messages
-                  </Button>
-                </Box>
+                    <Button
+                      variant="outlined"
+                      startIcon={<ChevronUp size={18} />}
+                      onClick={() => {
+                        if (!selectedChat?.id) return;
+
+                        loadOlder(
+                          selectedChat.id,
+                          messages.length,
+                          setHasOlderMessages
+                        );
+                      }}
+                      sx={{
+                        borderRadius: "12px",
+                        textTransform: "none",
+                      }}
+                    >
+                      Older Messages
+                    </Button>
+                  </Box>
                 )}
                 {messages.map((message: any) => (
-                  <MessageBubble
+                  <Box
                     key={message.id}
-                    text={message.text}
-                    timeStamp={message.createdAt}
-                    type={message.type}
-                    mediaUrl={message.mediaUrl}
-                    fileName={message.fileName}
-                    fileSize={message.fileSize}
-                    isRead={message.isRead}
-                    isSender={message.sender.id === currentUser.id}
-                    selectedId={selectedChat?.id}
-                    currentUserId={currentUser?.id}
-                  />
+                    id={`message-${message.id}`}
+                  //           sx={{
+                  //             transition: "all .35s ease",
+
+                  //             transform:
+                  //               selectedSearchMessageId === message.id
+                  //                 ? "scale(1.02)"
+                  //                 : "scale(1)",
+
+                  //             boxShadow:
+                  //               selectedSearchMessageId === message.id
+                  //                 ? (theme) =>
+                  //                   `0 0 0 2px ${theme.palette.primary.main}40,
+                  //  0 8px 18px ${theme.palette.primary.main}25`
+                  //                 : "none",
+
+                  //             border:
+                  //               selectedSearchMessageId === message.id
+                  //                 ? "1px solid"
+                  //                 : "1px solid transparent",
+
+                  //             borderColor:
+                  //               selectedSearchMessageId === message.id
+                  //                 ? "primary.main"
+                  //                 : "transparent",
+
+                  //             borderRadius: 2,
+                  //           }}
+                  >
+                    <MessageBubble
+                      key={message.id}
+                      text={message.text}
+                      timeStamp={message.createdAt}
+                      type={message.type}
+                      mediaUrl={message.mediaUrl}
+                      fileName={message.fileName}
+                      fileSize={message.fileSize}
+                      isRead={message.isRead}
+                      isSender={message.sender.id === currentUser.id}
+                      selectedId={selectedChat?.id}
+                      currentUserId={currentUser?.id}
+                      highlightText={highlightText}
+                      searchKeyword={debouncedSearch}
+                      highlight={
+                        matchedMessageIds.has(message.id)
+                      }
+                    />
+                  </Box>
                 ))}
               </>
             )}

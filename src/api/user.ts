@@ -6,7 +6,7 @@ import { RequestEmailChangePayload } from "@/types/email-change";
 // import { useQueryClient } from "@tanstack/react-query";
 // const [skip, setSkip] = useState(0);
 
-const  getUserToken = async () => {
+const getUserToken = async () => {
   try {
     const response = await api.get("/auth/token-info");
     return response.data
@@ -154,6 +154,25 @@ const loadOlderMessages = async (conversationId: string, skip: number) => {
     throw error.response?.data || error;
   }
 };
+const searchConversationMessages = async (conversationId: string, search: string
+) => {
+  console.log("search", conversationId,search);
+  
+  try {
+    const response = await api.get(`/conversations/${conversationId}/messages/search`,
+      {
+        params: {
+          q: search,
+        },
+      }
+    );
+    console.log("search response", response.data);
+    
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+};
 const sendAudio = async (formData: any) => {
   try {
 
@@ -216,10 +235,10 @@ const deleteAccount = async (password: string) => {
 
 }
 
-const requestEmailChange = async (requestEmailDetails:RequestEmailChangePayload) => {
+const requestEmailChange = async (requestEmailDetails: RequestEmailChangePayload) => {
   try {
-    console.log("requestEmailDetails",requestEmailDetails);
-    
+    console.log("requestEmailDetails", requestEmailDetails);
+
     const response = await api.post('/auth/request-email-change', requestEmailDetails);
     console.log(response.data);
 
@@ -230,7 +249,7 @@ const requestEmailChange = async (requestEmailDetails:RequestEmailChangePayload)
   }
 }
 
-const verifyRecoverAccount = async (token?:string) => {
+const verifyRecoverAccount = async (token?: string) => {
   try {
     const response = await api.post("/auth/recover-account-verify", { token });
     console.log(response.data);
@@ -239,8 +258,8 @@ const verifyRecoverAccount = async (token?:string) => {
 
   } catch (error: any) {
     throw error.response?.data || error;
-    
-  } 
+
+  }
 }
 
 const verifyEmailChange = async (token: string) => {
@@ -256,16 +275,17 @@ const verifyEmailChange = async (token: string) => {
   }
 
 }
-export { 
-  getCurrentUser, getAllUsers, 
-  getAllConversations, createNewConversations, 
-  sendMessage, resetUnreadCount, 
+export {
+  getCurrentUser, getAllUsers,
+  getAllConversations, createNewConversations,
+  sendMessage, resetUnreadCount,
   getMessages, loadOlderMessages,
-  markMessagesAsRead, 
-  sendAudio, sendDocument, 
-  updateUser, blockUser, 
-  unblockUser, clearChat, 
-  logOut, deleteAccount, 
+  markMessagesAsRead,
+  sendAudio, sendDocument,
+  updateUser, blockUser,
+  unblockUser, clearChat,
+  logOut, deleteAccount,
   requestEmailChange, verifyRecoverAccount,
-  verifyEmailChange, getUserToken 
+  verifyEmailChange, getUserToken,
+  searchConversationMessages
 }

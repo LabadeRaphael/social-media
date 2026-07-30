@@ -298,9 +298,9 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
               sx={{
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: "rgba(255,194,68,0.2)", // light yellow background
+                backgroundColor: "rgba(255,194,68,0.2)",
                 "& .MuiLinearProgress-bar": {
-                  backgroundColor: theme.palette.primary.main, // your yellow
+                  backgroundColor: theme.palette.primary.main,
                 },
               }}
             />
@@ -371,7 +371,11 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
                     </Box>
                   </ListItemAvatar>
                   <ListItemText
-                    primary={conv.userName}
+                    primary={
+                      conv.userName
+                        ? conv.userName.at(0).toUpperCase() + conv.userName.slice(1).toLowerCase()
+                        : ""
+                    }
                     secondary={
                       <>
                         <TypingIndicator
@@ -457,8 +461,9 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
                   variant="caption"
                   color="text.primary"
                 >
-                  {currentUser?.
-                    userName
+                  {currentUser ?
+                    currentUser.
+                      userName.at(0).toUpperCase() + currentUser?.userName.slice(1).toLowerCase() : "Unknown User"
                   }
                 </Typography>
                 <Typography

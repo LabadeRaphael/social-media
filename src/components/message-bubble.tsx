@@ -8,7 +8,7 @@ import { useTheme } from "@mui/material/styles";
 import { getFileType } from "./file-type-formater";
 import FileCard from "./file-card";
 import TypingIndicator from "./typing-indicator";
-import {MessageBubbleProps} from "@types/MessageBubbleProps"
+import { MessageBubbleProps } from "@types/MessageBubbleProps"
 
 export default function MessageBubble({
   text,
@@ -20,7 +20,10 @@ export default function MessageBubble({
   fileName,
   fileSize,
   selectedId,
-  currentUserId
+  currentUserId,
+  highlight,
+  searchKeyword,
+  highlightText,
 }: MessageBubbleProps) {
   const formatTime = (timeStamp: string) => {
     const now = moment();
@@ -145,10 +148,10 @@ export default function MessageBubble({
       {(type === 'TEXT' && text) || (type === 'VOICE' && mediaUrl) ? (
         <Box
           sx={{
-            bgcolor: isSender ? mode === 'light'? theme.palette.chat.sender: theme.palette.primary.main : mode === 'light' ? theme.palette.primary.contrastText : theme.palette.secondary.contrastText,
+            bgcolor: isSender ? mode === 'light' ? theme.palette.chat.sender : theme.palette.primary.main : mode === 'light' ? theme.palette.primary.contrastText : theme.palette.secondary.contrastText,
             // bgcolor: isSender  ? theme.palette.chat.sender
             // : theme.palette.chat.receiver,
-            
+
             color: mode === 'light' ? "secondary.contrastText" : "primary.contrastText",
             p: 1.2,
             borderRadius: 2,
@@ -159,8 +162,13 @@ export default function MessageBubble({
           {/* TEXT MESSAGE */}
           {type === "TEXT" && text != null && (
             <>
-              <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
+              {/* <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
                 {text}
+              </Typography> */}
+              <Typography>
+                {highlight && searchKeyword
+                  ? highlightText?.(text, searchKeyword)
+                  : text}
               </Typography>
               {getTickIcon()}
             </>
@@ -216,7 +224,7 @@ export default function MessageBubble({
           )}
         </Box>
       ) : null}
-       {/* DOCUMENT */}
+      {/* DOCUMENT */}
       {type === "DOCUMENT" && (
         <Box
           sx={{
