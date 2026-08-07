@@ -56,17 +56,6 @@ const useCreateConversation = () => {
     },
   });
 };
-// const useSendMessage = () => {
-//   return useMutation({
-//     mutationFn: (messageDetails: Message) => {
-//       console.log("mutationFn data:", messageDetails);
-//       return sendMessage(messageDetails);
-//     },
-//     onSuccess: (newMessage) => {
-//       console.log("onSuccess data:", newMessage);
-//     },
-//   });
-// };
 const useSendMessage = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -75,8 +64,18 @@ const useSendMessage = () => {
     onSuccess: (newMessage) => {
       queryClient.setQueryData(
         ["messages", newMessage.conversationId],
-        (old: any[] = []) => {
-          return [...old, newMessage];
+        (old: any) => {
+          if (!old) {
+            return {
+              messages: [newMessage],
+              hasMore: false,
+            };
+          }
+
+          return {
+            ...old,
+            messages: [...old.messages, newMessage],
+          };
         }
       );
     },
@@ -84,6 +83,7 @@ const useSendMessage = () => {
 };
 
 const useLoadOlder = () => {
+  console.log("🔥 loader MESSAGES");
   const queryClient = useQueryClient();
   const loadOlder = async (
     conversationId: string,
@@ -91,43 +91,40 @@ const useLoadOlder = () => {
     setHasOlderMessages: any
   ) => {
     try {
-      const olderMessages = await loadOlderMessages(
+      const response = await loadOlderMessages(
         conversationId,
         skip
       );
-      if (olderMessages.length < 10) {
-        setHasOlderMessages(false);
-      }
-      console.log("OlderMessages", olderMessages);
-      console.log("OlderMessages Reverse", olderMessages.reverse());
+      const olderMessages = response.messages;
+      console.log("culprit", olderMessages);
 
+      setHasOlderMessages(response.hasMore);
       queryClient.setQueryData(
         ["messages", conversationId],
-        (old: any[] = []) => {
-          if (old.some(m => m.id === olderMessages.id)) {
-            return old;
-          }
+        (old: any) => {
+          if (!old) return old;
 
           const merged = [
             ...olderMessages,
-            ...old,
+            ...old.messages,
           ];
 
-          // remove duplicates using Map
-          const uniqueMessages = Array.from(
+          const unique = Array.from(
             new Map(
-              merged.map((message) => [
-                message.id,
-                message,
-              ])
+              merged.map((m: any) => [m.id, m])
             ).values()
           );
-          const sortMessages = uniqueMessages.sort(
-            (a, b) =>
+
+          unique.sort(
+            (a: any, b: any) =>
               new Date(a.createdAt).getTime() -
               new Date(b.createdAt).getTime()
           );
-          return sortMessages;
+
+          return {
+            messages: unique,
+            hasMore: olderMessages.hasMore,
+          };
         }
       );
     } catch (error) {
@@ -175,19 +172,39 @@ const useSocketChat = (conversationId?: string) => {
       socket.emit("join_conversation", conversationId);
       socket.emit("mark_as_read", conversationId);
     }
+    const handleReceiveMessage = (message: any) => {
 
-    socket.on("receive_message", (message) => {
-      // if (!message.conversationId) return;
-      console.log("📩 New message received:", message);
+      queryClient.setQueryData(
+        ["messages", message.conversationId],
+        (old: any) => {
+          if (!old) {
+            return {
+              messages: [message],
+              hasMore: false,
+            };
+          }
 
+          if (old.messages.some((m: any) => m.id === message.id)) {
+            return old;
+          }
 
-      // also refresh conversation list (to update lastMessage/unread)
-      queryClient.invalidateQueries({ queryKey: ["current-user-conv"] });
-      queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
-    });
+          return {
+            ...old,
+            messages: [...old.messages, message],
+          };
+        }
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["current-user-conv"],
+      });
+    }
+    socket.on("receive_message", handleReceiveMessage);
+    console.log("🔥 SOCKET MESSAGES");
+    return () => {
+      socket.off("receive_message", handleReceiveMessage);
+    };
   }, [conversationId, queryClient]);
-};
-
+}
 const useMessages = (conversationId: string | null) => {
   return useQuery({
     queryKey: ["messages", conversationId],
@@ -356,8 +373,6 @@ const useSearchConversationMessages = (
     enabled: !!conversationId && search.trim().length > 0,
   });
 };
-
-
 
 export {
   useAllUsers, useCurrentUser,

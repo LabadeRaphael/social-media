@@ -223,9 +223,16 @@ export default function ChatWindow({
   const onlineUsers = useOnlineUsers();
   console.log("onlineuser", onlineUsers);
 
-  const { data: messages = [], isLoading, isError } = useMessages(
+  const { data, isLoading, isError } = useMessages(
     selectedChat?.id ?? ""
   );
+  const messages = data?.messages ?? [];
+  
+      useEffect(() => {
+  if (data) {
+    setHasOlderMessages(data.hasMore);
+  }
+}, [data, selectedChat?.id]);
   console.log("selectedChat", selectedChat);
   console.log("message", messages)
   const handleTyping = () => {

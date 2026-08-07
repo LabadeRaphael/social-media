@@ -135,6 +135,7 @@ const markMessagesAsRead = async (conversationId: string) => {
 };
 
 const getMessages = async (conversationId?: string) => {
+  console.log("🔥 GET MESSAGES");
   try {
     const response = await api.get(`/conversations/${conversationId}/messages`);
     return response.data
