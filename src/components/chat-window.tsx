@@ -26,7 +26,7 @@ import {
 
 } from "lucide-react";
 import { Menu, MenuItem } from "@mui/material";
-import { Ban, Trash2, MessageCircleX } from "lucide-react";
+import { Ban, Trash2} from "lucide-react";
 import Settings from "@/components/settings"
 import MessageBubble from "./message-bubble";
 import React, { useEffect, useRef, useState } from "react";
@@ -70,7 +70,7 @@ export default function ChatWindow({
   activeView,
   setActiveView
 }: ChatWindowProps) {
-  const recorderRef = useRef<VoiceRecorderHandle>(null);
+  const recorderRef = useRef<VoiceRecorderHandle|null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -92,7 +92,7 @@ export default function ChatWindow({
   const theme = useTheme();
   const mode = theme.palette.mode;
   const [search, setSearch] = useState("");
-
+  const [isLoadingSearchHistory, setIsLoadingSearchHistory] = useState(false);
   const [debouncedSearch, setDebouncedSearch] =
     useState("");
   const highlightText = (text: string, keyword: string) => {
@@ -101,7 +101,7 @@ export default function ChatWindow({
     // Escape regex special characters
     const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-    const regex = new RegExp(`(${escapedKeyword})`, "gi");
+    const regex = new RegExp(`(${escapedKeyword})`, "i");
 
     return text.split(regex).map((part, index) =>
       regex.test(part) ? (
@@ -157,9 +157,14 @@ export default function ChatWindow({
     selectedChat?.id ?? null,
     debouncedSearch
   );
+  // const matchedMessageIds = new Set(
+  //   searchResults.map((m: Message) => m.id)
+  // );
+
   const matchedMessageIds = new Set(
     searchResults.map((m: Message) => m.id)
   );
+
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -219,6 +224,13 @@ export default function ChatWindow({
   };
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
   useSocketChat(selectedChat?.id);
   const onlineUsers = useOnlineUsers();
   console.log("onlineuser", onlineUsers);
@@ -227,12 +239,93 @@ export default function ChatWindow({
     selectedChat?.id ?? ""
   );
   const messages = data?.messages ?? [];
-  
-      useEffect(() => {
-  if (data) {
-    setHasOlderMessages(data.hasMore);
-  }
-}, [data, selectedChat?.id]);
+  useEffect(() => {
+    if (data) {
+      setHasOlderMessages(data.hasMore);
+    }
+  }, [data, selectedChat?.id]);
+  const loadMessagesForSearch = async () => {
+    if (
+      !selectedChat?.id ||
+      !debouncedSearch.trim() ||
+      searchResults.length === 0
+    ) {
+      return;
+    }
+
+    const searchResultIds = new Set(
+      searchResults.map((message: Message) => message.id)
+    );
+
+    let currentMessages = messages;
+    let hasMore = data?.hasMore ?? false;
+
+    // Keep loading older batches until
+    // one of the search results appears.
+    while (hasMore) {
+      const found = currentMessages.some((message: Message) =>
+        searchResultIds.has(message.id)
+      );
+
+      if (found) {
+        console.log("✅ Search message is now loaded");
+        return;
+      }
+
+      console.log("⬆️ Loading another older batch...");
+
+      const result = await loadOlder(
+        selectedChat.id,
+        currentMessages.length,
+        setHasOlderMessages
+      );
+
+      if (!result) {
+        console.log("❌ loadOlder returned nothing");
+        return;
+      }
+
+      currentMessages = [
+        ...result.messages,
+        ...currentMessages,
+      ];
+
+      currentMessages = Array.from(
+        new Map(
+          currentMessages.map((message: Message) => [
+            message.id,
+            message,
+          ])
+        ).values()
+      );
+
+      hasMore = result.hasMore;
+
+      console.log(
+        "📦 Loaded messages:",
+        currentMessages.length,
+        "hasMore:",
+        hasMore
+      );
+    }
+
+    console.log("❌ Search result was not found in loaded messages");
+  };
+  useEffect(() => {
+    if (
+      !debouncedSearch.trim() ||
+      searchResults.length === 0
+    ) {
+      return;
+    }
+
+    loadMessagesForSearch();
+  }, [
+    debouncedSearch,
+    searchResults,
+    selectedChat?.id,
+    // loadMessagesForSearch
+  ]);
   console.log("selectedChat", selectedChat);
   console.log("message", messages)
   const handleTyping = () => {
@@ -254,24 +347,57 @@ export default function ChatWindow({
     }, 1000);
   };
 
-  const handleSendMessage = async (text: string) => {
-    if (text.trim() && selectedChat) {
-      const socket = getSocket();
-      socket.emit("send_message", {
-        text,
-        conversationId: selectedChat.id,
-        type: "TEXT",
-        receiverId: otherUser?.user.id
-      });
-      socket.on('message_blocked', (reason) => {
-        if (reason === 'BLOCKED_BY_RECEIVER') {
-          toast.error("You can’t message this user");
-        } else if (reason === 'BLOCKED_BY_SENDER') {
-          toast.error("You’ve blocked this user. Unblock them to send messages.");
-        }
-      });
-      setNewMessage("");
-    }
+  // const handleSendMessage = async (text: string) => {
+  //   if (text.trim() && selectedChat) {
+  //     const socket = getSocket();
+  //     socket.emit("send_message", {
+  //       text,
+  //       conversationId: selectedChat.id,
+  //       type: "TEXT",
+  //       receiverId: otherUser?.user.id
+  //     });
+  //     socket.on('message_blocked', (reason) => {
+  //       if (reason === 'BLOCKED_BY_RECEIVER') {
+  //         toast.error("You can’t message this user");
+  //       } else if (reason === 'BLOCKED_BY_SENDER') {
+  //         toast.error("You’ve blocked this user. Unblock them to send messages.");
+  //       }
+  //     });
+  //     setNewMessage("");
+  //   }
+  // };
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleMessageBlocked = (reason: string) => {
+      if (reason === "BLOCKED_BY_RECEIVER") {
+        toast.error("You can’t message this user");
+      } else if (reason === "BLOCKED_BY_SENDER") {
+        toast.error(
+          "You’ve blocked this user. Unblock them to send messages."
+        );
+      }
+    };
+
+    socket.on("message_blocked", handleMessageBlocked);
+
+    return () => {
+      socket.off("message_blocked", handleMessageBlocked);
+    };
+  }, []);
+  const handleSendMessage = (text: string) => {
+    if (!text.trim() || !selectedChat) return;
+
+    const socket = getSocket();
+
+    socket.emit("send_message", {
+      text,
+      conversationId: selectedChat.id,
+      type: "TEXT",
+      receiverId: otherUser?.user.id,
+    });
+
+    setNewMessage("");
   };
   // Document
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -588,7 +714,31 @@ export default function ChatWindow({
                     />
                   </Box>
                 )}
-                {/* {isSearchError && } */}
+                {/* {!isSearching && searchError && (
+                  <Box
+                    p={3}
+                    textAlign="center"
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    gap={0.5}
+                  >
+                    <Typography
+                      color="error"
+                      variant="body2"
+                      fontWeight={600}
+                    >
+                      Unable to search messages
+                    </Typography>
+
+                    <Typography
+                      color="text.secondary"
+                      variant="caption"
+                    >
+                      Something went wrong. Please try again.
+                    </Typography>
+                  </Box>
+                )} */}
 
                 {!isSearching &&
                   searchResults?.length === 0 && (
@@ -607,48 +757,6 @@ export default function ChatWindow({
 
                     </Box>
                   )}
-
-                {/* {searchResults?.map((message: Message) => (
-                  <Box
-                    key={message?.id}
-                    sx={{
-                      px: 2,
-                      py: 1,
-                      cursor: "pointer",
-                      "&:hover": {
-                        bgcolor: "action.hover",
-                      },
-                    }}
-                    onClick={() => {
-                      setSelectedSearchMessageId(message.id);
-
-                      document
-                        .getElementById(`message-${message.id}`)
-                        ?.scrollIntoView({
-                          behavior: "smooth",
-                          block: "center",
-                        });
-                    }}
-                  >
-                    <Typography variant="body2">
-                      {message.text}
-                    </Typography>
-                    <Typography variant="body2">
-                      {highlightText(
-                        message.text,
-                        debouncedSearch
-                      )}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                    >
-                      {new Date(
-                        message.createdAt
-                      ).toLocaleString()}
-                    </Typography>
-                  </Box>
-                ))} */}
               </Box>
             )}
 
@@ -713,36 +821,8 @@ export default function ChatWindow({
                   <Box
                     key={message.id}
                     id={`message-${message.id}`}
-                  //           sx={{
-                  //             transition: "all .35s ease",
-
-                  //             transform:
-                  //               selectedSearchMessageId === message.id
-                  //                 ? "scale(1.02)"
-                  //                 : "scale(1)",
-
-                  //             boxShadow:
-                  //               selectedSearchMessageId === message.id
-                  //                 ? (theme) =>
-                  //                   `0 0 0 2px ${theme.palette.primary.main}40,
-                  //  0 8px 18px ${theme.palette.primary.main}25`
-                  //                 : "none",
-
-                  //             border:
-                  //               selectedSearchMessageId === message.id
-                  //                 ? "1px solid"
-                  //                 : "1px solid transparent",
-
-                  //             borderColor:
-                  //               selectedSearchMessageId === message.id
-                  //                 ? "primary.main"
-                  //                 : "transparent",
-
-                  //             borderRadius: 2,
-                  //           }}
                   >
                     <MessageBubble
-                      key={message.id}
                       text={message.text}
                       timeStamp={message.createdAt}
                       type={message.type}
@@ -750,7 +830,7 @@ export default function ChatWindow({
                       fileName={message.fileName}
                       fileSize={message.fileSize}
                       isRead={message.isRead}
-                      isSender={message.sender.id === currentUser.id}
+                      isSender={message.sender.id === currentUser?.id}
                       selectedId={selectedChat?.id}
                       currentUserId={currentUser?.id}
                       highlightText={highlightText}

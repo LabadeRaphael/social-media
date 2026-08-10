@@ -171,6 +171,8 @@ const searchConversationMessages = async (conversationId: string, search: string
     
     return response.data;
   } catch (error: any) {
+    console.log("Search error",error.response?.data);
+    
     throw error.response?.data || error;
   }
 };

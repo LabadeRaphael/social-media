@@ -123,12 +123,14 @@ const useLoadOlder = () => {
 
           return {
             messages: unique,
-            hasMore: olderMessages.hasMore,
+            hasMore: response.hasMore,
           };
         }
       );
+      return { messages: olderMessages, hasMore: response.hasMore, };
     } catch (error) {
       console.log(error);
+      throw error;
     }
   };
 
