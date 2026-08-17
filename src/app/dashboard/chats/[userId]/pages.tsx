@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, useParams, useMediaQuery } from "@mui/material";
-import ChatWindow from "@/components/chat-window";
+import ChatWindow from "@/components/chat/chat-window";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedChat } from "@/redux/chats-slice";

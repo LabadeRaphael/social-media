@@ -17,7 +17,8 @@ import {
 import { useState } from "react";
 import * as Yup from "yup";
 import { useRouter } from "next/navigation";
-import { useCurrentUser, useUpdateUser } from "@/react-query/query-hooks";
+import { useCurrentUser } from "@/react-query/query-hooks";
+import { useUpdateUser } from "@/react-query/user-hook";
 import { Edit, Eye, EyeOff } from "lucide-react";
 import { getAuthTextFieldSx } from "@/utils/textFieldStyles";
 import toast from "react-hot-toast";
@@ -67,7 +68,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   const [errors, setErrors] = useState<{
     password?: string; confirmPassword?: string,
     reAuthPassword?: string, saveAuthPassword?: string,
-    // newEmail?: string, emailAuthPassword?: string;
   }>({});
 
   const formik = useFormik({

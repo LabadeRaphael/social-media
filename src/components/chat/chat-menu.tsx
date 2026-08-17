@@ -11,7 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import DynamicModal from "./dynamic-modal";
+import DynamicModal from "../dynamic-modal";
 
 interface ChatMenuProps {
   anchorEl: HTMLElement | null;

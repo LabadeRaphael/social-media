@@ -8,6 +8,6 @@ export interface Message {
   fileName?: string|null;
   fileSize?: number|null,
   fileType?: string|null
-  isRead?: boolean; // ✅ add this line
+  isRead?: boolean;
   type: "TEXT" | "DOCUMENT" | "VOICE"; // extend later
 }

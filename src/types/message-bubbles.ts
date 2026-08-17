@@ -9,7 +9,9 @@ export interface MessageBubbleProps {
   fileSize?: number;
   selectedId?: string
   currentUserId?: string
-    highlight?: boolean;
-searchKeyword?: string;
-highlightText?: (text: string, keyword: string) => React.ReactNode;
+  highlight?: boolean;
+  sender:string;
+  createdAt:Date;
+  searchKeyword?: string;
+  highlightText?: (text: string, keyword: string) => React.ReactNode;
 }

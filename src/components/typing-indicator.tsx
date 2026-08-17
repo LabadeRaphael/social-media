@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Typography, Box } from "@mui/material";
-import {useTypingIndicator} from "@/react-query/query-hooks";
+import { useTypingIndicator } from "@/react-query/socket-hook";
 
 interface TypingIndicatorProps {
   conversationId: string;

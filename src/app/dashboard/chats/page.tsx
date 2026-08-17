@@ -2,7 +2,7 @@
 
 import { Box, useMediaQuery } from "@mui/material";
 import Sidebar from "@/components/sidebar";
-import ChatWindow from "@/components/chat-window";
+import ChatWindow from "@/components/chat/chat-window";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedChat } from "@/redux/chats-slice";

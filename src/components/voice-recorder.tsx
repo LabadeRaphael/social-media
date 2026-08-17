@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "re
 import { Box, IconButton, CircularProgress } from "@mui/material";
 import { Play, Pause, Send, X } from "lucide-react";
 import WaveSurfer from "wavesurfer.js";
-import { useCurrentUser, useSendVoice } from "@/react-query/query-hooks";
+import { useCurrentUser } from "@/react-query/query-hooks";
+import { useSendVoice } from "@/react-query/chat-hook";
 import { getSocket } from "@/lib/socket";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
