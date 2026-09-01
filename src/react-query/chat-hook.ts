@@ -244,7 +244,6 @@ const useSendVoice = () => {
   return useMutation({
     mutationFn: async ({
       file,
-      conversationId,
     }: UploadVoicePayload) => {
       const formData =
         new FormData();
@@ -252,11 +251,6 @@ const useSendVoice = () => {
       formData.append(
         "file",
         file
-      );
-
-      formData.append(
-        "conversationId",
-        conversationId
       );
 
       return sendAudio(formData);

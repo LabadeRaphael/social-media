@@ -123,6 +123,7 @@ export default function ChatMessages({
                   }
                   type={message.type}
                   mediaUrl={message.mediaUrl}
+                  duration={message.duration}
                   fileName={message.fileName}
                   fileSize={message.fileSize}
                   isRead={message.isRead}
