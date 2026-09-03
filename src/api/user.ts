@@ -157,8 +157,8 @@ const loadOlderMessages = async (conversationId: string, skip: number) => {
 };
 const searchConversationMessages = async (conversationId: string, search: string
 ) => {
-  console.log("search", conversationId,search);
-  
+  console.log("search", conversationId, search);
+
   try {
     const response = await api.get(`/conversations/${conversationId}/messages/search`,
       {
@@ -168,11 +168,11 @@ const searchConversationMessages = async (conversationId: string, search: string
       }
     );
     console.log("search response", response.data);
-    
+
     return response.data;
   } catch (error: any) {
-    console.log("Search error",error.response?.data);
-    
+    console.log("Search error", error.response?.data);
+
     throw error.response?.data || error;
   }
 };
@@ -182,7 +182,7 @@ const sendAudio = async (formData: any) => {
     const response = await api.post('/messages/voice', formData
     );
     // console.log("voice",response.data);
-    
+
     return response.data
 
   } catch (error: any) {

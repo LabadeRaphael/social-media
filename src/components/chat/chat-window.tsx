@@ -53,6 +53,7 @@ export default function ChatWindow({
   setActiveView,
 }: ChatWindowProps) {
   const theme = useTheme();
+  const mode = theme.palette.mode
 
   const {
     currentUser,
@@ -161,8 +162,8 @@ export default function ChatWindow({
             key={index}
             component="span"
             sx={{
-              bgcolor:
-                theme.palette.primary.main,
+              bgcolor: mode === "light" ? 
+                theme.palette.primary.main : theme.palette.text.primary,
               color:
                 theme.palette.warning
                   .contrastText,
