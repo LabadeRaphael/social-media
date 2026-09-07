@@ -449,7 +449,6 @@ export function useChatWindow({
 
       const message = await sendDocumentMutation({
         file,
-        conversationId: selectedChat.id,
       });
 
       const socket = getSocket();
@@ -457,7 +456,6 @@ export function useChatWindow({
       socket.emit("send_message", {
         type: "DOCUMENT",
         mediaUrl: message.mediaUrl,
-        receiverId: otherUser?.user.id,
         conversationId: selectedChat.id,
         fileName: message.fileName,
         fileSize: message.fileSize,

@@ -76,7 +76,7 @@ export default function ChatHeader({
 
         <Box>
           <Typography variant="subtitle1">
-            {otherUser?.user.userName}
+            {otherUser?.user.userName.at(0).toUpperCase() + otherUser?.user.userName.slice(1)}
           </Typography>
 
           <Typography

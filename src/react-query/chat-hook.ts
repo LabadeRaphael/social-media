@@ -20,6 +20,7 @@ import {
 
 import { Message } from "@/types/messages";
 import { UploadVoicePayload } from "@/types/audio";
+import { Document } from "@/types/document";
 const useSendMessage = () => {
   const queryClient = useQueryClient();
 
@@ -262,8 +263,7 @@ const useSendDocument = () => {
   return useMutation({
     mutationFn: async ({
       file,
-      conversationId,
-    }: UploadVoicePayload) => {
+    }: Document) => {
       const formData =
         new FormData();
 
@@ -271,13 +271,9 @@ const useSendDocument = () => {
         "file",
         file
       );
-
-      formData.append(
-        "conversationId",
-        conversationId
-      );
-
+      
       return sendDocument(formData);
+      
     },
   });
 };

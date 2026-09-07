@@ -365,7 +365,7 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
                           width: 10,
                           height: 10,
                           borderRadius: "50%",
-                          bgcolor: isOnline ? "green" : "red",
+                          bgcolor: isOnline ? "green" : "grey.400",
 
                           border: "2px solid white", // adds a border to separate dot from avatar
                         }}

@@ -15,11 +15,6 @@ import {
   CheckCheck,
   Play,
   Pause,
-  FileText,
-  FileImage,
-  FileMusic,
-  FileVideo,
-  File,
   Download,
   AlertCircle,
 } from "lucide-react";
@@ -38,7 +33,7 @@ import FileCard from "./file-card";
 import TypingIndicator from "./typing-indicator";
 
 import { MessageBubbleProps } from "../types/message-bubbles";
-
+let activeVoiceAudio: HTMLAudioElement | null = null;
 export default function MessageBubble({
   text,
   isSender,
@@ -241,9 +236,17 @@ export default function MessageBubble({
       setIsPlaying(false);
     };
 
+    // const handleEnded = () => {
+    //   setIsPlaying(false);
+    //   setCurrentTime(0);
+    // };
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
+
+      if (activeVoiceAudio === audio) {
+        activeVoiceAudio = null;
+      }
     };
 
     const handleWaiting = () => {
@@ -301,45 +304,19 @@ export default function MessageBubble({
     );
 
     return () => {
-      audio.removeEventListener(
-        "loadedmetadata",
-        handleLoadedMetadata
-      );
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("waiting", handleWaiting);
+      audio.removeEventListener("canplay", handleCanPlay);
+      audio.removeEventListener("error", handleError);
 
-      audio.removeEventListener(
-        "timeupdate",
-        handleTimeUpdate
-      );
-
-      audio.removeEventListener(
-        "play",
-        handlePlay
-      );
-
-      audio.removeEventListener(
-        "pause",
-        handlePause
-      );
-
-      audio.removeEventListener(
-        "ended",
-        handleEnded
-      );
-
-      audio.removeEventListener(
-        "waiting",
-        handleWaiting
-      );
-
-      audio.removeEventListener(
-        "canplay",
-        handleCanPlay
-      );
-
-      audio.removeEventListener(
-        "error",
-        handleError
-      );
+      if (activeVoiceAudio === audio) {
+        audio.pause();
+        activeVoiceAudio = null;
+      }
     };
 
 
@@ -349,38 +326,77 @@ export default function MessageBubble({
   
   * Play / pause.
     */
+  // const togglePlay = async () => {
+  //   const audio = audioRef.current;
+
+
+  //   if (!audio || !mediaUrl) return;
+
+
+
+  //   try {
+  //     setAudioError(false);
+
+  //     if (audio.paused) {
+  //       setAudioLoading(true);
+
+  //       await audio.play();
+  //     } else {
+  //       audio.pause();
+  //     }
+  //   } catch (error) {
+  //     console.error(
+  //       "Voice playback failed:",
+  //       error
+  //     );
+
+  //     setIsPlaying(false);
+  //     setAudioLoading(false);
+  //     setAudioError(true);
+  //   }
+
+
+  // };
   const togglePlay = async () => {
     const audio = audioRef.current;
-
-
     if (!audio || !mediaUrl) return;
-
-
 
     try {
       setAudioError(false);
 
       if (audio.paused) {
+        // Pause any other voice note that is currently playing
+        if (activeVoiceAudio && activeVoiceAudio !== audio) {
+          activeVoiceAudio.pause();
+        }
+
+        // Make this voice note the active one
+        activeVoiceAudio = audio;
+
         setAudioLoading(true);
 
         await audio.play();
       } else {
         audio.pause();
+
+        // Clear the active voice note when manually paused
+        if (activeVoiceAudio === audio) {
+          activeVoiceAudio = null;
+        }
       }
     } catch (error) {
-      console.error(
-        "Voice playback failed:",
-        error
-      );
+      console.error("Voice playback failed:", error);
 
       setIsPlaying(false);
       setAudioLoading(false);
       setAudioError(true);
+
+      // Don't leave a failed audio as the active voice
+      if (activeVoiceAudio === audio) {
+        activeVoiceAudio = null;
+      }
     }
-
-
   };
-
   /*
   
   * Seek through the waveform.
@@ -537,69 +553,69 @@ export default function MessageBubble({
 
   };
 
-  const getFileIcon = (
-    name?: string | null
-  ) => {
-    const ext = name
-      ?.split(".")
-      .pop()
-      ?.toLowerCase();
+  // const getFileIcon = (
+  //   name?: string | null
+  // ) => {
+  //   const ext = name
+  //     ?.split(".")
+  //     .pop()
+  //     ?.toLowerCase();
 
 
-    if (!ext) return File;
+  //   if (!ext) return File;
 
-    if (
-      [
-        "jpg",
-        "jpeg",
-        "png",
-        "gif",
-        "webp",
-      ].includes(ext)
-    ) {
-      return FileImage;
-    }
+  //   if (
+  //     [
+  //       "jpg",
+  //       "jpeg",
+  //       "png",
+  //       "gif",
+  //       "webp",
+  //     ].includes(ext)
+  //   ) {
+  //     return FileImage;
+  //   }
 
-    if (
-      [
-        "mp3",
-        "wav",
-        "ogg",
-        "webm",
-      ].includes(ext)
-    ) {
-      return FileMusic;
-    }
+  //   if (
+  //     [
+  //       "mp3",
+  //       "wav",
+  //       "ogg",
+  //       "webm",
+  //     ].includes(ext)
+  //   ) {
+  //     return FileMusic;
+  //   }
 
-    if (
-      [
-        "mp4",
-        "mov",
-        "webm",
-      ].includes(ext)
-    ) {
-      return FileVideo;
-    }
+  //   if (
+  //     [
+  //       "mp4",
+  //       "mov",
+  //       "webm",
+  //     ].includes(ext)
+  //   ) {
+  //     return FileVideo;
+  //   }
 
-    if (
-      [
-        "pdf",
-        "doc",
-        "docx",
-        "txt",
-        "xlsx",
-        "xls",
-        "ppt",
-        "pptx",
-      ].includes(ext)
-    ) {
-      return FileText;
-    }
+  //   if (
+  //     [
+  //       "pdf",
+  //       "doc",
+  //       "docx",
+  //       "txt",
+  //       "xlsx",
+  //       "xls",
+  //       "ppt",
+  //       "pptx",
+  //     ].includes(ext)
+  //   ) {
+  //     return FileText;
+  //   }
 
-    return File;
+  //   return File;
 
 
-  };
+  // };
 
   const fileType =
     type === "DOCUMENT" && fileName
