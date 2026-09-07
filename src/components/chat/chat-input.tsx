@@ -36,6 +36,8 @@ interface ChatInputProps {
 
   isRecording: boolean;
 
+  isPreviewPlaying: boolean;
+
   onTyping: () => void;
   onSendMessage: (
     text: string
@@ -64,6 +66,7 @@ export default function ChatInput({
   onSendMessage,
   onStartRecording,
   onStopRecording,
+  isPreviewPlaying,
   fileInputRef,
   onFileUpload,
   onEmojiSelect,
@@ -166,6 +169,7 @@ export default function ChatInput({
               ? "error"
               : "primary"
           }
+          disabled={isPreviewPlaying}
           onClick={
             isRecording
               ? onStopRecording

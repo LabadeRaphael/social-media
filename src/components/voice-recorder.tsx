@@ -43,6 +43,11 @@ import { RootState } from "@/redux/store";
 
 type Props = {
   conversationId?: string;
+  isRecording: boolean;
+  onRecordingStateChange: (
+    recording: boolean
+  ) => void;
+  onPlaybackStateChange: (playing: boolean) => void;
 };
 
 export type VoiceRecorderHandle = {
@@ -75,7 +80,7 @@ const formatDuration = (seconds: number) => {
 // ============================================================
 
 const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
-  ({ conversationId }, ref) => {
+  ({ conversationId, isRecording, onRecordingStateChange, onPlaybackStateChange }, ref) => {
     // ==========================================================
     // THEME
     // ==========================================================
@@ -88,8 +93,8 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
     // STATE
     // ==========================================================
 
-    const [isRecording, setIsRecording] =
-      useState(false);
+    // const [isRecording, setIsRecording] =
+    // useState(false);
 
     const [isPreviewing, setIsPreviewing] =
       useState(false);
@@ -1233,6 +1238,7 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
           );
 
           setIsPlaying(true);
+          onPlaybackStateChange(true);
         };
 
       const handlePause =
@@ -1242,6 +1248,7 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
           );
 
           setIsPlaying(false);
+          onPlaybackStateChange(false);
         };
 
       const handleEnded =
@@ -1251,6 +1258,7 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
           );
 
           setIsPlaying(false);
+          onPlaybackStateChange(false);
 
           const finalTime =
             Number.isFinite(
@@ -1670,9 +1678,10 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
               "Chrome is receiving no microphone audio. Check Windows microphone input/permissions."
             );
 
-            setIsRecording(
-              false
-            );
+            // setIsRecording(
+            //   false
+            // );
+            onRecordingStateChange(false);
 
             return;
           }
@@ -1799,9 +1808,7 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
                   "No audio was recorded."
                 );
 
-                setIsRecording(
-                  false
-                );
+                onRecordingStateChange(false);
 
                 return;
               }
@@ -1896,9 +1903,10 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
                 url
               );
 
-              setIsRecording(
-                false
-              );
+              // setIsRecording(
+              //   false
+              // );
+              onRecordingStateChange(false);
 
               setIsPreviewing(
                 true
@@ -1954,9 +1962,10 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
 
           startRecordingTimer();
 
-          setIsRecording(
-            true
-          );
+          // setIsRecording(
+          //   true
+          // );
+          onRecordingStateChange(true);
 
           // ----------------------------------------------------
           // START REAL LIVE WAVEFORM
@@ -1996,9 +2005,10 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
           recordingStartTimeRef.current =
             null;
 
-          setIsRecording(
-            false
-          );
+          // setIsRecording(
+          //   false
+          // );
+          onRecordingStateChange(false);
 
           toast.error(
             "Unable to start recording: " +
@@ -2028,9 +2038,10 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
             "⚠️ [Recording] No MediaRecorder"
           );
 
-          setIsRecording(
-            false
-          );
+          // setIsRecording(
+          //   false
+          // );
+          onRecordingStateChange(false);
 
           stopRecordingTimer();
 
@@ -2062,9 +2073,10 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
 
         stopRecordingTimer();
 
-        setIsRecording(
-          false
-        );
+        // setIsRecording(
+        //   false
+        // );
+        onRecordingStateChange(false);
 
         stopMicMonitor();
       };
@@ -2277,7 +2289,7 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
         setIsPreviewing(
           false
         );
-
+        onPlaybackStateChange(false);
         setIsPlaying(
           false
         );
@@ -3502,13 +3514,13 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
                     )}`,
 
                   "&:hover": {
-                    bgcolor:
+                    bgcolor: 
                       alpha(
                         theme
                           .palette
-                          .success
+                          .secondary
                           .main,
-                        0.15
+                        1
                       ),
 
                     transform:
@@ -3605,14 +3617,23 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
                         .main,
 
                     bgcolor:
+                      // alpha(
+                      //   theme
+                      //     .palette
+                      //     .text
+                      //     .primary,
+                      //   0.09
+                      // ),
+                     
                       alpha(
                         theme
                           .palette
-                          .error
+                          .secondary
                           .main,
-                        0.09
+                        1
                       ),
-
+                      // "white",
+                      
                     borderColor:
                       alpha(
                         theme

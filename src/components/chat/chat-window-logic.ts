@@ -10,7 +10,7 @@ import {
   useSendDocument,
   useSearchConversationMessages,
 } from "@/react-query/chat-hook";
-import {  useCurrentUser } from "@/react-query/query-hooks";
+import { useCurrentUser } from "@/react-query/query-hooks";
 import { getSocket } from "@/lib/socket";
 import { useSocketChat } from "@/react-query/socket-hook";
 import { useOnlineUsers } from "@/react-query/socket-hook";
@@ -33,12 +33,13 @@ export function useChatWindow({
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [isRecording, setIsRecording] = useState(false);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const [isSendingFile, setIsSendingFile] = useState(false);
 
-//   const [hasOlderMessages, setHasOlderMessages] = useState(true);
+  //   const [hasOlderMessages, setHasOlderMessages] = useState(true);
   const [selectedFile, setSelectedFile] = useState<{
     url: string;
     name: string;
@@ -140,11 +141,11 @@ export function useChatWindow({
    * --------------------------------
    */
 
-//   useEffect(() => {
-//     if (data) {
-//       setHasOlderMessages(data.hasMore);
-//     }
-//   }, [data]);
+  //   useEffect(() => {
+  //     if (data) {
+  //       setHasOlderMessages(data.hasMore);
+  //     }
+  //   }, [data]);
 
   /*
    * --------------------------------
@@ -348,7 +349,7 @@ export function useChatWindow({
         onError: (error: any) => {
           toast.error(
             error?.message ||
-              "Chat clear failed, retry"
+            "Chat clear failed, retry"
           );
         },
       }
@@ -475,7 +476,7 @@ export function useChatWindow({
 
       toast.error(
         error?.message ||
-          "Failed to send file"
+        "Failed to send file"
       );
     } finally {
       setIsSendingFile(false);
@@ -488,16 +489,22 @@ export function useChatWindow({
    * --------------------------------
    */
 
+  // const startRecording = () => {
+  //   recorderRef.current?.startRecording();
+  //   setIsRecording(true);
+  // };
+
+  // const stopRecording = () => {
+  //   recorderRef.current?.stopRecording();
+  //   setIsRecording(false);
+  // };
   const startRecording = () => {
     recorderRef.current?.startRecording();
-    setIsRecording(true);
   };
 
   const stopRecording = () => {
     recorderRef.current?.stopRecording();
-    setIsRecording(false);
   };
-
   /*
    * --------------------------------
    * Return everything
@@ -523,9 +530,14 @@ export function useChatWindow({
     fileInputRef,
 
     isRecording,
+    setIsRecording,
+    
     startRecording,
     stopRecording,
-
+    
+    isPreviewPlaying,
+    setIsPreviewPlaying,
+    
     newMessage,
     setNewMessage,
 

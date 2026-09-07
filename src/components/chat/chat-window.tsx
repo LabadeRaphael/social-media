@@ -22,9 +22,7 @@ import {
 } from "./chat-window-logic";
 
 import { Conversation } from "@/types/conversation";
-
 import { useTheme } from "@mui/material/styles";
-
 import {
   ChevronLeft,
 } from "lucide-react";
@@ -37,8 +35,8 @@ interface ChatWindowProps {
   isMobile: boolean;
 
   activeView:
-    | "chat"
-    | "settings";
+  | "chat"
+  | "settings";
 
   setActiveView: (
     view: "chat" | "settings"
@@ -73,8 +71,14 @@ export default function ChatWindow({
     fileInputRef,
 
     isRecording,
+    setIsRecording,
+
     startRecording,
     stopRecording,
+
+    isPreviewPlaying,
+    setIsPreviewPlaying,
+
 
     newMessage,
     setNewMessage,
@@ -162,7 +166,7 @@ export default function ChatWindow({
             key={index}
             component="span"
             sx={{
-              bgcolor: mode === "light" ? 
+              bgcolor: mode === "light" ?
                 theme.palette.primary.main : theme.palette.text.primary,
               color:
                 theme.palette.warning
@@ -330,6 +334,9 @@ export default function ChatWindow({
 
             <VoiceRecorder
               ref={recorderRef}
+              isRecording={isRecording}
+              onRecordingStateChange={setIsRecording}
+              onPlaybackStateChange={setIsPreviewPlaying}
               conversationId={
                 selectedChat.id
               }
@@ -384,6 +391,8 @@ export default function ChatWindow({
               isRecording={
                 isRecording
               }
+              isPreviewPlaying={isPreviewPlaying}
+
               onTyping={
                 handleTyping
               }
