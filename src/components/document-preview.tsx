@@ -4,14 +4,8 @@ import { X, Check, Loader2 } from "lucide-react";
 import { useTheme } from "@mui/material/styles";
 import { getFileType } from "./file-type-formater";
 import FileCard from "./file-card";
-interface PreviewDocumentProps {
-  fileUrl: string;
-  fileName: string;
-  fileSize: number;
-  onSend: () => void;
-  onCancel: () => void;
-  isSending?: boolean;
-}
+import { PreviewDocumentProps } from "@/types/preview-document";
+
 export default function DocumentPreview({
   fileUrl,
   fileName,

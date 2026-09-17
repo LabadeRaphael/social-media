@@ -118,34 +118,19 @@ export default function ChatMessages({
               >
                 <MessageBubble
                   text={message.text}
-                  timeStamp={
-                    message.createdAt
-                  }
+                  timeStamp={message.createdAt}
                   type={message.type}
                   mediaUrl={message.mediaUrl}
                   duration={message.duration}
                   fileName={message.fileName}
                   fileSize={message.fileSize}
                   isRead={message.isRead}
-                  isSender={
-                    message.sender.id ===
-                    currentUserId
-                  }
-                  selectedId={
-                    selectedChatId
-                  }
-                  currentUserId={
-                    currentUserId
-                  }
-                  highlightText={
-                    highlightText
-                  }
-                  searchKeyword={
-                    searchKeyword
-                  }
-                  highlight={matchedMessageIds.has(
-                    message.id
-                  )}
+                  isSender={message.sender.id === currentUserId}
+                  selectedId={selectedChatId}
+                  currentUserId={currentUserId}
+                  highlightText={highlightText}
+                  searchKeyword={searchKeyword}
+                  highlight={matchedMessageIds.has(message.id)}
                 />
               </Box>
             )

@@ -3617,21 +3617,14 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, Props>(
                         .main,
 
                     bgcolor:
-                      // alpha(
-                      //   theme
-                      //     .palette
-                      //     .text
-                      //     .primary,
-                      //   0.09
-                      // ),
-                     
                       alpha(
                         theme
                           .palette
-                          .secondary
-                          .main,
-                        1
+                          .text
+                          .primary,
+                        0.09
                       ),
+                     
                       // "white",
                       
                     borderColor:

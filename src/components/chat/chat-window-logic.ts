@@ -74,8 +74,7 @@ export function useChatWindow({
     isLoading,
     isError,
   } = useMessages(selectedChat?.id ?? "");
-
-  const messages = data?.messages ?? [];
+  const messages = useMemo(() => data?.messages ?? [], [data?.messages]);
   const hasOlderMessages = data?.hasMore ?? false;
   const {
     data: searchResults = [],
@@ -399,7 +398,6 @@ export function useChatWindow({
       conversationId: selectedChat.id,
       type: "TEXT",
       text,
-      // receiverId: otherUser?.user.id,
     });
 
     setNewMessage("");

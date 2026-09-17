@@ -1,19 +1,7 @@
+
+import { DynamicModalProps } from "@/types/dynamic-modal";
 import { Box, Typography, Button } from "@mui/material";
 import React from "react";
-
-interface DynamicModalProps {
-  open: boolean;
-  title: string;
-  description?: string;
-  confirmText?: string;
-  cancelText?: string;
-  confirmColor?: string;
-  disabled?:boolean|string;
-  type?:string;
-  onClose: () => void;
-  onConfirm: () => void;
-  children?: React.ReactNode; // allows inputs inside
-}
 
 const DynamicModal: React.FC<DynamicModalProps> = ({
   open,
@@ -64,7 +52,9 @@ const DynamicModal: React.FC<DynamicModalProps> = ({
             {description}
           </Typography>
         )}
+
         {children}
+
         <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
           <Button variant="outlined" onClick={onClose}>
             {cancelText}

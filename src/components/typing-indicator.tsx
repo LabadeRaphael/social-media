@@ -2,12 +2,9 @@
 import React from "react";
 import { Typography, Box } from "@mui/material";
 import { useTypingIndicator } from "@/react-query/socket-hook";
+import { TypingIndicatorProps } from "@/types/typing-indicator";
 
-interface TypingIndicatorProps {
-  conversationId: string;
-  currentUserId: string;
-  fallback?:any
-}
+
 
 const TypingIndicator: React.FC<TypingIndicatorProps> = ({
   conversationId,
