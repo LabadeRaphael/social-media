@@ -164,7 +164,7 @@ export default function LoginPage() {
 
                   // 🔹 Redirect after 2 seconds
                   setTimeout(() => {
-                    router.push("/dashboard/chats")
+                    router.replace("/dashboard/chats")
                   }, 2000);
                 } catch (err: any) {
                   const message = err.response?.data?.message || err.message

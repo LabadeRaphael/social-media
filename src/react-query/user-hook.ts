@@ -6,10 +6,17 @@ import {
 } from "@tanstack/react-query";
 
 import { updateUser } from "@/api/user";
-
+import { useQuery } from "@tanstack/react-query";
 import { UpdateUserPayload } from "@/types/update-user";
-
-
+import { getUserToken } from "@/api/user";
+const useUserToken = (enabled: boolean) => {
+  return useQuery({
+    queryKey: ["user-token"],
+    queryFn: getUserToken,
+    enabled,
+    retry: false,
+  });
+};
 const useUpdateUser = () => {
   const queryClient =
     useQueryClient();
@@ -64,5 +71,6 @@ const useUpdateUser = () => {
 
 
 export {
-  useUpdateUser,
+ useUserToken,
+ useUpdateUser
 };

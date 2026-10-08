@@ -7,7 +7,7 @@ const api = axios.create({
 });
 
 // Public routes (no auth logic should touch these)
-const PUBLIC_ROUTES = [
+const PUBLIC_API_ROUTES = [
   "/auth/login",
   "/auth/signup",
   "/auth/forgot-password",
@@ -33,7 +33,7 @@ api.interceptors.response.use(
     }
 
     // ✅ 1. IGNORE PUBLIC ROUTES (VERY IMPORTANT)
-    const isPublicRoute = PUBLIC_ROUTES.some((route) =>
+    const isPublicRoute = PUBLIC_API_ROUTES.some((route) =>
       url.includes(route)
     );
     console.log(isPublicRoute);
