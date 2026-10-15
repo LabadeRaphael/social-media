@@ -656,9 +656,38 @@ const ChangeEmailSchema = Yup.object({
     .required("Email is required"),
 
 });
+const ChangePasswordSchema = Yup.object({
+  password: Yup.string().test(
+    "password-length",
+    "Password must be at least 6 characters",
+    (value) => !value || value.length >= 6
+  ),
 
+  confirmPassword: Yup.string().test(
+    "password-match",
+    "Passwords do not match",
+    function (value) {
+      const { password } = this.parent;
+
+      if (!password && !value) return true;
+
+      return Boolean(password) && value === password;
+    }
+  ),
+});
+const SaveAuthPasswordSchema = Yup.object({
+  saveAuthPassword: Yup.string()
+    .required("Current password is required")
+    .min(6, "Password must be at least 6 characters"),
+});
+
+const ReAuthPasswordSchema = Yup.object({
+  reAuthPassword: Yup.string()
+    .required("Current password is required")
+    .min(6, "Password must be at least 6 characters"),
+});
 export default function SettingsPage({ setActiveView }: SettingProp) {
-  
+
   const theme = useTheme();
   const mode = theme.palette.mode;
   const router = useRouter()
@@ -715,6 +744,51 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
       } catch (error: any) {
         toast.error(error.message || "Something went wrong");
       }
+    },
+  });
+
+  const passwordFormik = useFormik({
+    initialValues: {
+      password: "",
+      confirmPassword: "",
+    },
+    validationSchema: ChangePasswordSchema,
+    validateOnMount: false,
+    validateOnChange: true,
+    validateOnBlur: true,
+
+    onSubmit: () => { },
+  });
+  const savePasswordFormik = useFormik({
+    initialValues: {
+      saveAuthPassword: "",
+    },
+    validationSchema: SaveAuthPasswordSchema,
+    validateOnMount: false,
+    validateOnChange: true,
+    validateOnBlur: true,
+
+    onSubmit: async () => {
+      await handleUpdate();
+      setSaveChangesModal(false);
+      savePasswordFormik.resetForm();
+
+    },
+  });
+  const delPasswordFormik = useFormik({
+    initialValues: {
+      reAuthPassword: "",
+    },
+    validationSchema: ReAuthPasswordSchema,
+    validateOnMount: false,
+    validateOnChange: true,
+    validateOnBlur: true,
+
+    onSubmit: async () => {
+      await handleDelete();
+      setShowDeleteModal(false);
+      delPasswordFormik.resetForm();
+
     },
   });
 
@@ -1083,6 +1157,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
           open={openEmailModal}
           title="Change email address"
           description="Enter your new email address. A verification link will be sent to confirm the change."
+          confirmColor="primary"
           confirmText="Send link"
           onClose={() => setOpenEmailModal(false)}
           onConfirm={formik.handleSubmit}
@@ -1224,7 +1299,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
               gap: 2,
             }}
           >
-            <TextField
+            {/* <TextField
               label="New password"
               type={showPassword ? "text" : "password"}
               value={password}
@@ -1253,7 +1328,52 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                   </InputAdornment>
                 ),
               }}
+            /> */}
+
+            <TextField
+              label="New password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={passwordFormik.values.password}
+              onChange={(e) => {
+                const value = e.target.value;
+
+                passwordFormik.setFieldValue("password", value);
+                setPassword(value);
+              }}
+              onBlur={passwordFormik.handleBlur}
+              error={Boolean(
+                passwordFormik.touched.password &&
+                passwordFormik.errors.password
+              )}
+              helperText={
+                passwordFormik.touched.password
+                  ? passwordFormik.errors.password || " "
+                  : " "
+              }
+              fullWidth
+              size="small"
+              sx={getAuthTextFieldSx({
+                theme,
+                mode,
+                // touched: passwordFormik.touched.password,
+                error: passwordFormik.errors.password,
+              })}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      edge="end"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
+
 
             {/* <TextField
               label="Confirm new password"
@@ -1293,48 +1413,80 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                 ),
               }}
             /> */}
+            {/* <TextField
+              label="Confirm password"
+              name="confirmPassword"
+              value={formik.values.confirmPassword}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={
+                formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)
+              }
+              helperText={
+                formik.touched.confirmPassword && formik.errors.confirmPassword
+              }
+              fullWidth
+              size="small"
+              sx={
+                getAuthTextFieldSx({
+                  theme,
+                  mode,
+                  touched: formik.touched.confirmPassword,
+                  error: formik.errors.confirmPassword,
+                })
+              }
+            /> */}
+
             <TextField
-  label="Confirm new password"
-  type={showConfirmPassword ? "text" : "password"}
-  value={confirmPassword}
-  onChange={(e) => {
-    setConfirmPassword(e.target.value);
-  }}
-  onBlur={() => {
-    setConfirmPasswordTouched(true);
-  }}
-  fullWidth
-  size="small"
-  error={confirmPasswordTouched && !!errors.confirmPassword}
-  helperText={
-    confirmPasswordTouched ? errors.confirmPassword || " " : " "
-  }
-  sx={getAuthTextFieldSx({
-    theme,
-    mode,
-    touched: confirmPasswordTouched,
-    error: confirmPasswordTouched ? errors.confirmPassword : undefined,
-  })}
-  InputProps={{
-    endAdornment: (
-      <InputAdornment position="end">
-        <IconButton
-          aria-label={
-            showConfirmPassword ? "Hide password" : "Show password"
-          }
-          onClick={() => setShowConfirmPassword((prev) => !prev)}
-          edge="end"
-        >
-          {showConfirmPassword ? (
-            <EyeOff size={18} />
-          ) : (
-            <Eye size={18} />
-          )}
-        </IconButton>
-      </InputAdornment>
-    ),
-  }}
-/>
+              label="Confirm password"
+              name="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              value={passwordFormik.values.confirmPassword}
+              onChange={(e) => {
+                passwordFormik.handleChange(e);
+                setConfirmPassword(e.target.value);
+              }}
+              onBlur={passwordFormik.handleBlur}
+              error={
+                Boolean(
+                  passwordFormik.touched.confirmPassword &&
+                  passwordFormik.errors.confirmPassword
+                )
+              }
+              helperText={
+                passwordFormik.touched.confirmPassword
+                  ? passwordFormik.errors.confirmPassword || " "
+                  : " "
+              }
+              fullWidth
+              size="small"
+              sx={getAuthTextFieldSx({
+                theme,
+                mode,
+                // touched: passwordFormik.touched.confirmPassword,
+                error: passwordFormik.errors.confirmPassword,
+              })}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={
+                        showConfirmPassword ? "Hide password" : "Show password"
+                      }
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff size={18} />
+                      ) : (
+                        <Eye size={18} />
+                      )}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
           </Box>
 
           <Divider sx={{ borderColor: "divider" }} />
@@ -1386,30 +1538,41 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
           description="Your profile information and any password change will be updated after you confirm your current password."
           confirmText={isUpdate ? "Saving..." : "Confirm changes"}
           confirmColor="primary"
-          disabled={isUpdate}
+          onConfirm={savePasswordFormik.handleSubmit}
+          disabled={!savePasswordFormik.isValid || savePasswordFormik.isSubmitting}
           onClose={() => {
             setSaveChangesModal(false);
             setPassword("");
           }}
-          onConfirm={handleUpdate}
         >
           <TextField
             label="Current password"
+            name="saveAuthPassword"
             type={showSaveAuthPassword ? "text" : "password"}
-            value={saveAuthPassword}
-            onChange={(e) => setSaveAuthPassword(e.target.value)}
-            error={!!errors.saveAuthPassword}
-            helperText={errors.saveAuthPassword || " "}
+            value={savePasswordFormik.values.saveAuthPassword}
+            onChange={(e) => {
+              savePasswordFormik.handleChange(e);
+              setSaveAuthPassword(e.target.value);
+            }}
+            onBlur={savePasswordFormik.handleBlur}
+            error={Boolean(
+              savePasswordFormik.touched.saveAuthPassword &&
+              savePasswordFormik.errors.saveAuthPassword
+            )}
+            helperText={
+              savePasswordFormik.touched.saveAuthPassword
+                ? savePasswordFormik.errors.saveAuthPassword || " "
+                : " "
+            }
             fullWidth
             size="small"
             autoFocus
-            sx={
-              getAuthTextFieldSx({
-                theme,
-                mode,
-                touched: !!saveAuthPassword,
-                error: errors.saveAuthPassword,
-              })}
+            sx={getAuthTextFieldSx({
+              theme,
+              mode,
+              touched: savePasswordFormik.touched.saveAuthPassword,
+              error: savePasswordFormik.errors.saveAuthPassword,
+            })}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -1436,6 +1599,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
               }
             }}
           />
+
         </DynamicModal>
       </Paper>
 
@@ -1605,26 +1769,52 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
           description="Your account will be deactivated. Enter your password to confirm this action."
           confirmText={loading ? "Deleting..." : "Delete account"}
           confirmColor="error"
-          disabled={loading}
+
+          onConfirm={delPasswordFormik.handleSubmit}
+          disabled={!delPasswordFormik.isValid || delPasswordFormik.isSubmitting}
+          // onClose={() => {
+          //   setSaveChangesModal(false);
+          //   setPassword("");
+          // }}
+          // disabled={loading}
           onClose={() => {
             setShowDeleteModal(false);
             setReAuthPassword("");
           }}
-          onConfirm={handleDelete}
+        // onConfirm={handleDelete}
         >
           <TextField
             label="Current password"
+            name="reAuthPassword"
             type={showReAuthPassword ? "text" : "password"}
-            value={reAuthPassword}
-            onChange={(e) => setReAuthPassword(e.target.value)}
-            error={!!errors.reAuthPassword}
-            helperText={errors.reAuthPassword || " "}
+            value={delPasswordFormik.values.reAuthPassword}
+            onChange={(e) => {
+              delPasswordFormik.handleChange(e);
+              setReAuthPassword(e.target.value);
+            }}
+            onBlur={delPasswordFormik.handleBlur}
+            error={
+              Boolean(
+                delPasswordFormik.touched.reAuthPassword &&
+                delPasswordFormik.errors.reAuthPassword
+              )
+            }
+            helperText={
+              delPasswordFormik.touched.reAuthPassword
+                ? delPasswordFormik.errors.reAuthPassword || " "
+                : " "
+            }
             fullWidth
             size="small"
             autoFocus
-            sx={{
-              "& .MuiOutlinedInput-root": { borderRadius: 2.5 },
-            }}
+            sx={
+              getAuthTextFieldSx({
+                theme,
+                mode,
+                touched: delPasswordFormik.touched.reAuthPassword,
+                error: delPasswordFormik.errors.reAuthPassword,
+              })
+            }
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -1645,9 +1835,9 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
               ),
             }}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "Enter" && !delPasswordFormik.isSubmitting) {
                 e.preventDefault();
-                handleDelete();
+                delPasswordFormik.handleSubmit();
               }
             }}
           />
