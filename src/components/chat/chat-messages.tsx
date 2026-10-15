@@ -14,6 +14,7 @@ import {
 import MessageBubble from "../message-bubble";
 
 import { Message } from "@/types/messages";
+import { url } from "inspector";
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -55,7 +56,6 @@ export default function ChatMessages({
       flex={1}
       p={2}
       overflow="auto"
-      bgcolor="background.default"
     >
       {isLoading ? (
         <Box

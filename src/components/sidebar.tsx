@@ -17,12 +17,15 @@ import {
   CircularProgress,
   Stack,
   LinearProgress,
+  MenuItem,
+  Menu,
 } from "@mui/material";
 import {
   Search,
   MoreVertical,
   MessageCircle,
   Mic,
+  Settings,
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useCallback, useMemo, useEffect } from "react";
@@ -99,7 +102,25 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
     isLoading: isLoadingConversations,
     error: conversationsError,
   } = useAllConversations();
+  const [moreMenuAnchorEl, setMoreMenuAnchorEl] =
+    useState<null | HTMLElement>(null);
 
+  const isMoreMenuOpen = Boolean(moreMenuAnchorEl);
+
+  const handleMoreMenuOpen = (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    setMoreMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleMoreMenuClose = () => {
+    setMoreMenuAnchorEl(null);
+  };
+
+  const handleOpenSettings = () => {
+    handleMoreMenuClose();
+    setActiveView("settings");
+  };
   // search input
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -458,7 +479,8 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
 
           <IconButton
             size="small"
-            aria-label="Messages"
+            // aria-label="Chats"
+            // onClick={() => setActiveView("chats")}
             sx={{
               width: 36,
               height: 36,
@@ -476,7 +498,7 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
             <MessageCircle size={19} strokeWidth={1.9} />
           </IconButton>
 
-          <IconButton
+          {/* <IconButton
             size="small"
             aria-label="More options"
             onClick={() => setActiveView("settings")}
@@ -495,7 +517,69 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
             }}
           >
             <MoreVertical size={19} strokeWidth={1.9} />
+          </IconButton> */}
+          {/* More options */}
+          <IconButton
+            size="small"
+            aria-label="More options"
+            aria-haspopup="menu"
+            aria-expanded={isMoreMenuOpen}
+            onClick={handleMoreMenuOpen}
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: 1.75,
+              color: isMoreMenuOpen
+                ? "primary.main"
+                : "text.secondary",
+              bgcolor: isMoreMenuOpen
+                ? "action.selected"
+                : "transparent",
+              "&:hover": {
+                color: "primary.main",
+                bgcolor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(255,194,68,0.10)"
+                    : "rgba(255,194,68,0.12)",
+              },
+            }}
+          >
+            <MoreVertical size={19} strokeWidth={1.9} />
           </IconButton>
+          <Menu
+            anchorEl={moreMenuAnchorEl}
+            open={isMoreMenuOpen}
+            onClose={handleMoreMenuClose}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "right",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "right",
+            }}
+            slotProps={{
+              paper: {
+                sx: {
+                  mt: 1,
+                  minWidth: 180,
+                  borderRadius: 2.5,
+                  bgcolor: "background.paper",
+                  border: 1,
+                  borderColor: "divider",
+                  boxShadow:
+                    theme.palette.mode === "dark"
+                      ? "0 8px 28px rgba(0,0,0,0.35)"
+                      : "0 8px 28px rgba(50,30,10,0.10)",
+                },
+              },
+            }}
+          >
+            <MenuItem onClick={handleOpenSettings}>
+              <Settings size={18} style={{ marginRight: 12 }} />
+              Settings
+            </MenuItem>
+          </Menu>
         </Stack>
       </Box>
 
@@ -570,10 +654,10 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
             },
 
             "& .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-              {
-                borderColor: "primary.main",
-                borderWidth: 1,
-              },
+            {
+              borderColor: "primary.main",
+              borderWidth: 1,
+            },
 
             "& input": {
               fontSize: "0.84rem",
@@ -600,7 +684,7 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
         }}
       >
         {isLoadingConversations ||
-        (isLoadingUsers && searchTerm) ? (
+          (isLoadingUsers && searchTerm) ? (
           <Box sx={{ px: 1.25, pt: 0.5 }}>
             <LinearProgress
               sx={{
@@ -772,11 +856,10 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
                           fontSize: "0.95rem",
                           fontWeight: 600,
                           boxShadow: isSelected
-                            ? `0 0 0 2px ${
-                                theme.palette.mode === "dark"
-                                  ? "rgba(255,194,68,0.18)"
-                                  : "rgba(255,194,68,0.22)"
-                              }`
+                            ? `0 0 0 2px ${theme.palette.mode === "dark"
+                              ? "rgba(255,194,68,0.18)"
+                              : "rgba(255,194,68,0.22)"
+                            }`
                             : "none",
                           transition: "box-shadow 0.18s ease",
                         }}
@@ -796,8 +879,8 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
                           bgcolor: isOnline
                             ? theme.palette.primary.main
                             : theme.palette.mode === "dark"
-                            ? "grey.700"
-                            : "grey.400",
+                              ? "grey.700"
+                              : "grey.400",
                           border: "2px solid",
                           borderColor: "background.paper",
                           boxSizing: "border-box",
@@ -837,7 +920,7 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
                         >
                           {conv.userName
                             ? conv.userName.at(0)?.toUpperCase() +
-                              conv.userName.slice(1).toLowerCase()
+                            conv.userName.slice(1).toLowerCase()
                             : ""}
                         </Typography>
 
@@ -857,11 +940,11 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
                         >
                           {conv.lastMessageTime
                             ? new Date(
-                                conv.lastMessageTime
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
+                              conv.lastMessageTime
+                            ).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
                             : "--:--"}
                         </Typography>
                       </Box>
@@ -1031,7 +1114,7 @@ export default function Sidebar({ setActiveView }: SidebarProps) {
               >
                 {currentUser?.userName
                   ? currentUser.userName.at(0)?.toUpperCase() +
-                    currentUser.userName.slice(1).toLowerCase()
+                  currentUser.userName.slice(1).toLowerCase()
                   : "Unknown User"}
               </Typography>
 
