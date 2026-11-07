@@ -25,6 +25,7 @@ import Image from "next/image";
 import { ApiMessage } from "@/types/api-response";
 import { useRouter } from "next/navigation";
 import { getAuthTextFieldSx } from "@/utils/textFieldStyles";
+import GoogleAuthButton from "@/components/auth/google-auth-button";
 // Yup validation schema
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Email is required"),
@@ -42,11 +43,6 @@ export default function LoginPage() {
   useEffect(() => {
     AOS.init({ duration: 800, easing: "ease-in-out", once: true });
   });
-
-  const getBorderColor = (touched: boolean | undefined, error: string | undefined) => {
-    if (!touched) return undefined;
-    return error ? "error.main" : "success.main";
-  };
 
   return (
     <Container
@@ -291,7 +287,15 @@ export default function LoginPage() {
                 </Form>
               )}
             </Formik>
-
+            {/* Google Authentication */}
+            <GoogleAuthButton
+              onError={(message) =>
+                setApiMessage({
+                  message,
+                  status: false,
+                })
+              }
+            />
             <Typography
               variant="body2"
               color="text.secondary"

@@ -24,6 +24,7 @@ import MessageAlert from "@/components/message-alert";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getAuthTextFieldSx } from "@/utils/textFieldStyles";
+import GoogleAuthButton from "@/components/auth/google-auth-button";
 // Yup validation schema
 const SignupSchema = Yup.object().shape({
   userName: Yup.string()
@@ -335,7 +336,15 @@ export default function SignupPage() {
                 </Form>
               )}
             </Formik>
-
+            {/* Google Authentication */}
+            <GoogleAuthButton
+              onError={(message) =>
+                setApiMessage({
+                  message,
+                  status: false,
+                })
+              }
+            />
             <Typography
               variant="body2"
               color="text.secondary"
