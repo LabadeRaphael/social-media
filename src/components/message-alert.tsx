@@ -35,8 +35,10 @@
 import { Box, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { MessageAlertProps } from "@/types/MessageAlertProps";
+import { IconButton } from "@mui/material";
+import { X } from "lucide-react";
 
-const MessageAlert = ({ message, status }: MessageAlertProps) => {
+const MessageAlert = ({ message, status, onClose }: MessageAlertProps) => {
   const theme = useTheme();
 
   const palette = status
@@ -63,6 +65,16 @@ const MessageAlert = ({ message, status }: MessageAlertProps) => {
       >
         {message}
       </Typography>
+      {onClose && (
+  <IconButton
+    size="small"
+    onClick={onClose}
+    aria-label="Dismiss message"
+    sx={{ ml: "auto", mt: -0.5 }}
+  >
+    <X size={17} />
+  </IconButton>
+  )}
     </Box>
   );
 };

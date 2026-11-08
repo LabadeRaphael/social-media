@@ -26,6 +26,7 @@ import { ApiMessage } from "@/types/api-response";
 import { useRouter } from "next/navigation";
 import { getAuthTextFieldSx } from "@/utils/textFieldStyles";
 import GoogleAuthButton from "@/components/auth/google-auth-button";
+import GoogleAuthError from "@/components/auth/google-auth-error";
 // Yup validation schema
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Email is required"),
@@ -197,6 +198,7 @@ export default function LoginPage() {
               {({ values, errors, touched, handleChange, handleBlur, isValid, isSubmitting }) => (
                 <Form>
                   <Stack spacing={{ xs: 1, sm: 1.5, md: 2 }}>
+                    <GoogleAuthError />
                     {apiMessage && (
                       <MessageAlert
                         message={apiMessage.message}
