@@ -22,6 +22,7 @@ import { deleteAccount, logOut, requestEmailChange } from "@/api/user";
 import DynamicModal from "./dynamic-modal";
 import { Avatar, Box, Button, Divider, IconButton, InputAdornment, Paper, Stack, TextField, Typography, useTheme } from "@mui/material";
 import { getAuthTextFieldSx } from "@/utils/textFieldStyles";
+import GoogleDeleteError from "./auth/google-act-deletion-error";
 interface SettingProp {
   setActiveView: (view: 'chat' | 'settings') => void;
 }
@@ -297,6 +298,8 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
         color: "text.primary",
       }}
     >
+      {/* google deletion error message */}
+      <GoogleDeleteError />
       {/* Page heading */}
       <Box
         sx={{
@@ -718,7 +721,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                 ),
               }}
             />
-            
+
             <TextField
               label="Confirm password"
               name="confirmPassword"
@@ -794,7 +797,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
             <Button
               variant="contained"
               onClick={showSaveChangesModal}
-              disabled={isUpdate || !!passwordFormik.errors.confirmPassword }
+              disabled={isUpdate || !!passwordFormik.errors.confirmPassword}
               sx={{
                 borderRadius: 2.5,
                 px: { xs: 2.5, sm: 2.5, md: 2 },
@@ -1012,7 +1015,15 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
               variant="outlined"
               color="error"
               startIcon={<Trash2 size={17} />}
-              onClick={handleShowDeleteModal}
+              // onClick={handleShowDeleteModal}
+              onClick={() => {
+                if (currentUser?.hasPassword) {
+                  handleShowDeleteModal();
+                } else {
+                  window.location.href =
+                    `${process.env.NEXT_PUBLIC_BASE_URL}/auth/google/reauthenticate`;
+                }
+              }}
               sx={{
                 flexShrink: 0,
                 borderRadius: 2.5,
@@ -1051,7 +1062,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
           description="Your account will be deactivated. Enter your password to confirm this action."
           confirmText={loading ? "Deleting..." : "Delete account"}
           confirmColor="error"
-
           onConfirm={delPasswordFormik.handleSubmit}
           disabled={!delPasswordFormik.isValid || delPasswordFormik.isSubmitting}
           onClose={() => {

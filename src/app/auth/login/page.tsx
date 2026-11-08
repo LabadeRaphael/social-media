@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 import { getAuthTextFieldSx } from "@/utils/textFieldStyles";
 import GoogleAuthButton from "@/components/auth/google-auth-button";
 import GoogleAuthError from "@/components/auth/google-auth-error";
+import GoogleAcccountDeletionSuccess from "@/components/auth/google-act-deletion-success";
 // Yup validation schema
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Email is required"),
@@ -199,6 +200,7 @@ export default function LoginPage() {
                 <Form>
                   <Stack spacing={{ xs: 1, sm: 1.5, md: 2 }}>
                     <GoogleAuthError />
+                    <GoogleAcccountDeletionSuccess/>
                     {apiMessage && (
                       <MessageAlert
                         message={apiMessage.message}
