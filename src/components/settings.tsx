@@ -74,11 +74,19 @@ const ChangePasswordSchema = Yup.object({
     }
   ),
 });
-const SaveAuthPasswordSchema = Yup.object({
-  saveAuthPassword: Yup.string()
-    .required("Current password is required")
-    .min(6, "Password must be at least 6 characters"),
-});
+// const SaveAuthPasswordSchema = Yup.object({
+//   saveAuthPassword: Yup.string()
+//     .required("Current password is required")
+//     .min(6, "Password must be at least 6 characters"),
+// });
+const getSaveAuthPasswordSchema = (hasPassword: boolean) =>
+  Yup.object({
+    saveAuthPassword: hasPassword
+      ? Yup.string()
+        .required("Current password is required")
+        .min(6, "Password must be at least 6 characters")
+      : Yup.string().notRequired(),
+  });
 
 const ReAuthPasswordSchema = Yup.object({
   reAuthPassword: Yup.string()
@@ -110,7 +118,10 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   const [saveChangesModal, setSaveChangesModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [openEmailModal, setOpenEmailModal] = useState(false)
-
+  const hasProfileChanges =
+    userName !== currentUser?.userName ||
+    Boolean(avatarFile) ||
+    Boolean(password);
   // synchronize useName and email if currrentUser() fail on mount
   useEffect(() => {
     if (!currentUser) return;
@@ -176,20 +187,44 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
 
     onSubmit: () => { },
   });
+  // const savePasswordFormik = useFormik({
+  //   initialValues: {
+  //     saveAuthPassword: "",
+  //   },
+  //   validationSchema: SaveAuthPasswordSchema,
+  //   validateOnMount: false,
+  //   validateOnChange: true,
+  //   validateOnBlur: true,
+
+  //   onSubmit: async () => {
+  //     await handleUpdate();
+  //     setSaveChangesModal(false);
+  //     savePasswordFormik.resetForm();
+
+  //   },
+  // });
+
   const savePasswordFormik = useFormik({
     initialValues: {
       saveAuthPassword: "",
     },
-    validationSchema: SaveAuthPasswordSchema,
-    validateOnMount: false,
+
+    validationSchema: getSaveAuthPasswordSchema(
+      currentUser?.hasPassword === true
+    ),
+
+    validateOnMount: true,
     validateOnChange: true,
     validateOnBlur: true,
 
     onSubmit: async () => {
-      await handleUpdate();
-      setSaveChangesModal(false);
-      savePasswordFormik.resetForm();
+      const success = await handleUpdate();
 
+      if (!success) return;
+
+      setSaveChangesModal(false);
+      setSaveAuthPassword("");
+      savePasswordFormik.resetForm();
     },
   });
   const delPasswordFormik = useFormik({
@@ -247,18 +282,18 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const validateSavePassword = () => {
-    const newErrors: typeof errors = {};
+  // const validateSavePassword = () => {
+  //   const newErrors: typeof errors = {};
 
-    if (!saveAuthPassword) {
-      newErrors.saveAuthPassword = "Password is required";
-    } else if (saveAuthPassword.length < 6) {
-      newErrors.saveAuthPassword = "Password must be at least 6 characters";
-    }
+  //   if (!saveAuthPassword) {
+  //     newErrors.saveAuthPassword = "Password is required";
+  //   } else if (saveAuthPassword.length < 6) {
+  //     newErrors.saveAuthPassword = "Password must be at least 6 characters";
+  //   }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  //   setErrors(newErrors);
+  //   return Object.keys(newErrors).length === 0;
+  // };
 
   const handleLogoutModal = () => {
     setShowLogoutModal(!showLogoutModal)
@@ -290,27 +325,70 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   }
 
   const { mutateAsync: updateUserMutation } = useUpdateUser();
-  const handleUpdate = async () => {
-    if (isUpdate) return;
-    if (!validateSavePassword()) return;
+  // const handleUpdate = async () => {
+  //   if (isUpdate || !hasProfileChanges) return;
+  //   // if (!validateSavePassword()) return;
+  //   if (currentUser?.hasPassword && !validateSavePassword()) {
+  //     return;
+  //   }
+  //   setIsupdate(true);
+  //   try {
+  //     const payload = {
+  //       userName,
+  //       avatar: avatarFile,
+  //       password: password || undefined,
+  //       re_auth_psw: saveAuthPassword,
+  //     };
+  //     const response = await updateUserMutation(payload)
+  //     console.log(response);
+
+
+  //     toast.success("Profile updated successfully!");
+  //     setSaveChangesModal(false);
+  //     setSaveAuthPassword("");
+  //   } catch (error: any) {
+  //     toast.error(error?.message || "Failed to update profile");
+  //   } finally {
+  //     setIsupdate(false);
+  //   }
+  // };
+  const handleUpdate = async (): Promise<boolean> => {
+    if (isUpdate || !hasProfileChanges) return false;
+
+    // Password-based accounts must confirm with their current password.
+    if (currentUser?.hasPassword && !savePasswordFormik.values.saveAuthPassword) {
+      await savePasswordFormik.validateForm();
+      savePasswordFormik.setFieldTouched("saveAuthPassword", true);
+      return false;
+    }
+
+    // // Google-only accounts must reauthenticate before setting a password.
+    // if (!currentUser?.hasPassword && password) {
+    //   toast.error("Google reauthentication is required before setting a password.");
+    //   return false;
+    // }
 
     setIsupdate(true);
+
     try {
       const payload = {
-        userName,
+        userName: userName.trim(),
         avatar: avatarFile,
         password: password || undefined,
-        re_auth_psw: saveAuthPassword,
+        re_auth_psw: currentUser?.hasPassword
+          ? savePasswordFormik.values.saveAuthPassword
+          : undefined,
       };
-      const response = await updateUserMutation(payload)
+
+      const response = await updateUserMutation(payload);
       console.log(response);
 
-
       toast.success("Profile updated successfully!");
-      setSaveChangesModal(false);
-      setSaveAuthPassword("");
+
+      return true;
     } catch (error: any) {
       toast.error(error?.message || "Failed to update profile");
+      return false;
     } finally {
       setIsupdate(false);
     }
@@ -592,7 +670,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
           onConfirm={formik.handleSubmit}
           disabled={!formik.isValid || formik.isSubmitting}
           type="Change Email"
-         
+
         >
           <Stack spacing={2}>
             <TextField
@@ -855,7 +933,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
             <Button
               variant="contained"
               onClick={showSaveChangesModal}
-              disabled={isUpdate || !!passwordFormik.errors.confirmPassword}
+              disabled={isUpdate || !hasProfileChanges || !!passwordFormik.errors.confirmPassword}
               sx={{
                 borderRadius: 2.5,
                 px: { xs: 2.5, sm: 2.5, md: 2 },
@@ -878,7 +956,12 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
         <DynamicModal
           open={saveChangesModal}
           title="Save account changes?"
-          description="Your profile information and any password change will be updated after you confirm your current password."
+          // description="Your profile information and any password change will be updated after you confirm your current password."
+          description={
+            currentUser?.hasPassword
+              ? "Enter your current password to confirm these account changes."
+              : "Confirm your account changes."
+          }
           confirmText={isUpdate ? "Saving..." : "Confirm changes"}
           confirmColor="primary"
           onConfirm={savePasswordFormik.handleSubmit}
@@ -888,60 +971,57 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
             setPassword("");
           }}
         >
-          <TextField
-            label="Current password"
-            name="saveAuthPassword"
-            type={showSaveAuthPassword ? "text" : "password"}
-            value={savePasswordFormik.values.saveAuthPassword}
-            onChange={(e) => {
-              savePasswordFormik.handleChange(e);
-              setSaveAuthPassword(e.target.value);
-            }}
-            onBlur={savePasswordFormik.handleBlur}
-            error={Boolean(
-              savePasswordFormik.touched.saveAuthPassword &&
-              savePasswordFormik.errors.saveAuthPassword
-            )}
-            helperText={
-              savePasswordFormik.touched.saveAuthPassword
-                ? savePasswordFormik.errors.saveAuthPassword || " "
-                : " "
-            }
-            fullWidth
-            size="small"
-            autoFocus
-            sx={getAuthTextFieldSx({
-              theme,
-              mode,
-              touched: savePasswordFormik.touched.saveAuthPassword,
-              error: savePasswordFormik.errors.saveAuthPassword,
-            })}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label={
-                      showSaveAuthPassword ? "Hide password" : "Show password"
-                    }
-                    onClick={() => setShowSaveAuthPassword((prev) => !prev)}
-                    edge="end"
-                  >
-                    {showSaveAuthPassword ? (
-                      <EyeOff size={18} />
-                    ) : (
-                      <Eye size={18} />
-                    )}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleUpdate();
+          {currentUser?.hasPassword && (
+            <TextField
+              label="Current password"
+              name="saveAuthPassword"
+              type={showSaveAuthPassword ? "text" : "password"}
+              value={savePasswordFormik.values.saveAuthPassword}
+              onChange={(e) => {
+                savePasswordFormik.handleChange(e);
+                setSaveAuthPassword(e.target.value);
+              }}
+              onBlur={savePasswordFormik.handleBlur}
+              error={Boolean(
+                savePasswordFormik.touched.saveAuthPassword &&
+                savePasswordFormik.errors.saveAuthPassword
+              )}
+              helperText={
+                savePasswordFormik.touched.saveAuthPassword
+                  ? savePasswordFormik.errors.saveAuthPassword || " "
+                  : " "
               }
-            }}
-          />
+              fullWidth
+              size="small"
+              autoFocus
+              sx={getAuthTextFieldSx({
+                theme,
+                mode,
+                touched: savePasswordFormik.touched.saveAuthPassword,
+                error: savePasswordFormik.errors.saveAuthPassword,
+              })}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={
+                        showSaveAuthPassword ? "Hide password" : "Show password"
+                      }
+                      onClick={() => setShowSaveAuthPassword((prev) => !prev)}
+                      edge="end"
+                    >
+                      {showSaveAuthPassword ? (
+                        <EyeOff size={18} />
+                      ) : (
+                        <Eye size={18} />
+                      )}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+          )}
 
         </DynamicModal>
       </Paper>
@@ -1191,65 +1271,3 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   );
 
 }
-
-return (
-  <Box
-    sx={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      width: "100vw",
-      height: "100vh",
-      bgcolor: "rgba(0,0,0,0.5)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: 2000,
-    }}
-  >
-    <Box
-      component="form"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onConfirm();
-      }}
-      onClick={(e) => e.stopPropagation()}
-      sx={{
-        bgcolor: "background.paper",
-        p: 3,
-        borderRadius: 2,
-        width: "90%",
-        maxWidth: 400,
-        boxShadow: 24,
-      }}
-    >
-      <Typography variant="h6" mb={1}>
-        {title}
-      </Typography>
-
-      {description && (
-        <Typography variant="body2" mb={2}>
-          {description}
-        </Typography>
-      )}
-
-      {children}
-
-      <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
-        <Button variant="outlined" onClick={onClose}>
-          {cancelText}
-        </Button>
-
-        <Button
-          type="submit"
-          variant="contained"
-          color={confirmColor as any}
-          disabled={disabled}
-        >
-          {confirmText}
-        </Button>
-      </Box>
-    </Box>
-  </Box>
-);
-
