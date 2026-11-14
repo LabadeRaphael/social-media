@@ -40,7 +40,15 @@ export default function ChatPage() {
       toast.error(error.message || "Failed to load conversations");
     }
   }, [error]);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
 
+    const activeView = params.get("active");
+
+    if (activeView === "settings") {
+      setActiveView("settings");
+    }
+  }, []);
   // Handle back navigation
   const handleBack = () => {
     dispatch(setSelectedChat(null));

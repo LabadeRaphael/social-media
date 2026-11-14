@@ -27,12 +27,34 @@ interface SettingProp {
   setActiveView: (view: 'chat' | 'settings') => void;
 }
 
-const ChangeEmailSchema = Yup.object({
-  newEmail: Yup.string()
-    .email("Invalid email")
-    .required("Email is required"),
+// const ChangeEmailSchema = Yup.object({
+//   newEmail: Yup.string()
+//     .email("Invalid email")
+//     .required("Email is required"),
 
-});
+//   password: Yup.string().when([], {
+//     is: () => Boolean(currentUser?.hasPassword),
+//     then: (schema) =>
+//       schema
+//         .required("Current password is required")
+//         .min(6, "Password must be at least 6 characters"),
+//     otherwise: (schema) => schema.notRequired(),
+//   }),
+
+// });
+
+const getChangeEmailSchema = (hasPassword: boolean) =>
+  Yup.object({
+    newEmail: Yup.string()
+      .email("Invalid email")
+      .required("Email is required"),
+
+    password: hasPassword
+      ? Yup.string()
+        .required("Current password is required")
+        .min(6, "Password must be at least 6 characters")
+      : Yup.string().notRequired(),
+  });
 const ChangePasswordSchema = Yup.object({
   password: Yup.string().test(
     "password-length",
@@ -101,18 +123,35 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
     reAuthPassword?: string, saveAuthPassword?: string,
   }>({});
 
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("google_verified") === "change-email") {
+      setOpenEmailModal(true);
+
+      // Remove the query parameter without reloading the page.
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   const formik = useFormik({
     initialValues: {
       newEmail: "",
       password: "",
       // confirmPassword: "",
     },
-    validationSchema: ChangeEmailSchema,
+    validationSchema: getChangeEmailSchema(
+      currentUser?.hasPassword === true
+    ),
+    validateOnMount: true,
     onSubmit: async (values) => {
       try {
         const res = await requestEmailChange({
           newEmail: values.newEmail,
-          emailAuthPassword: values.password,
+          emailAuthPassword: currentUser?.hasPassword
+            ? values.password
+            : undefined,
         });
 
         toast.success(res?.message);
@@ -120,6 +159,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
         formik.resetForm();
       } catch (error: any) {
         toast.error(error.message || "Something went wrong");
+        setOpenEmailModal(false)
       }
     },
   });
@@ -168,6 +208,16 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
 
     },
   });
+
+  const handleOpenEmailModal = () => {
+    if (currentUser?.hasPassword) {
+      setOpenEmailModal(true);
+      return;
+    }
+
+    window.location.href =
+      `${process.env.NEXT_PUBLIC_BASE_URL}/auth/google/reauthenticate?intent=change-email`;
+  };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -517,7 +567,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                 <Button
                   size="small"
                   startIcon={<Mail size={15} />}
-                  onClick={() => setOpenEmailModal(true)}
+                  onClick={handleOpenEmailModal}
                   sx={{
                     flexShrink: 0,
                     textTransform: "none",
@@ -542,6 +592,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
           onConfirm={formik.handleSubmit}
           disabled={!formik.isValid || formik.isSubmitting}
           type="Change Email"
+         
         >
           <Stack spacing={2}>
             <TextField
@@ -567,54 +618,61 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
                 })
               }
             />
-
-            <TextField
-              label="Current password"
-              name="password"
-              type={showEmailAuthPassword ? "text" : "password"}
-              value={formik.values.password}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={
-                formik.touched.password && Boolean(formik.errors.password)
-              }
-              helperText={
-                formik.touched.password && formik.errors.password
-              }
-              fullWidth
-              size="small"
-              sx={
-                getAuthTextFieldSx({
-                  theme,
-                  mode,
-                  touched: formik.touched.password,
-                  error: formik.errors.password,
-                })
-              }
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label={
-                        showEmailAuthPassword
-                          ? "Hide password"
-                          : "Show password"
-                      }
-                      onClick={() =>
-                        setShowEmailAuthPassword((prev) => !prev)
-                      }
-                      edge="end"
-                    >
-                      {showEmailAuthPassword ? (
-                        <EyeOff size={18} />
-                      ) : (
-                        <Eye size={18} />
-                      )}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+            {currentUser?.hasPassword && (
+              // for password email and password base only.
+              <TextField
+                label="Current password"
+                name="password"
+                type={showEmailAuthPassword ? "text" : "password"}
+                value={formik.values.password}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={
+                  formik.touched.password && Boolean(formik.errors.password)
+                }
+                // helperText={
+                //   formik.touched.password && formik.errors.password
+                // }
+                helperText={
+                  formik.touched.password
+                    ? formik.errors.password || " "
+                    : " "
+                }
+                fullWidth
+                size="small"
+                sx={
+                  getAuthTextFieldSx({
+                    theme,
+                    mode,
+                    touched: formik.touched.password,
+                    error: formik.errors.password,
+                  })
+                }
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={
+                          showEmailAuthPassword
+                            ? "Hide password"
+                            : "Show password"
+                        }
+                        onClick={() =>
+                          setShowEmailAuthPassword((prev) => !prev)
+                        }
+                        edge="end"
+                      >
+                        {showEmailAuthPassword ? (
+                          <EyeOff size={18} />
+                        ) : (
+                          <Eye size={18} />
+                        )}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
           </Stack>
         </DynamicModal>
       </Paper>
@@ -1133,4 +1191,65 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   );
 
 }
+
+return (
+  <Box
+    sx={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      bgcolor: "rgba(0,0,0,0.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 2000,
+    }}
+  >
+    <Box
+      component="form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onConfirm();
+      }}
+      onClick={(e) => e.stopPropagation()}
+      sx={{
+        bgcolor: "background.paper",
+        p: 3,
+        borderRadius: 2,
+        width: "90%",
+        maxWidth: 400,
+        boxShadow: 24,
+      }}
+    >
+      <Typography variant="h6" mb={1}>
+        {title}
+      </Typography>
+
+      {description && (
+        <Typography variant="body2" mb={2}>
+          {description}
+        </Typography>
+      )}
+
+      {children}
+
+      <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
+        <Button variant="outlined" onClick={onClose}>
+          {cancelText}
+        </Button>
+
+        <Button
+          type="submit"
+          variant="contained"
+          color={confirmColor as any}
+          disabled={disabled}
+        >
+          {confirmText}
+        </Button>
+      </Box>
+    </Box>
+  </Box>
+);
 

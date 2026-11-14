@@ -33,6 +33,11 @@ const DynamicModal: React.FC<DynamicModalProps> = ({
       }}
     >
       <Box
+        component="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onConfirm();
+        }}
         onClick={(e) => e.stopPropagation()}
         sx={{
           bgcolor: "background.paper",
@@ -61,9 +66,10 @@ const DynamicModal: React.FC<DynamicModalProps> = ({
           </Button>
 
           <Button
+            type="submit"
             variant="contained"
             color={confirmColor as any}
-            onClick={onConfirm}
+            // onClick={onConfirm}
             disabled={disabled}
           >
             {confirmText}
