@@ -157,8 +157,8 @@ export default function LoginPage() {
                   const message = res?.data?.message
                   const status = res?.data?.status
                   setApiMessage({ message: message, status: status });
-                  // 🔹 Hide message after 3 seconds
-                  setTimeout(() => setApiMessage(null), 3000);
+                  // // 🔹 Hide message after 3 seconds
+                  // setTimeout(() => setApiMessage(null), 3000);
 
                   // 🔹 Redirect after 2 seconds
                   setTimeout(() => {

@@ -118,6 +118,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   const [saveChangesModal, setSaveChangesModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [openEmailModal, setOpenEmailModal] = useState(false)
+  const [googlePasswordVerified, setGooglePasswordVerified] = useState(false);
   const hasProfileChanges =
     userName !== currentUser?.userName ||
     Boolean(avatarFile) ||
@@ -135,17 +136,27 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   }>({});
 
 
+ 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(window.location.search);
+  const verifiedIntent = params.get("google_verified");
 
-    if (params.get("google_verified") === "change-email") {
-      setOpenEmailModal(true);
+  if (verifiedIntent === "change-email") {
+    setOpenEmailModal(true);
+  }
 
-      // Remove the query parameter without reloading the page.
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-  }, []);
+  if (verifiedIntent === "set-password") {
+    setGooglePasswordVerified(true);
 
+    toast.success(
+      "Google verification successful. You can now set your password."
+    );
+  }
+
+  if (verifiedIntent) {
+    window.history.replaceState({}, "", window.location.pathname);
+  }
+}, []);
   const formik = useFormik({
     initialValues: {
       newEmail: "",
@@ -367,6 +378,14 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
     //   toast.error("Google reauthentication is required before setting a password.");
     //   return false;
     // }
+    // Google-only accounts must verify their Google identity
+    // before setting their first password.
+    if (!currentUser?.hasPassword && password && !googlePasswordVerified) {
+      window.location.href =
+        `${process.env.NEXT_PUBLIC_BASE_URL}/auth/google/reauthenticate?intent=set-password`;
+
+      return false;
+    }
 
     setIsupdate(true);
 
@@ -380,10 +399,13 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
           : undefined,
       };
 
-      const response = await updateUserMutation(payload);
-      console.log(response);
-
-      toast.success("Profile updated successfully!");
+      const res = await updateUserMutation(payload);
+      // console.log(res?.message);
+      const message = res?.message
+      console.log(message);
+      
+      toast.success(message);
+      setGooglePasswordVerified(false);
 
       return true;
     } catch (error: any) {
