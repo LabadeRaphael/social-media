@@ -9,14 +9,28 @@ import { updateUser } from "@/api/user";
 import { useQuery } from "@tanstack/react-query";
 import { UpdateUserPayload } from "@/types/update-user";
 import { getUserToken } from "@/api/user";
+// const useUserToken = (enabled: boolean) => {
+//   return useQuery({
+//     queryKey: ["user-token"],
+//     queryFn: getUserToken,
+//     enabled,
+//     retry: false,
+//   });
+// };
+
+
 const useUserToken = (enabled: boolean) => {
   return useQuery({
     queryKey: ["user-token"],
     queryFn: getUserToken,
     enabled,
     retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
   });
 };
+
 const useUpdateUser = () => {
   const queryClient =
     useQueryClient();

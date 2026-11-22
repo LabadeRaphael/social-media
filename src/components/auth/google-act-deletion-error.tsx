@@ -19,6 +19,10 @@ const googleDeleteErrorMessages: Record<string, string> = {
 
   google_auth_failed:
     "Something went wrong during Google verification. Please try again.",
+  
+  google_auth_network_error: 
+      "Unable to connect to Google. Check your internet connection and try again.",
+  
 };
 
 const GoogleDeleteError = () => {
@@ -52,3 +56,4 @@ const GoogleDeleteError = () => {
 };
 
 export default GoogleDeleteError;
+

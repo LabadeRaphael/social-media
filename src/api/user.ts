@@ -6,15 +6,88 @@ import { RequestEmailChangePayload } from "@/types/email-change";
 // import { useQueryClient } from "@tanstack/react-query";
 // const [skip, setSkip] = useState(0);
 
+
+// const getUserToken = async () => {
+//   try {
+//     const response = await api.get("/auth/token-info");
+//     return response.data;
+//   } catch (error: any) {
+//     if (error.response?.status !== 401) {
+//       throw error.response?.data || error;
+//     }
+//   }
+
+//   // Only reached when token-info returns 401.
+//   try {
+//     console.log("auth refresh-token trigger");
+
+//     const response = await api.post("/auth/refresh-token");
+//     return response.data;
+//   } catch (error: any) {
+//     throw error.response?.data || error;
+//   }
+// };
+
+
+import axios from "axios";
+
+// const getUserToken = async () => {
+//   try {
+//     const response = await api.get("/auth/token-info");
+//     return response.data;
+//   } catch (error) {
+//     // Only attempt refresh when access-token validation returns 401.
+//     if (
+//       !axios.isAxiosError(error) ||
+//       error.response?.status !== 401
+//     ) {
+//       throw error;
+//     }
+//   }
+
+//   // Restore the session using the refresh-token cookie.
+//   const response = await api.post("/auth/refresh-token");
+//   return response.data;
+// };
+// import axios from "axios";
+// import api from "@/api/axiosInstance";
+
+
 const getUserToken = async () => {
+  console.log("get user trigger");
+  
   try {
     const response = await api.get("/auth/token-info");
-    return response.data
-
-  } catch (error: any) {
-    throw error.response?.data || error;
+    console.log("get user /auth/token-info", response);
+    return response.data;
+  } catch (error) {
+    if (
+      !axios.isAxiosError(error) ||
+      error.response?.status !== 401
+    ) {
+      console.log("get user /auth/token-info error", error);
+      throw error;
+    }
   }
-}
+
+  try {
+    const response = await api.post("/auth/refresh-token");
+    console.log("get user /auth/refresh-token", response);
+    return response.data;
+  } catch (error) {
+    if (
+      axios.isAxiosError(error) &&
+      error.response?.status === 401
+    ) {
+      console.log("get user /auth/refresh-token error", error);
+      return null;
+    }
+     console.log("error", error);
+    throw error;
+  }
+};
+
+
 
 const getCurrentUser = async () => {
   try {

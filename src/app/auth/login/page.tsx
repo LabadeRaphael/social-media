@@ -158,7 +158,7 @@ export default function LoginPage() {
                   const status = res?.data?.status
                   setApiMessage({ message: message, status: status });
                   // // 🔹 Hide message after 3 seconds
-                  // setTimeout(() => setApiMessage(null), 3000);
+                  setTimeout(() => setApiMessage(null), 3000);
 
                   // 🔹 Redirect after 2 seconds
                   setTimeout(() => {
@@ -170,6 +170,7 @@ export default function LoginPage() {
                   setApiMessage({ message: message, status: status });
                   // 🔹 Hide message after 3 seconds
                   setTimeout(() => setApiMessage(null), 3000);
+                  // setDisabled(true)
                   console.error("Login error:", err.response?.data || err.message);
                   if (err.response?.data?.timeLeft) {
                     setDisabled(true);

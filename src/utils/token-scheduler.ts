@@ -38,7 +38,7 @@ const refreshToken = async (router:any) => {
   } catch (err) {
     console.error("Refresh token failed", err);
     // Optionally log out
-    router.push("/auth/login")
+    router.replace("/auth/login")
   }
 };
 

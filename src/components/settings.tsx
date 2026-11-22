@@ -27,22 +27,6 @@ interface SettingProp {
   setActiveView: (view: 'chat' | 'settings') => void;
 }
 
-// const ChangeEmailSchema = Yup.object({
-//   newEmail: Yup.string()
-//     .email("Invalid email")
-//     .required("Email is required"),
-
-//   password: Yup.string().when([], {
-//     is: () => Boolean(currentUser?.hasPassword),
-//     then: (schema) =>
-//       schema
-//         .required("Current password is required")
-//         .min(6, "Password must be at least 6 characters"),
-//     otherwise: (schema) => schema.notRequired(),
-//   }),
-
-// });
-
 const getChangeEmailSchema = (hasPassword: boolean) =>
   Yup.object({
     newEmail: Yup.string()
@@ -74,11 +58,6 @@ const ChangePasswordSchema = Yup.object({
     }
   ),
 });
-// const SaveAuthPasswordSchema = Yup.object({
-//   saveAuthPassword: Yup.string()
-//     .required("Current password is required")
-//     .min(6, "Password must be at least 6 characters"),
-// });
 const getSaveAuthPasswordSchema = (hasPassword: boolean) =>
   Yup.object({
     saveAuthPassword: hasPassword
@@ -136,27 +115,27 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   }>({});
 
 
- 
+
   useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const verifiedIntent = params.get("google_verified");
+    const params = new URLSearchParams(window.location.search);
+    const verifiedIntent = params.get("google_verified");
 
-  if (verifiedIntent === "change-email") {
-    setOpenEmailModal(true);
-  }
+    if (verifiedIntent === "change-email") {
+      setOpenEmailModal(true);
+    }
 
-  if (verifiedIntent === "set-password") {
-    setGooglePasswordVerified(true);
+    if (verifiedIntent === "set-password") {
+      setGooglePasswordVerified(true);
 
-    toast.success(
-      "Google verification successful. You can now set your password."
-    );
-  }
+      toast.success(
+        "Google verification successful. You can now set your password."
+      );
+    }
 
-  if (verifiedIntent) {
-    window.history.replaceState({}, "", window.location.pathname);
-  }
-}, []);
+    if (verifiedIntent) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
   const formik = useFormik({
     initialValues: {
       newEmail: "",
@@ -198,22 +177,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
 
     onSubmit: () => { },
   });
-  // const savePasswordFormik = useFormik({
-  //   initialValues: {
-  //     saveAuthPassword: "",
-  //   },
-  //   validationSchema: SaveAuthPasswordSchema,
-  //   validateOnMount: false,
-  //   validateOnChange: true,
-  //   validateOnBlur: true,
-
-  //   onSubmit: async () => {
-  //     await handleUpdate();
-  //     setSaveChangesModal(false);
-  //     savePasswordFormik.resetForm();
-
-  //   },
-  // });
 
   const savePasswordFormik = useFormik({
     initialValues: {
@@ -293,19 +256,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
     return Object.keys(newErrors).length === 0;
   };
 
-  // const validateSavePassword = () => {
-  //   const newErrors: typeof errors = {};
-
-  //   if (!saveAuthPassword) {
-  //     newErrors.saveAuthPassword = "Password is required";
-  //   } else if (saveAuthPassword.length < 6) {
-  //     newErrors.saveAuthPassword = "Password must be at least 6 characters";
-  //   }
-
-  //   setErrors(newErrors);
-  //   return Object.keys(newErrors).length === 0;
-  // };
-
   const handleLogoutModal = () => {
     setShowLogoutModal(!showLogoutModal)
   }
@@ -336,33 +286,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
   }
 
   const { mutateAsync: updateUserMutation } = useUpdateUser();
-  // const handleUpdate = async () => {
-  //   if (isUpdate || !hasProfileChanges) return;
-  //   // if (!validateSavePassword()) return;
-  //   if (currentUser?.hasPassword && !validateSavePassword()) {
-  //     return;
-  //   }
-  //   setIsupdate(true);
-  //   try {
-  //     const payload = {
-  //       userName,
-  //       avatar: avatarFile,
-  //       password: password || undefined,
-  //       re_auth_psw: saveAuthPassword,
-  //     };
-  //     const response = await updateUserMutation(payload)
-  //     console.log(response);
-
-
-  //     toast.success("Profile updated successfully!");
-  //     setSaveChangesModal(false);
-  //     setSaveAuthPassword("");
-  //   } catch (error: any) {
-  //     toast.error(error?.message || "Failed to update profile");
-  //   } finally {
-  //     setIsupdate(false);
-  //   }
-  // };
   const handleUpdate = async (): Promise<boolean> => {
     if (isUpdate || !hasProfileChanges) return false;
 
@@ -372,12 +295,7 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
       savePasswordFormik.setFieldTouched("saveAuthPassword", true);
       return false;
     }
-
-    // // Google-only accounts must reauthenticate before setting a password.
-    // if (!currentUser?.hasPassword && password) {
-    //   toast.error("Google reauthentication is required before setting a password.");
-    //   return false;
-    // }
+    
     // Google-only accounts must verify their Google identity
     // before setting their first password.
     if (!currentUser?.hasPassword && password && !googlePasswordVerified) {
@@ -402,8 +320,6 @@ export default function SettingsPage({ setActiveView }: SettingProp) {
       const res = await updateUserMutation(payload);
       // console.log(res?.message);
       const message = res?.message
-      console.log(message);
-      
       toast.success(message);
       setGooglePasswordVerified(false);
 
