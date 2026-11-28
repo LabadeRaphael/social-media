@@ -28,6 +28,7 @@ import { getAuthTextFieldSx } from "@/utils/textFieldStyles";
 import GoogleAuthButton from "@/components/auth/google-auth-button";
 import GoogleAuthError from "@/components/auth/google-auth-error";
 import GoogleAcccountDeletionSuccess from "@/components/auth/google-act-deletion-success";
+import { useLogin } from "@/react-query/user-hook";
 // Yup validation schema
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Email is required"),
@@ -45,7 +46,7 @@ export default function LoginPage() {
   useEffect(() => {
     AOS.init({ duration: 800, easing: "ease-in-out", once: true });
   });
-
+  const { mutateAsync: login, isPending } = useLogin();
   return (
     <Container
       maxWidth="lg"
@@ -149,21 +150,25 @@ export default function LoginPage() {
                 try {
                   setSubmitting(true)
 
-                  const res = await api.post("/auth/login", {
+                  const res = await login({
                     email: values.email,
                     password: values.password,
                   });
-                  console.log("Login success:", res.data);
-                  const message = res?.data?.message
-                  const status = res?.data?.status
-                  setApiMessage({ message: message, status: status });
-                  // // 🔹 Hide message after 3 seconds
-                  setTimeout(() => setApiMessage(null), 3000);
 
-                  // 🔹 Redirect after 2 seconds
-                  setTimeout(() => {
-                    router.replace("/dashboard/chats")
-                  }, 2000);
+                  console.log("Login success:", res);
+                  const message = res?.message
+                  const status = res?.status
+                  setApiMessage({ message: message, status: status });
+                  
+                  // app intilizer handles this
+                  
+                  // // // 🔹 Hide message after 3 seconds
+                  // setTimeout(() => setApiMessage(null), 3000);
+
+                  // // 🔹 Redirect after 2 seconds
+                  // setTimeout(() => {
+                  //   router.replace("/dashboard/chats")
+                  // }, 2000);
                 } catch (err: any) {
                   const message = err.response?.data?.message || err.message
                   const status = err.response?.data?.status
@@ -201,7 +206,7 @@ export default function LoginPage() {
                 <Form>
                   <Stack spacing={{ xs: 1, sm: 1.5, md: 2 }}>
                     <GoogleAuthError />
-                    <GoogleAcccountDeletionSuccess/>
+                    <GoogleAcccountDeletionSuccess />
                     {apiMessage && (
                       <MessageAlert
                         message={apiMessage.message}

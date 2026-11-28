@@ -5,10 +5,11 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-import { updateUser } from "@/api/user";
+import { loginUser, resendVerification, updateUser, verifyEmail, verifyRecoverAccount } from "@/api/user";
 import { useQuery } from "@tanstack/react-query";
 import { UpdateUserPayload } from "@/types/update-user";
 import { getUserToken } from "@/api/user";
+import { LoginPayload } from "@/types/login";
 // const useUserToken = (enabled: boolean) => {
 //   return useQuery({
 //     queryKey: ["user-token"],
@@ -30,7 +31,19 @@ const useUserToken = (enabled: boolean) => {
     refetchOnWindowFocus: false,
   });
 };
+const useLogin = () => {
+  const queryClient = useQueryClient();
 
+  return useMutation({
+    mutationFn: loginUser,
+
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["user-token"],
+      });
+    },
+  });
+};
 const useUpdateUser = () => {
   const queryClient =
     useQueryClient();
@@ -84,7 +97,29 @@ const useUpdateUser = () => {
 };
 
 
+const useVerifyEmail = () => {
+  return useMutation({
+    mutationFn: (token: string) => verifyEmail(token),
+    retry: false,
+  });
+};
+
+const useResendVerification = () => {
+  return useMutation({
+    mutationFn: (email: string) => resendVerification(email),
+    retry: false,
+  });
+};
+
+export const useVerifyRecoverAccount = () =>
+  useMutation({
+    mutationFn: (token: string) => verifyRecoverAccount(token),
+    retry: false,
+  });
+
+
+
 export {
- useUserToken,
- useUpdateUser
+ useUserToken, useLogin, useUpdateUser,
+ useVerifyEmail, useResendVerification
 };

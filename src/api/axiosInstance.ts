@@ -106,6 +106,8 @@ const PUBLIC_API_ROUTES = [
   "/auth/recover-account-verify",
   "/auth/token-info",
   "/auth/refresh-token",
+  "/auth/verify-email",
+  "/auth/resend-verification",
 ];
 
 const isPublicApiRoute = (url: string) => {
@@ -157,6 +159,7 @@ api.interceptors.response.use(
           (refreshStatus === 401 || refreshStatus === 403) &&
           typeof window !== "undefined"
         ) {
+          console.log("reaching here");
           window.location.replace("/auth/login");
         }
 

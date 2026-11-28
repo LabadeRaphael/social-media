@@ -30,6 +30,7 @@ import { RequestEmailChangePayload } from "@/types/email-change";
 
 
 import axios from "axios";
+import { LoginPayload } from "@/types/login";
 
 // const getUserToken = async () => {
 //   try {
@@ -87,7 +88,10 @@ const getUserToken = async () => {
   }
 };
 
-
+const loginUser = async (values:LoginPayload) => {
+  const response = await api.post("/auth/login", values);
+  return response.data;
+};
 
 const getCurrentUser = async () => {
   try {
@@ -353,8 +357,35 @@ const verifyEmailChange = async (token: string) => {
   }
 
 }
+
+const verifyEmail = async (token: string) => {
+  try {
+    const response = await api.post("/auth/verify-email", {
+      token,
+    });
+    console.log("verifyEmail",response.data);
+    
+    return response.data;
+  } catch (error: any) {
+     console.log("verifyEmail", error);
+    throw error.response?.data || error;
+  }
+};
+
+const resendVerification = async (email: string) => {
+  try {
+    const response = await api.post("/auth/resend-verification", {
+      email,
+    });
+
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+};
+
 export {
-  getCurrentUser, getAllUsers,
+  getCurrentUser,loginUser, getAllUsers,
   getAllConversations, createNewConversations,
   sendMessage, resetUnreadCount,
   getMessages, loadOlderMessages,
@@ -364,6 +395,6 @@ export {
   unblockUser, clearChat,
   logOut, deleteAccount,
   requestEmailChange, verifyRecoverAccount,
-  verifyEmailChange, getUserToken,
-  searchConversationMessages
+  verifyEmailChange, verifyEmail, resendVerification, 
+  getUserToken, searchConversationMessages
 }

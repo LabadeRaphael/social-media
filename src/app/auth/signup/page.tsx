@@ -18,7 +18,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail } from "lucide-react";
 import api from "@/api/axiosInstance";
 import MessageAlert from "@/components/message-alert";
 import Image from "next/image";
@@ -248,6 +248,20 @@ export default function SignupPage() {
                         error: errors.email,
                       })
                       }
+                      InputProps={{
+                        startAdornment: (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              mr: 1,
+                              color: "text.secondary",
+                            }}
+                          >
+                            <Mail size={18} />
+                          </Box>
+                        ),
+                      }}
                     />
 
                     {/* Password */}

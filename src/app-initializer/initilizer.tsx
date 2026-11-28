@@ -41,6 +41,8 @@ export default function AppInitializer({
     "/auth/reset-password",
     "/auth/recover-account",
     "/auth/recover-account-verify",
+    "/auth/verify-email",
+    "/auth/resend-verification",
   ];
 
   const matchesRoute = (routes: string[]) =>
@@ -54,6 +56,7 @@ export default function AppInitializer({
 
   const shouldCheckSession = !isOtherPublicPage;
   console.log("shouldCheckSession", shouldCheckSession);
+  const isProtectedPage = !isAuthPage && !isOtherPublicPage;
 
   const {
     data: user,
@@ -61,21 +64,30 @@ export default function AppInitializer({
     isError,
     isPending,
     isFetching,
-    error,
+    // error,
     refetch,
   } = useUserToken(shouldCheckSession);
   console.log("user", user);
 
-  const isUnauthorized =
-    axios.isAxiosError(error) &&
-    error.response?.status === 401;
+  // const isUnauthorized =
+  //   axios.isAxiosError(error) &&
+  //   error.response?.status === 401;
 
   const hasValidSession =
     isSuccess && Boolean(user?.accessTokenExpireAt);
-
+  console.log("SESSION DEBUG:", {
+    pathname,
+    user,
+    isSuccess,
+    isFetching,
+    isPending,
+    hasValidSession,
+    accessTokenExpireAt: user?.accessTokenExpireAt,
+  });
   const isCheckingAuth =
-    isAuthPage && (isPending || isFetching);
-
+    shouldCheckSession && (isPending || isFetching);
+  // const isCheckingSession =
+  //   shouldCheckSession && (isPending || isFetching);
   const shouldShowError =
     isAuthPage &&
     !isFetching &&
@@ -99,14 +111,42 @@ export default function AppInitializer({
 
   // Redirect authenticated users away from login/signup.
   useEffect(() => {
-    if (!isAuthPage || isFetching || !hasValidSession) return;
 
+    if (!isAuthPage || isFetching || !hasValidSession) return;
     router.replace("/dashboard/chats");
   }, [
     isAuthPage,
     isFetching,
     hasValidSession,
     router,
+  ]);
+
+  // Redirect unauthenticated users from protected pages.
+  useEffect(() => {
+    console.log("REDIRECT CHECK:", {
+      isProtectedPage,
+      isFetching,
+      isSuccess,
+      hasValidSession,
+      user,
+    });
+    if (
+      !isProtectedPage ||
+      isFetching ||
+      !isSuccess ||
+      hasValidSession
+    ) {
+      return;
+    }
+
+    router.replace("/auth/login");
+  }, [
+    isProtectedPage,
+    isFetching,
+    isSuccess,
+    hasValidSession,
+    router,
+    user
   ]);
 
   // Session verification screen.
